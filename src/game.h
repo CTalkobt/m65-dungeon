@@ -106,6 +106,7 @@ struct mon {
     unsigned char x, y, kind, hp;
     unsigned char awake;      /* 0 asleep, 1 wandering, 2 hunting */
     unsigned char stun;       /* turns it will not move (after the player fled) */
+    unsigned char carry;      /* what it ran off with: I_* + 1, 0 nothing */
 };
 extern struct mon mons[MAX_MON];
 extern unsigned char nmons;
@@ -200,7 +201,14 @@ void msg_clear(void);
 void msg_show(void);                  /* the messages drawn again */
 
 /* explore.c */
-unsigned char explore(void);          /* until the player dies (DIED) or wins (WON) */
+unsigned char explore(unsigned char resume);   /* until DIED, WON or SAVED; resume: a saved game, loaded */
+
+/* keep.c: the game on the disk (DGSAVE) */
+#define SAVED  4              /* explore: the player saved and stopped */
+unsigned char game_save(void);        /* 1 if it was written */
+unsigned char game_load(void);        /* 1 if there was one, and it is back */
+unsigned char game_peek(void);        /* 1 if there is one */
+void game_unsave(void);               /* the journey is over: no more of it */
 
 /* battle.c */
 unsigned char battle(unsigned char m, unsigned char ambush);

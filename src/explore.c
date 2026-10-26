@@ -61,6 +61,7 @@ static void level_enter(void) {
     msg(buf, C_GOLD);
     if (pl.depth == 1) msg("Arrows / WASD move, QEZC diagonally. H for help.", C_DIM);
     if (pl.depth == DEPTHS) msg("A cold voice whispers your name.", C_PURPLE);
+    game_save();                     /* (each level begun is kept, while the screen is dark) */
     screen_in();
 }
 
@@ -320,20 +321,23 @@ static void test_shoot(void) {
 }
 #endif
 
-static unsigned char explore_run(void);
+static unsigned char explore_run(unsigned char resume);
 
-unsigned char explore(void) {
+unsigned char explore(unsigned char resume) {
     unsigned char r;
     music_ticks = 0;
-    r = explore_run();
+    r = explore_run(resume);
     music_off();
     return r;
 }
 
-static unsigned char explore_run(void) {
+static unsigned char explore_run(unsigned char resume) {
     unsigned char k, took, r;
     signed char dx, dy;
-    level_enter();
+    if (resume) {
+        msg("You take up your descent again.", C_GOLD);
+        screen_in();
+    } else level_enter();
 #ifdef TEST_ITEMS
     for (k = 0; k < I_COUNT; k++) pl.items[k] = 2;    /* (tests: two of everything) */
 #endif
@@ -420,8 +424,14 @@ static unsigned char explore_run(void) {
             msg("There are no stairs here.", C_DIM);
             break;
         case K_STOP:
-            msg("Give up? Y to end your delve, any other key to go on.", C_RED);
-            if (key_wait() == 'y') return DIED;
+            msg("S: save and stop. Y: give up. Another key: go on.", C_RED);
+            k = key_wait();
+            if (k == 'y') return DIED;
+            if (k == 's') {
+                if (game_save()) return SAVED;
+                msg("The disk will not take it.", C_RED);
+                break;
+            }
             msg("You steel yourself.", C_DIM);
             break;
         }

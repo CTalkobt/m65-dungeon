@@ -79,7 +79,7 @@ unsigned char terrain(unsigned char x, unsigned char y) {
     return TR_LOCKED;
 }
 
-static unsigned char lit_x0[MAX_LIT], lit_y0[MAX_LIT], lit_x1[MAX_LIT], lit_y1[MAX_LIT];
+unsigned char lit_x0[MAX_LIT], lit_y0[MAX_LIT], lit_x1[MAX_LIT], lit_y1[MAX_LIT];   /* (keep.c saves them) */
 unsigned char lit_n;
 
 void lit_add(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1) {
@@ -92,7 +92,7 @@ void lit_add(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char
 }
 
 /* the vault: a room behind locked doors (none: x1 0) */
-static unsigned char vault_x0, vault_y0, vault_x1, vault_y1;
+unsigned char vault_x0, vault_y0, vault_x1, vault_y1;
 
 void vault_set(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1) {
     vault_x0 = x0;

@@ -66,7 +66,8 @@ game builds with its SID effects only.
 | H M F | | | (items) potion, draught, scroll of fire |
 | B G | | | (shooting) the bow, the flintlock |
 | H | | help | |
-| RUN/STOP | | give up | back out of the spells or items |
+| RUN/STOP | | save and stop (S), or give up (Y) | back out of the spells or items |
+| C (on the title) | | continue the saved descent | |
 
 **Exploring.** Walk into doors to open them, into creatures to fight them.
 Gold, healing potions (red), mana draughts (blue), scrolls and keys are
@@ -77,6 +78,13 @@ in the shadows, you see only what shines: eyes. What you have seen stays
 behind as faint blue outlines of the walls, doors and stairs, dimming over
 some hundreds of turns until it is gone. Some idols sharpen your memory,
 others make it slip.
+
+**Saving.** Each level is saved as you enter it, and RUN/STOP then S saves
+where you stand and goes back to the title, where C takes it up again. It
+is one save (`DGSAVE`, 29 blocks on the game's disk); dying or winning
+ends it. On the disk it is the player, the creatures, what lies about,
+each place's terrain tile (a byte; the map's characters are drawn again
+from them) and its memory.
 
 **Settings** (O on the map, S on the title). The music's and the sounds'
 levels, 1-15, or off (RETURN turns the chosen one off and back on). The

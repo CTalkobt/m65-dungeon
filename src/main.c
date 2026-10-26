@@ -44,6 +44,7 @@ static void seed(void) {
 }
 
 int main(void) {
+    unsigned char r;
     seed();
     REG(0xD020) = 0;                          /* black while it loads */
     REG(0xD021) = 0;
@@ -74,10 +75,13 @@ int main(void) {
     sfx_on();
     title_show();                             /* the title first, then the sounds under it */
     audio_init();
-    while (title()) {
-        player_new();
+    while ((r = title()) != 0) {
+        if (r == 2) {
+            if (!game_load()) continue;  /* (Continue: the saved descent) */
+        } else player_new();
         msg_clear();
-        ending(explore());
+        r = explore(r == 2);
+        if (r != SAVED) ending(r);
     }
     video_fade(0);
     sfx_off();

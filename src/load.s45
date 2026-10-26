@@ -4,6 +4,10 @@
 ; it there (SETBNK, SETNAM, SETLFS with secondary address 1, LOAD) from the
 ; drive the program came from (8 if none). ROM calls go through crt0's
 ; __rom_call, which keeps the program's base page. (After pfest's load.s45.)
+;
+; ld_save saves ld_from .. ld_to - 1 of the bank (the file starting with
+; ld_from, its load address); ld_cmd sends the name to the drive's command
+; channel (a scratch: "S0:NAME").
 
 .cpu _45gs02
 .segmentOrder code, data, bss
@@ -12,14 +16,95 @@
 .global _ld_name
 .global _ld_len
 .global _ld_bank
+.global _ld_save, _ld_cmd, _ld_from, _ld_to
 .extern ___cbm_target, __rom_call
 
 .data
 _ld_name: .word 0         ; the file's name (PETSCII)
 _ld_len:  .byte 0         ;   its length
 _ld_bank: .byte 0         ;   the bank it loads into
+_ld_from: .word 0         ; what ld_save saves: from
+_ld_to:   .word 0         ;   to (not included)
+bank:     .byte 0
 
 .code
+
+; SETBNK (the data's bank A, the name's 0) and SETNAM (ld_name)
+proc name
+    sta bank
+    lda #$6B
+    sta ___cbm_target
+    lda #$FF
+    sta ___cbm_target+1
+    lda bank
+    ldx #0
+    jsr __rom_call
+    lda #$BD
+    sta ___cbm_target
+    lda _ld_len
+    ldx _ld_name
+    ldy _ld_name+1
+    jmp __rom_call
+endproc
+
+; X: the program's drive (8 if none)
+proc drive
+    ldx $00BA
+    cpx #8
+    bcs @ok
+    ldx #8
+@ok:
+    rts
+endproc
+
+; unsigned char ld_save(void): 1 when saved
+proc _ld_save
+    lda _ld_bank
+    jsr name
+    lda #$BA              ; SETLFS 0, the drive, 0
+    sta ___cbm_target
+    jsr drive
+    lda #0
+    ldy #0
+    jsr __rom_call
+    lda _ld_from          ; SAVE: A = a base page pointer to the start, X/Y the end
+    sta $00FB
+    lda _ld_from+1
+    sta $00FC
+    lda #$D8
+    sta ___cbm_target
+    lda #$FB
+    ldx _ld_to
+    ldy _ld_to+1
+    jsr __rom_call
+    bcs @fail
+    lda #1
+    ldx #0
+    rts
+@fail:
+    lda #0
+    ldx #0
+    rts
+endproc
+
+; void ld_cmd(void): the name to the command channel (15)
+proc _ld_cmd
+    lda #0
+    jsr name
+    lda #$BA              ; SETLFS 15, the drive, 15
+    sta ___cbm_target
+    jsr drive
+    lda #15
+    ldy #15
+    jsr __rom_call
+    lda #$C0              ; OPEN
+    sta ___cbm_target
+    jsr __rom_call
+    lda #$C3              ; CLOSE 15
+    sta ___cbm_target
+    lda #15
+    jmp __rom_call
+endproc
 
 ; unsigned char ld_file(void): 1 when the file is in
 proc _ld_file

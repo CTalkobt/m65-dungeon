@@ -74,13 +74,23 @@ void loading_tick(void) {
     video_centre(44, q, C_DIM);
 }
 
+/* the prompt under the words: with Continue when there is a saved descent */
+static unsigned char saved;
+
+static void prompt(void) {
+    video_blank(1, 44, 78, 1);
+    video_centre(44, saved ? "RETURN: begin    C: continue    S: settings    RUN/STOP: leave"
+                           : "RETURN or FIRE to begin     S: settings     RUN/STOP to leave", C_HILITE);
+}
+
+/* 0: the player wants to leave; 1: a new descent; 2: the saved one (game_load) */
 unsigned char title(void) {
-    unsigned char k;
+    unsigned char k, r = 1;
     unsigned int t = 0;
     if (!shown) title_show();
     shown = 0;
-    video_blank(1, 44, 78, 1);
-    video_centre(44, "RETURN or FIRE to begin     S: settings     RUN/STOP to leave", C_HILITE);
+    saved = game_peek();
+    prompt();
     tune_play_far(MUSIC_LIN + TUNE_TITLE_AT);  /* the theme, now that the loading is done */
     v_music = 1;
     for (;;) {
@@ -98,10 +108,14 @@ unsigned char title(void) {
         }
         k = key_get();
         if (k == K_FIRE || k == ' ') break;
+        if (k == 'c' && saved) {
+            r = 2;
+            break;
+        }
         if (k == 's') {
             settings(18, 36);
             title_text();
-            video_centre(44, "RETURN or FIRE to begin     S: settings     RUN/STOP to leave", C_HILITE);
+            prompt();
         }
         if (k == K_STOP) {
             v_music = 0;
@@ -117,12 +131,13 @@ unsigned char title(void) {
 #endif
     sfx(SFX_BELL);
     video_fade(0);
-    return 1;
+    return r;
 }
 
 /* the end: fallen, or the lich destroyed */
 void ending(unsigned char how) {
     char buf[64];
+    game_unsave();                            /* the descent is over */
     video_fade(0);
     v_flicker = 0;
     v_fire = 0;

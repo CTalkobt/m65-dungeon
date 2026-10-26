@@ -152,6 +152,7 @@ static void add_mon(unsigned char kind, unsigned int at) {
     m->hp = FRESH;
     m->awake = rng_range(3) == 0;
     m->stun = 0;
+    m->carry = 0;
 }
 
 void dungeon_make(void) {
