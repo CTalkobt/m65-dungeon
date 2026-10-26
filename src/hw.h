@@ -4,13 +4,17 @@
  *
  * Chip RAM:
  *   bank 0      the program (from $2001), the heap and stack up to $BFFF
- *   $40000      DGTILES: the palette (entries 16-127), the exploration tiles,
- *               the frame and bar characters (assets.h T_*)
+ *   $40000      DGTILES: the palette (entries 16-127 the full-colour tiles,
+ *               128-255 the map's palette banks); from $40400 the terrain's
+ *               16-colour tiles (assets.h TK_*), the full-colour tiles (T_*),
+ *               the frame and bar characters
+ *   $48000      the level's map: the terrain as characters, 128 x 96 (game.h vm_*)
  *   $50000      the scene: a monster's close-up, a chest or an idol (DGMON*,
  *               DGCHEST, DGIDOL), loaded when it is needed: its palette
  *               (entries 128-255), a header, its characters
  *   $5E000      the screen: 80 x 50 cells of 2 bytes
- * Colour RAM at $FF80000, 2 bytes a cell.
+ * Colour RAM at $FF80000, 2 bytes a cell; the map's memory (game.h seen_*)
+ * at $FF82000.
  */
 #pragma once
 
@@ -20,6 +24,7 @@
 
 #define COLOR_LIN  0xFF80000UL
 #define TILES_LIN  0x0040000UL
+#define MAP_LIN    0x0048000UL       /* (src/vmap.s45 knows it) */
 #define SCENE_LIN  0x0050000UL
 #define SCREEN_LIN 0x005E000UL
 #define MUSIC_LIN  0x8070000UL       /* DGMUSIC, the tunes: attic RAM (tune_play_far) */
@@ -27,13 +32,13 @@
 /* a file's palette: 256 red, 256 green, 256 blue (plain 8-bit values) */
 #define PAL_BYTES  768
 #define SCENE_HDR  (SCENE_LIN + PAL_BYTES)          /* assets.h SCENE_HDR_SIZE: what the creature is (gen_art.py header) */
-#define TILE_CHAR0 (unsigned int)((TILES_LIN + PAL_BYTES) / 64)
 
 #define COLS       80
 #define ROWS       50
 
 /* the palette: 0-15 the text colours (video.c), 16-127 the tiles',
- * 128-254 the scene's (247-254 its glow, which pulses) */
+ * 128-254 the scene's (247-254 its glow, which pulses) or, while the map
+ * is shown, the map's palette banks (128-255: view.c) */
 #define PAL_TILES  16
 #define PAL_SCENE  128
 #define PAL_GLOW   247        /* 247-254 (255 would show the colour RAM colour) */

@@ -72,7 +72,11 @@ unsigned char scene_load(unsigned char s) {
     unsigned char keep[8];
     unsigned char n = 0, ok;
     unsigned long at = CACHE_LIN + ((unsigned long)s << 17);
-    if (loaded == s) return 1;
+    v_map = 0;                                /* 128-255 the scene's again */
+    if (loaded == s) {
+        video_pal_load(SCENE_LIN, PAL_SCENE, 255 - PAL_SCENE);   /* (the map's banks were there) */
+        return 1;
+    }
     if (cached & (1U << s)) {
         dma_copy_far(SCENE_LIN, at, BANK5_LEN);
         dma_copy_far(BANK1_LIN, at + 0x10000UL, BANK1_LEN);

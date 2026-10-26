@@ -3,9 +3,11 @@
 
 Writes, in the build directory:
 Every .bin is packed (pack.py) and unpacks in place where it says:
-  dgtiles.bin   DGTILES: bank 4 ($40000): the palette (entries 16-127 set),
-                then the tiles (4 characters each: top left, top right,
-                bottom left, bottom right) and the frame and bar characters
+  dgtiles.bin   DGTILES: bank 4 ($40000): the palette (entries 16-127: the
+                full-colour tiles; 128-255: the map's banks), then from
+                $40400 the terrain's 16-colour tiles, the full-colour tiles
+                (4 characters each: top left, top right, bottom left,
+                bottom right) and the frame and bar characters
   dg<name>a.bin DG<NAME>A: bank 5 ($50000): a close-up's palette (128-254
                 set), a header (frames, width, height in characters), each
                 frame's map (a character number a cell), its first characters
@@ -42,6 +44,10 @@ DEPTHS = 5
 SPAWN = 8                      # level_mons: the creatures a level draws from, 8 a level
 FIRE0 = 120                    # the tiles' fire: 4 palette entries the program turns round
 FIRE_RAMP = [(150, 30, 4), (235, 100, 14), (255, 190, 50), (255, 240, 160)]
+PAL_MAP = 128                  # the map's palette banks: 8 + bank (gen_art map_palette)
+MAP_GENERAL, MAP_EDGE = 11, 3  # a terrain tile's colour numbers: 1-11 the stone, 12-14 its edges
+TCHAR0 = 0x1010                # the terrain's first character ($40400): src/vmap.s45 knows it
+MAP_LIN = 0x48000              # the level's map (hw.h MAP_LIN): the tiles end below
 BACK1 = 0x2A000                # the backdrop's characters: in the C64 BASIC's space
 BACK2 = 0x2E000                #   and the C64 KERNAL's (8 KB each)
 BACK_HALF = 128
@@ -67,9 +73,57 @@ def write(path, dest, data, limit):
     return skip, len(stream)
 
 
+def ncm_tile(nib):
+    """a 16 x 16 tile of colour numbers (0-15) as its 4 16-colour characters
+    (top left, top right, bottom left, bottom right), each shown 8 pixels
+    wide (the colour RAM trims it): a row is 4 bytes of two pixels, the
+    left one in the low nibble, then 4 bytes not shown"""
+    out = []
+    for y0 in (0, 8):
+        for x0 in (0, 8):
+            c = bytearray()
+            for y in range(8):
+                r = nib[y0 + y, x0:x0 + 8]
+                c += bytes(int(r[k]) | int(r[k + 1]) << 4 for k in range(0, 8, 2)) + bytes(4)
+            out.append(bytes(c))
+    return out
+
+
+def map_palette(terrain):
+    """the map's 16-colour tiles' colours (MAP_GENERAL for the stone, the
+    wood, the iron; MAP_EDGE for the edges), the tiles as colour numbers
+    (1-14; 0 black), and the palette banks (8 x 16 entries: 128-255)"""
+    gen = np.concatenate([img[~edge] for name, img, edge in terrain if name != "ROCK"])
+    edg = np.concatenate([img[edge] for name, img, edge in terrain if name != "ROCK"])
+    gpal, _ = quantize(to8(np.clip(gen, 0, 1))[None], MAP_GENERAL, dither=False)
+    epal, _ = quantize(to8(np.clip(edg, 0, 1))[None], MAP_EDGE, dither=False)
+    nibs = []
+    for name, img, edge in terrain:
+        if name == "ROCK":
+            nibs.append(np.zeros(img.shape[:2], np.int32))
+            continue
+        i8 = to8(np.clip(img, 0, 1))
+        g = remap(i8, gpal, dither=False) + 1
+        e = remap(i8, epal, dither=False) + 1 + MAP_GENERAL
+        nibs.append(np.where(edge, e, g))
+    cols = np.zeros((15, 3), np.float32)               # colour number -> RGB (0..1)
+    cols[1:1 + len(gpal)] = gpal / 255.0
+    cols[1 + MAP_GENERAL:1 + MAP_GENERAL + len(epal)] = epal / 255.0
+    banks = np.zeros((128, 3), np.float32)
+    for lv in range(4):                                 # MAP_LIT + lv: the torch's levels
+        banks[lv * 16 + 1:lv * 16 + 15] = cols[1:] * tiles.LEVELS[lv] * np.array(tiles.TINTS[lv], np.float32)
+    for m in range(3):                                  # MAP_MEM + m: remembered, only the edges
+        b = (4 + m) * 16
+        banks[b + 1 + MAP_GENERAL:b + 15] = tiles.MEM_COL * tiles.MEMS[m]
+    return cols, nibs, to8(np.clip(banks, 0, 1))      # (bank 7, MAP_DARK: all black)
+
+
 def build_tiles(out):
-    """the tiles and frame characters in one palette; the C tables"""
-    kinds = tiles.kinds()
+    """the tiles and frame characters; the map's palette banks; the C tables"""
+    terrain = tiles.terrain_kinds()
+    cols, nibs, banks = map_palette(terrain)
+    floor_seen = cols[nibs[1]]                          # FLOOR0 as the map shows it, under the sprites
+    kinds = tiles.sprite_kinds(floor_seen)
     ui = tiles.ui_chars()
     imgs = []
     for name, vs in kinds:
@@ -97,13 +151,17 @@ def build_tiles(out):
     full[16:16 + len(pal)] = pal
     for k, rgb in enumerate(FIRE_RAMP):
         full[FIRE0 + k] = rgb
+    full[PAL_MAP:] = banks
 
     def idx(img):
         f = fire_slots(img)
         i = remap(to8(unfired(img)), pal, dither=False) + 16
         return np.where(f >= 0, FIRE0 + f, i)
 
-    chars = []          # 64-byte characters
+    # the terrain's characters first, at TCHAR0: TCHAR0 + kind * 4 + quarter
+    chars = []
+    for nib in nibs:
+        chars.extend(ncm_tile(nib))
     seen = {}           # a tile's 4 characters (bytes) -> its first character's index
 
     def add_tile(img):
@@ -115,25 +173,27 @@ def build_tiles(out):
             chars.extend(q)
         return seen[key]
 
-    char0 = (TILES_LIN + PAL_BYTES) // 64
     table = []
     for name, vs in kinds:
         row = []
         for v in vs:
-            row.append(0 if v is None else char0 + add_tile(np.clip(v, 0, 1)))
+            row.append(0 if v is None else TCHAR0 + add_tile(np.clip(v, 0, 1)))
         table.append((name, row))
     ui_nums = []
     for name, c in ui:
         i = idx(np.clip(c, 0, 1)).astype(np.uint8).tobytes()
-        ui_nums.append((name, char0 + len(chars)))
+        ui_nums.append((name, TCHAR0 + len(chars)))
         chars.append(i)
-    data = pal_bytes(full) + b"".join(chars)
-    assert TILES_LIN + len(data) <= 0x50000, "the tiles overflow bank 4 (%d bytes)" % len(data)
+    head = pal_bytes(full)
+    head += bytes(TCHAR0 * 64 - TILES_LIN - len(head))
+    data = head + b"".join(chars)
+    assert TILES_LIN + len(data) <= MAP_LIN, "the tiles reach the map (%d bytes)" % len(data)
     skip, packed = write(os.path.join(out, "dgtiles.bin"), TILES_LIN, data, 0x50000)
-    print("DGTILES: %d tiles, %d characters, %d bytes free in bank 4; packed %d -> %d"
-          % (len(seen), len(chars), 0x10000 - len(data), len(data), packed))
+    print("DGTILES: %d terrain tiles, %d tiles, %d characters, %d bytes before the map; packed %d -> %d"
+          % (len(terrain), len(seen), len(chars), MAP_LIN - TILES_LIN - len(data), len(data), packed))
     back = [idx(c).astype(np.uint8) for c in bimgs]
-    return table, ui_nums, skip, back, full
+    tk = [name for name, _, _ in terrain]
+    return table, tk, ui_nums, skip, back, full
 
 
 def back_char(i):
@@ -254,7 +314,7 @@ def main():
     out = sys.argv[1]
     pv = os.path.join(out, "preview")
     os.makedirs(pv, exist_ok=True)
-    table, ui_nums, tiles_skip, back, tile_pal = build_tiles(out)
+    table, terrain, ui_nums, tiles_skip, back, tile_pal = build_tiles(out)
     back_stream2, back_img, back_nums = build_backdrop(out, back)
     files = [("dgtiles.bin", "DGTILES"), ("dgback.bin", "DGBACK")]
     names = list(scenes.SCENES)
@@ -270,12 +330,17 @@ def main():
     nk = len(table)
     with open(os.path.join(out, "assets.h"), "w") as f:
         f.write("/* assets.h — made by tools/gen_art.py: the art's tables */\n#pragma once\n\n")
-        f.write("/* tile kinds (tile_char[kind][variant]: the first of 4 characters, 0 none) */\n")
+        f.write("/* the terrain's tiles (16 colours): characters TCHAR0 + kind * 4 + quarter */\n")
+        for i, name in enumerate(terrain):
+            f.write("#define TK_%s %d\n" % (name, i))
+        f.write("#define TK_COUNT %d\n#define TCHAR0 0x%04X\n" % (len(terrain), TCHAR0))
+        f.write("#define PAL_MAP %d           /* the map's palette banks (8): 128-255 of DGTILES' palette */\n" % PAL_MAP)
+        f.write("\n/* the full-colour tiles (tile_char[kind][variant]: the first of 4 characters, 0 none) */\n")
         for i, (name, _) in enumerate(table):
             f.write("#define T_%s %d\n" % (name, i))
         f.write("#define T_COUNT %d\n" % nk)
         f.write("#define PAL_FIRE %d          /* the fire's palette entries: 4 from here */\n" % FIRE0)
-        f.write("#define TV_EYES %d\n#define TV_MEM %d\n\n" % (tiles.V_EYES, 4))
+        f.write("#define TV_EYES %d\n\n" % tiles.V_EYES)
         f.write("extern const unsigned int tile_char[%d][%d];\n\n" % (nk, tiles.NV))
         f.write("/* the frame and bar characters */\n")
         for name, n in ui_nums:

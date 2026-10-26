@@ -1,10 +1,16 @@
 /* dungeon.c — a level: rooms cut in the rock, corridors between them,
  * doors, braziers in some rooms (the rest are dark), creatures, chests, an
  * idol, the stairs down (on the last level the lich instead)
+ *
+ * It is made straight in the map (game.h vm_*): the rooms' floors, then
+ * the corridors cut through the rock between them, the doors, and last the
+ * walls round anything one can walk on, each tile as it will be drawn.
  */
 #pragma cc45 overlay(gen)
 #pragma cc45 noescape_strings
 #include <dma.h>
+#include "hw.h"
+#include "video.h"
 #include "game.h"
 #include "rng.h"
 
@@ -21,8 +27,19 @@ static unsigned char overlaps(unsigned char x, unsigned char y, unsigned char w,
 }
 
 static void carve(unsigned char x, unsigned char y) {
-    unsigned int i = AT(x, y);
-    if (TERRAIN(i) == TR_ROCK) map[i] = TR_CORR;
+    if (vm_kind(x, y) == TK_ROCK) vm_set(x, y, TK_CORR0 + ((x ^ y) & 1));
+}
+
+/* a room's floor (a corridor's is not) */
+static unsigned char in_room(unsigned char x, unsigned char y) {
+    unsigned char k = vm_kind(x, y);
+    return k >= TK_FLOOR0 && k <= TK_FLOOR3;
+}
+
+/* nothing cut there (rock, or a wall already) */
+static unsigned char solid(unsigned char x, unsigned char y) {
+    unsigned char k = vm_kind(x, y);
+    return k == TK_ROCK || IS_WALL(k);
 }
 
 /* an L-shaped corridor between two rooms' middles */
@@ -47,16 +64,16 @@ static unsigned int spot(unsigned char r) {
         x = rx[r] + rng_range(rw[r]);
         y = ry[r] + rng_range(rh[r]);
         i = AT(x, y);
-        if (TERRAIN(i) == TR_FLOOR && !(map[i] & F_OBJ) && !mon_at(x, y) && !(x == pl.x && y == pl.y)) return i;
+        if (in_room(x, y) && !obj_at(i) && !mon_at(x, y) && !(x == pl.x && y == pl.y)) return i;
     }
     return 0;
 }
 
-/* a door or a corridor among the eight round a cell */
-static unsigned char by_way_in(unsigned int i) {
+/* a door or a corridor among the eight round a place */
+static unsigned char by_way_in(unsigned char x, unsigned char y) {
     unsigned char k, t;
     for (k = 0; k < 9; k++) {
-        t = TERRAIN(i + (k / 3 - 1) * MAP_W + (k % 3) - 1);
+        t = terrain(x + k % 3 - 1, y + k / 3 - 1);
         if (t == TR_DOOR || t == TR_OPEN || t == TR_CORR) return 1;
     }
     return 0;
@@ -83,11 +100,15 @@ void dungeon_make(void) {
     unsigned int i;
     unsigned char k, t, x, y, w, h, r, last, d = pl.depth - 1;
 
-    for (i = 0; i < MAP_N; i++) map[i] = TR_ROCK;
+    for (y = 0; y < MAP_H; y++) {
+        video_poll();
+        for (x = 0; x < MAP_W; x++) vm_set(x, y, TK_ROCK);
+    }
     dma_fill_far(SEEN_LIN, MAP_N, 0);
     obj_clear();
     nmons = 0;
     nrooms = 0;
+    lit_n = 0;
     /* rooms: tries at random places, those that fit */
     for (k = 0; k < 120 && nrooms < MAX_ROOMS; k++) {
         w = 4 + rng_range(9);
@@ -108,45 +129,50 @@ void dungeon_make(void) {
         }
     for (r = 0; r < nrooms; r++)
         for (y = ry[r]; y < ry[r] + rh[r]; y++)
-            for (x = rx[r]; x < rx[r] + rw[r]; x++) map[AT(x, y)] = TR_FLOOR | F_ROOM;
+            for (x = rx[r]; x < rx[r] + rw[r]; x++) vm_set(x, y, TK_FLOOR0 + (((x * 7) ^ (y * 13)) & 3));
     for (r = 1; r < nrooms; r++) corridor(r - 1, r);
     for (k = 0; k < 3; k++) corridor(rng_range(nrooms), rng_range(nrooms));
 
-    /* doors: where a corridor meets a room, between two walls */
-    for (y = 1; y < MAP_H - 1; y++)
+    /* doors: where a corridor meets a room, between two walls; across a
+     * corridor running east-west (rock above) the door stands upright */
+    for (y = 1; y < MAP_H - 1; y++) {
+        video_poll();
         for (x = 1; x < MAP_W - 1; x++) {
-            i = AT(x, y);
-            if (TERRAIN(i) != TR_CORR) continue;
-            if ((TERRAIN(i - 1) == TR_ROCK && TERRAIN(i + 1) == TR_ROCK &&
-                 ((map[i - MAP_W] & F_ROOM) || (map[i + MAP_W] & F_ROOM))) ||
-                (TERRAIN(i - MAP_W) == TR_ROCK && TERRAIN(i + MAP_W) == TR_ROCK &&
-                 ((map[i - 1] & F_ROOM) || (map[i + 1] & F_ROOM)))) {
+            if (terrain(x, y) != TR_CORR) continue;
+            if ((solid(x - 1, y) && solid(x + 1, y) && (in_room(x, y - 1) || in_room(x, y + 1))) ||
+                (solid(x, y - 1) && solid(x, y + 1) && (in_room(x - 1, y) || in_room(x + 1, y)))) {
+                t = solid(x, y - 1) ? TK_DOOR_V : TK_DOOR_H;
                 k = rng_range(10);
-                if (k < 5) map[i] = TR_DOOR;
-                else if (k < 8) map[i] = TR_OPEN;
+                if (k < 5) vm_set(x, y, t);
+                else if (k < 8) vm_set(x, y, t + TK_DOOR_OPEN_H - TK_DOOR_H);
             }
         }
+    }
 
-    /* the walls: rock next to anything one can walk on */
-    for (y = 1; y < MAP_H - 1; y++)
+    /* the walls: rock next to anything one can walk on, its face toward
+     * the open sides (N 1, E 2, S 4, W 8) */
+    for (y = 1; y < MAP_H - 1; y++) {
+        video_poll();
         for (x = 1; x < MAP_W - 1; x++) {
-            i = AT(x, y);
-            if (TERRAIN(i) != TR_ROCK) continue;
-            for (k = 0; k < 9; k++) {
-                t = TERRAIN(i + (k / 3 - 1) * MAP_W + (k % 3) - 1);
-                if (t != TR_ROCK) {
-                    map[i] |= F_BOUND;
-                    break;
-                }
-            }
+            if (vm_kind(x, y) != TK_ROCK) continue;
+            for (k = 0; k < 9; k++)
+                if (!solid(x + k % 3 - 1, y + k / 3 - 1)) break;
+            if (k == 9) continue;
+            t = 0;
+            if (!solid(x, y - 1)) t |= 1;
+            if (!solid(x + 1, y)) t |= 2;
+            if (!solid(x, y + 1)) t |= 4;
+            if (!solid(x - 1, y)) t |= 8;
+            vm_set(x, y, TK_WALL0 + t);
         }
+    }
 
     /* the player in the first room, the way down in the last */
     pl.x = rx[0] + rw[0] / 2;
     pl.y = ry[0] + rh[0] / 2;
     last = nrooms - 1;
     if (pl.depth < DEPTHS) {
-        map[AT(rx[last] + rw[last] / 2, ry[last] + rh[last] / 2)] = TR_STAIRS | F_ROOM;
+        vm_set(rx[last] + rw[last] / 2, ry[last] + rh[last] / 2, TK_STAIRS);
     } else {
         add_mon(M_BOSS, AT(rx[last] + rw[last] / 2, ry[last] + rh[last] / 2));
         mons[nmons - 1].awake = 0;
@@ -162,13 +188,12 @@ void dungeon_make(void) {
             x = rx[r] + (t & 1 ? rw[r] - 1 : 0);
             y = ry[r] + (t & 2 ? rh[r] - 1 : 0);
             i = AT(x, y);
-            if (TERRAIN(i) == TR_FLOOR && !(map[i] & F_OBJ) && !by_way_in(i)) {
+            if (in_room(x, y) && !obj_at(i) && !by_way_in(x, y)) {
                 obj_set(i, O_BRAZIER);
                 break;
             }
         }
-        for (y = ry[r] - 1; y <= ry[r] + rh[r]; y++)
-            for (x = rx[r] - 1; x <= rx[r] + rw[r]; x++) map[AT(x, y)] |= F_LIT;
+        lit_add(rx[r] - 1, ry[r] - 1, rx[r] + rw[r], ry[r] + rh[r]);
     }
 
     /* things to find */

@@ -1,0 +1,93 @@
+; vmap.s45 — the level's map (game.h vm_kind / vm_set): the terrain's
+; 16-colour tiles as the screen shows them, 2 x 2 characters a place, a
+; row of 128 characters (256 bytes) at MAP_LIN ($48000) on; reached through
+; a 32-bit pointer (lda [ptr],z)
+;
+; A tile kind k (TK_*) is the characters TCHAR0 + k * 4 + quarter, TCHAR0 =
+; $1010 (gen_art.py): the low byte of a place's top left character is
+; $10 + k * 4, its high byte $10.
+;
+; unsigned char vm_kind(unsigned char x, unsigned char y);         x $10, y $12
+; void vm_set(unsigned char x, unsigned char y, unsigned char k);  k $14
+; (cc45 gives each parameter two bytes)
+
+.cpu _45gs02
+.segmentOrder code, data, bss
+
+.global _vm_kind, _vm_set
+
+.segment "zp"
+ptr:    .res 4
+
+.segment "code"
+
+; ptr := MAP_LIN + y * 512 + x * 4 (x < 64, y < 48: no carries)
+proc at
+    lda $10
+    asl
+    asl
+    sta ptr
+    lda $12
+    asl
+    clc
+    adc #$80                ; MAP_LIN = $00048000
+    sta ptr+1
+    lda #$04
+    sta ptr+2
+    lda #$00
+    sta ptr+3
+    ldz #0
+    rts
+endproc
+
+proc _vm_kind
+    .zp_uses $10, $12
+    .reg_clobbers A, X, Z
+    .flag_clobbers C, N, Z
+    jsr at
+    lda [ptr],z
+    sec
+    sbc #$10
+    lsr
+    lsr
+    ldx #0
+    rts
+    .func_flags zp_call
+endproc
+
+; two cells of a row: characters X and X + 1 (high bytes $10); X + 1 after
+proc two
+    ldz #0
+    txa
+    sta [ptr],z
+    inz
+    lda #$10
+    sta [ptr],z
+    inz
+    inx
+    txa
+    sta [ptr],z
+    inz
+    lda #$10
+    sta [ptr],z
+    rts
+endproc
+
+proc _vm_set
+    .zp_uses $10, $12, $14
+    .reg_clobbers A, X, Z
+    .flag_clobbers C, N, Z
+    jsr at
+    lda $14
+    asl
+    asl
+    clc
+    adc #$10
+    tax                     ; the top left quarter's character
+    jsr two
+    inc ptr+1               ; the next row of characters
+    inx                     ; the bottom left quarter's
+    jsr two
+    rts
+    .func_flags zp_call
+endproc

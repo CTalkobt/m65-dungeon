@@ -32,6 +32,7 @@ extern unsigned char v_bright;               /* 0 black .. 16 as it is */
 extern unsigned char v_flicker;              /* 1: the tiles flicker like torchlight */
 extern unsigned char v_fire;                 /* 1: the map's fire (PAL_FIRE) burns */
 extern unsigned char v_music;                /* 1: a tune plays (tune_update a frame) */
+extern unsigned char v_map;                  /* 1: 128-255 are the map's palette banks, not a scene's */
 /* the scene (128-254) washed toward a colour by k / 16 (0 none) */
 extern unsigned char v_wash, v_wash_r, v_wash_g, v_wash_b;
 void video_pal_show(void);                   /* the master to the registers, now */

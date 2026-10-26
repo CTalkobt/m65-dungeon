@@ -15,7 +15,12 @@
  * The master palette (pal_r/g/b) is what the art asked for; what is shown
  * is it dimmed (v_bright, the fades), the tiles' part flickering like a
  * torch (v_flicker), the scene's washed toward a colour (v_wash: hits,
- * spells) and its glow (247-254) pulsing.
+ * spells) and its glow (247-254) pulsing; or, while the map is shown
+ * (v_map), 128-255 are the map's palette banks and flicker with the tiles.
+ *
+ * Colour RAM: a cell's first byte its attributes (0 for text and the
+ * full-colour characters; view.c sets the map's 16-colour ones), the
+ * second its colour.
  */
 #include <dma.h>
 #include <audio_tune.h>
@@ -25,7 +30,7 @@
 #include "assets.h"
 
 unsigned char pal_r[256], pal_g[256], pal_b[256];
-unsigned char v_bright = 16, v_flicker, v_fire, v_music;
+unsigned char v_bright = 16, v_flicker, v_fire, v_music, v_map;
 unsigned char v_wash, v_wash_r, v_wash_g, v_wash_b;
 
 static unsigned char pal_bank, saved[18];
@@ -106,6 +111,10 @@ void video_pal_show(void) {
     put_range(0, 15, v_bright == 16 ? 256 : base, 0);
     put_range(PAL_TILES, PAL_SCENE - 1, v_flicker ? (base * flick) >> 8 : base, 0);
     if (v_fire) fire_show(base);
+    if (v_map) {
+        put_range(PAL_SCENE, 255, v_flicker ? (base * flick) >> 8 : base, 0);
+        return;
+    }
     put_range(PAL_SCENE, PAL_GLOW - 1, base, v_wash);
     put_range(PAL_GLOW, PAL_GLOW + 7, (base * glow_scale()) >> 8, v_wash);
 }
@@ -249,6 +258,7 @@ void video_blank(unsigned char col, unsigned char row, unsigned char w, unsigned
 }
 
 void video_clear(void) {
+    dma_fill_far(COLOR_LIN, COLS * ROWS * 2, 0);   /* the map's 16-colour attributes off */
     video_blank(0, 0, COLS, ROWS);
 }
 

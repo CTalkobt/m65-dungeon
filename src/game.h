@@ -4,6 +4,7 @@
  */
 #pragma once
 #pragma encoding ascii
+#include "assets.h"
 
 #define MAP_W      64
 #define MAP_H      48
@@ -11,21 +12,28 @@
 #define AT(x, y)   ((unsigned int)(y) * MAP_W + (x))
 #define DEPTHS     5
 
-/* map[]: the terrain in the low bits, flags above */
+/* the level's map: each place's terrain tile (assets.h TK_*) drawn once
+ * as 2 x 2 16-colour characters, 128 x 96 of them at MAP_LIN (vmap.s45),
+ * the way the screen shows them; the view copies the part in sight to the
+ * screen (view.c). What a place is, is read back from its character. */
+unsigned char vm_kind(unsigned char x, unsigned char y);
+void vm_set(unsigned char x, unsigned char y, unsigned char kind);
+#define IS_WALL(k)  ((k) >= TK_WALL0 && (k) <= TK_WALL15)
+
+/* what a place is (terrain): walls are rock */
 #define TR_ROCK    0
 #define TR_FLOOR   1
 #define TR_CORR    2
 #define TR_DOOR    3          /* shut */
 #define TR_OPEN    4          /* an open door */
 #define TR_STAIRS  5
-#define TR_MASK    0x0F
-#define F_OBJ      0x10       /* something lies here (obj_at) */
-#define F_BOUND    0x20       /* rock next to a way through (a wall: drawn, remembered) */
-#define F_LIT      0x40       /* in a room with a brazier: seen from afar */
-#define F_ROOM     0x80       /* in a room (not a corridor) */
-extern unsigned char map[MAP_N];
-#define TERRAIN(i) (map[i] & TR_MASK)
-#define PASSABLE(t) ((t) != TR_ROCK && (t) != TR_DOOR)
+unsigned char terrain(unsigned char x, unsigned char y);
+
+/* the rooms a brazier lights (with their walls): seen from afar */
+#define MAX_LIT    14
+unsigned char lit_at(unsigned char x, unsigned char y);
+void lit_add(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1);
+extern unsigned char lit_n;
 
 /* obj[]: what lies there */
 #define O_NONE        0
@@ -38,6 +46,8 @@ extern unsigned char map[MAP_N];
 #define O_BONES       7
 #define O_BRAZIER     8
 #define MAX_OBJ       40
+extern unsigned int thing_at[MAX_OBJ];       /* where (AT) */
+extern unsigned char thing_kind[MAX_OBJ];    /* O_NONE: a free entry */
 unsigned char obj_at(unsigned int at);
 void obj_set(unsigned int at, unsigned char kind);
 void obj_clear(void);
@@ -60,7 +70,6 @@ unsigned char vis_at(unsigned char x, unsigned char y);
  * mon_tile, mon_scene, mon_flags, level_mons come from tools/monsters.py
  * through assets.h; the rest of what a creature is is in its close-up's
  * header, read when a fight starts (battle.c) */
-#include "assets.h"
 #define FRESH      0xFF       /* mon.hp of a creature not yet fought: its full life */
 
 #define MAX_MON    24

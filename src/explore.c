@@ -37,6 +37,8 @@ static void music_off(void) {
 }
 
 static void screen_in(void) {
+    video_pal_load(TILES_LIN, PAL_MAP, 128);  /* the map's palette banks (a close-up had them) */
+    v_map = 1;
     v_flicker = 1;
     v_fire = 1;
     music_on();
@@ -89,12 +91,16 @@ static signed char sgn(signed int v) {
     return v < 0 ? -1 : v > 0 ? 1 : 0;
 }
 
+/* a shut door opened: its tile swung back */
+static void door_open(unsigned char x, unsigned char y) {
+    vm_set(x, y, vm_kind(x, y) + TK_DOOR_OPEN_H - TK_DOOR_H);
+}
+
 static unsigned char free_for(struct mon *c, unsigned char x, unsigned char y) {
-    unsigned int i = AT(x, y);
-    unsigned char t = TERRAIN(i);
-    if (t == TR_ROCK || obj_at(i) == O_BRAZIER || mon_at(x, y)) return 0;
+    unsigned char t = terrain(x, y);
+    if (t == TR_ROCK || obj_at(AT(x, y)) == O_BRAZIER || mon_at(x, y)) return 0;
     if (t == TR_DOOR) {
-        map[i] = (map[i] & ~TR_MASK) | TR_OPEN;     /* it opens the door: that is its move */
+        door_open(x, y);                            /* it opens the door: that is its move */
         if (vis_at(x, y)) {
             msg("A latch clicks somewhere in the dark.", C_DIM);
             sfx_far(SFX_DOOR, (signed char)((signed int)x - pl.x));
@@ -166,10 +172,10 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
         *out = fight(m - 1, 0);
         return 1;
     }
-    t = TERRAIN(i);
+    t = terrain(x, y);
     if (t == TR_ROCK) return 0;
     if (t == TR_DOOR) {
-        map[i] = (map[i] & ~TR_MASK) | TR_OPEN;
+        door_open(x, y);
         sfx(SFX_DOOR);
         msg("The latch clicks, and the door swings open.", C_DIM);
         return 1;
@@ -261,9 +267,15 @@ static unsigned char explore_run(void) {
     if (r == DIED || r == WON) return r;
 #endif
     for (;;) {
+#ifdef TEST_TIME
+        k = FRAMECOUNT;              /* (tests: the frames the sight and the drawing take) */
+#endif
         view_fov();
         view_draw();
         view_hud();
+#ifdef TEST_TIME
+        video_num(60, 0, (unsigned char)(FRAMECOUNT - k), C_RED);
+#endif
         k = key_wait();
         took = 0;
         r = 0;
@@ -291,7 +303,7 @@ static unsigned char explore_run(void) {
             }
             break;
         case K_FIRE: case '>':
-            if (TERRAIN(AT(pl.x, pl.y)) == TR_STAIRS) {
+            if (terrain(pl.x, pl.y) == TR_STAIRS) {
                 pl.depth++;
                 pl.fade = 2;
                 msg_clear();

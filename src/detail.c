@@ -125,7 +125,7 @@ void chest_view(unsigned int at) {
 
 void idol_view(unsigned int at) {
     unsigned int i;
-    unsigned char r;
+    unsigned char r, x, y, k;
     const char *s;
     unsigned char c = C_GREEN;
     view_open(S_IDOL);
@@ -151,8 +151,11 @@ void idol_view(unsigned int at) {
         s = "The halls you have walked blaze again in your mind.";
         break;
     case 1:
-        for (i = 0; i < MAP_N; i++)
-            if ((map[i] & F_BOUND) || TERRAIN(i) == TR_STAIRS || TERRAIN(i) == TR_DOOR) seen_set(i, epoch());
+        for (y = 0; y < MAP_H; y++)
+            for (x = 0; x < MAP_W; x++) {
+                k = vm_kind(x, y);
+                if (IS_WALL(k) || k >= TK_DOOR_H) seen_set(AT(x, y), epoch());   /* doors, the stairs */
+            }
         s = "The shape of this level unfolds behind your eyes.";
         break;
     case 2:

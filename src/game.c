@@ -4,13 +4,12 @@
 
 struct player pl;
 unsigned int turn;
-unsigned char map[MAP_N];
 struct mon mons[MAX_MON];
 unsigned char nmons;
 
 /* the things lying about: a short list, the map flagging their places */
-static unsigned int thing_at[MAX_OBJ];
-static unsigned char thing_kind[MAX_OBJ];
+unsigned int thing_at[MAX_OBJ];
+unsigned char thing_kind[MAX_OBJ];
 
 void obj_clear(void) {
     unsigned char k;
@@ -19,7 +18,6 @@ void obj_clear(void) {
 
 unsigned char obj_at(unsigned int at) {
     unsigned char k;
-    if (!(map[at] & F_OBJ)) return O_NONE;
     for (k = 0; k < MAX_OBJ; k++)
         if (thing_kind[k] && thing_at[k] == at) return thing_kind[k];
     return O_NONE;
@@ -37,8 +35,38 @@ void obj_set(unsigned int at, unsigned char kind) {
     }
     thing_at[k] = at;
     thing_kind[k] = kind;
-    if (kind) map[at] |= F_OBJ;
-    else map[at] &= ~F_OBJ;
+}
+
+/* the terrain from the tile kind: TK_ROCK, FLOOR0-3, CORR0-1, WALL0-15,
+ * DOOR_H/V, DOOR_OPEN_H/V, STAIRS (gen_art.py's order) */
+unsigned char terrain(unsigned char x, unsigned char y) {
+    unsigned char k = vm_kind(x, y);
+    if (k < TK_FLOOR0) return TR_ROCK;
+    if (k < TK_CORR0) return TR_FLOOR;
+    if (k < TK_WALL0) return TR_CORR;
+    if (k < TK_DOOR_H) return TR_ROCK;
+    if (k < TK_DOOR_OPEN_H) return TR_DOOR;
+    if (k < TK_STAIRS) return TR_OPEN;
+    return TR_STAIRS;
+}
+
+static unsigned char lit_x0[MAX_LIT], lit_y0[MAX_LIT], lit_x1[MAX_LIT], lit_y1[MAX_LIT];
+unsigned char lit_n;
+
+void lit_add(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1) {
+    if (lit_n >= MAX_LIT) return;
+    lit_x0[lit_n] = x0;
+    lit_y0[lit_n] = y0;
+    lit_x1[lit_n] = x1;
+    lit_y1[lit_n] = y1;
+    lit_n++;
+}
+
+unsigned char lit_at(unsigned char x, unsigned char y) {
+    unsigned char k;
+    for (k = 0; k < lit_n; k++)
+        if (x >= lit_x0[k] && x <= lit_x1[k] && y >= lit_y0[k] && y <= lit_y1[k]) return 1;
+    return 0;
 }
 
 unsigned char mon_at(unsigned char x, unsigned char y) {
