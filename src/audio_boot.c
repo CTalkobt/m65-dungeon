@@ -66,21 +66,6 @@ static void decode(unsigned long src, unsigned int n, unsigned long dst) {
     }
 }
 
-/* "Welcome to the dungeon." and a laugh: DGINTRO loads into bank 5 at
- * SND_INTRO_AT and decodes in place down to $50000 (the title's picture
- * comes there after), and plays, on the left and the right */
-void intro_play(void) {
-#if SND_INTRO
-    unsigned int n[2], f;
-    if (!load_file("DGINTRO", 5)) return;
-    dma_copy_far((unsigned long)(unsigned int)n, SND_INTRO_AT, 4);
-    quips = 0;
-    decode(SND_INTRO_AT + 4, n[0], 0x50000UL);
-    audio_start(0, 0x50000UL, n[1], 0xE0, 0xE0);
-    for (f = n[1] / 240 + 8; f; f--) video_frame();   /* (the length at 12 kHz, in frames) */
-#endif
-}
-
 void audio_init(void) {
 #if SND_COUNT
     quips = 1;

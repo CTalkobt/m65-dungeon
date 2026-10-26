@@ -13,7 +13,6 @@ static unsigned char shown;                   /* the title is on the screen */
 
 /* the title screen, without the prompt (title() adds it) */
 void title_show(void) {
-    static unsigned char intro_done;
     video_fade(0);
     v_flicker = 0;
     v_fire = 0;
@@ -26,12 +25,6 @@ void title_show(void) {
     video_centre(40, "Take your torch. Mind the dark. And remember -", C_DIM);
     video_centre(41, "the deep makes you forget.", C_DIM);
     video_centre(47, "A game for the MEGA65, written in C with cc45", C_DARK);
-    if (!intro_done) {
-        /* the first time: out of the dark, a voice; then the lich */
-        intro_done = 1;
-        video_fade(16);
-        intro_play();
-    }
     scene_load(S_LICH);
     v_wash_r = v_wash_g = v_wash_b = 0;
     v_wash = 16;

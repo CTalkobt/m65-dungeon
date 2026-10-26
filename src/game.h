@@ -181,7 +181,6 @@ void audio_init(void);                /* decoded into attic RAM: at the start */
 void audio_off(void);
 void audio_play(unsigned char id, unsigned char left, unsigned char right);
 void audio_start(unsigned char ch, unsigned long at, unsigned int len, unsigned char left, unsigned char right);
-void intro_play(void);                /* audio_boot.c: the title's first words, once */
 void audio_update(void);              /* once a frame */
 
 /* front.c */

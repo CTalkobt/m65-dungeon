@@ -3,7 +3,7 @@
 ## baseimage.d81
 
 A D81 disk image holding the game's sampled sounds, the files `DGSFX1` to
-`DGSFX8`, and the title's intro, `DGINTRO`. `make` takes them off this image and puts them on
+`DGSFX8`. `make` takes them off this image and puts them on
 the game's disk (`build/dungeon.d81`), so the game can be built without
 the sound packs they were made from.
 
@@ -58,16 +58,6 @@ author's commercial subscription (their README says so).
 | CHAIN | NimbeKit | `fr_ambience_distant_chain.wav` |
 | FOOT | NimbeKit | `fr_ambience_far_footfall.wav` |
 | EMBER | NimbeKit | `fr_ambience_ember_pop.wav` |
-
-### The intro (DGINTRO)
-
-"Welcome to the dungeon." spoken by [eSpeak NG](https://github.com/espeak-ng/espeak-ng)
-(`en-us+m3`, slow and low), with a growl (ring modulation) and an echo
-added by `tools/gen_sfx.py`, then a laugh: **Evil Laugh 2** by AntumDeluge,
-<https://opengameart.org/content/evil-laugh-2>, CC0 (public domain). It
-plays once, when the game starts. Remaking it (`make sounds`) needs
-`espeak-ng`, GStreamer (`gst-launch-1.0`, for the laugh's FLAC) and the laugh
-in `~/resources/audio/dungeon/cc0/evil_laugh_02.flac`.
 
 ### Licensing
 
