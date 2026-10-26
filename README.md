@@ -139,11 +139,11 @@ the next fight with that creature is two DMA copies. A frame is shown by
 DMA-copying its map into the screen, a row at a time.
 
 **The C64 ROM's space.** In C65 mode the C64 BASIC and KERNAL in the ROM
-area are never used. At the start the program makes the ROM area writable
-(the hypervisor's memory trap, `$D641`), unpacks the backdrop (DGBACK) into
-`$2A000`-`$2BFFF` and `$2E000`-`$2FFFF`, and protects it again. After the
-game, `GO64` will not work until the machine is reset. (A library routine
-for this is asked for in CTalkobt/M65Compiler#339.)
+area are never used. At the start the program makes that space writable
+(cc45's `<rom_ram.h>`: `romram_enable(ROMRAM_C64)`), unpacks the backdrop
+(DGBACK) into `$2A000`-`$2BFFF` and `$2E000`-`$2FFFF`, and protects it
+again (`romram_protect`). After the game, `GO64` will not work until the
+machine is reset.
 
 **Packing** (`tools/pack.py`, `unpack` in `src/scene.c`). Every art file
 is packed with a byte-oriented LZ (literal runs, fills, and copies from 1

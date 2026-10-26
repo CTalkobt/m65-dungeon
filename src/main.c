@@ -18,6 +18,7 @@
 #include "rng.h"
 #include "game.h"
 #include "music.h"
+#include <rom_ram.h>
 
 /* nothing recurses and SAC keeps the variables static: a small stack */
 #pragma cc45 stack_size(1024)
@@ -30,19 +31,6 @@ static void rom_print(const char *s) {
         else if (c >= 0x41 && c <= 0x5A) c += 0x80;
         __jsr(0xFFD2, .A = c);
     }
-}
-
-/* the ROM's space ($20000-$3FFFF) writable or not: the hypervisor's
- * memory trap, $D641 (A = 2 writes on, 0 off). In C65 mode the C64 BASIC
- * and KERNAL there are never used: the close-ups' backdrop goes in their
- * place (GO64 will not work after the game; a reset puts them back).
- * (CTalkobt/M65Compiler#339 asks the library for this.) */
-static void rom_writable(void) {
-    asm("lda #$02\n sta $d641\n clv");
-}
-
-static void rom_protected(void) {
-    asm("lda #$00\n sta $d641\n clv");
 }
 
 static void seed(void) {
@@ -70,10 +58,15 @@ int main(void) {
         rom_print("dgback missing: run dungeon from its disk\r");
         return 1;
     }
-    rom_writable();
+    /* the C64 BASIC's and KERNAL's space: C65 mode never uses it (only
+     * GO64 would, until a reset) */
+    if (!romram_enable(ROMRAM_C64)) {
+        rom_print("the rom space will not take writes\r");
+        return 1;
+    }
     unpack(SCENE_LIN);
     unpack(SCENE_LIN + BACK_STREAM2);
-    rom_protected();
+    romram_protect();
     /* the music into attic RAM */
     if (load_file("DGMUSIC", 5)) dma_copy_far(MUSIC_LIN, SCENE_LIN, TUNES_SIZE);
     video_on();
