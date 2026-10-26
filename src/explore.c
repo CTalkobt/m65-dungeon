@@ -78,7 +78,7 @@ static unsigned char free_for(struct mon *c, unsigned char x, unsigned char y) {
     if (t == TR_ROCK || obj_at(i) == O_BRAZIER || mon_at(x, y)) return 0;
     if (t == TR_DOOR) {
         map[i] = (map[i] & ~TR_MASK) | TR_OPEN;     /* it opens the door: that is its move */
-        if (vis_at(x, y)) msg("A door creaks open in the dark.", C_DIM);
+        if (vis_at(x, y)) msg("A latch clicks somewhere in the dark.", C_DIM);
         return 0;
     }
     (void)c;
@@ -151,7 +151,7 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
     if (t == TR_DOOR) {
         map[i] = (map[i] & ~TR_MASK) | TR_OPEN;
         sfx(SFX_DOOR);
-        msg("The door groans open.", C_DIM);
+        msg("The latch clicks, and the door swings open.", C_DIM);
         return 1;
     }
     n = obj_at(i);
