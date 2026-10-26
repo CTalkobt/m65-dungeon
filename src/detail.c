@@ -68,12 +68,12 @@ static unsigned char find(unsigned char line, unsigned char good) {
         str_cat(buf, "Wrapped in oilcloth: a ");
         str_cat(buf, weapon_name(pl.weapon));
         str_cat(buf, ". You take it up.");
-    } else if (r < 36 && pl.armour < ARMOURS - 1) {
+    } else if (r < 34 && pl.armour < ARMOURS - 1) {
         armour_take(pl.armour + 1);
         str_cat(buf, "Folded at the bottom: ");
         str_cat(buf, armour_name(pl.armour));
         str_cat(buf, ". You put it on.");
-    } else if (r < 52) {
+    } else if (r < 48) {
         d = 1 + rng_range(2);
         pl.items[I_POTION] += d;
         str_cat(buf, "Stoppered flasks of red cordial: ");
@@ -81,15 +81,25 @@ static unsigned char find(unsigned char line, unsigned char good) {
         str_cat(buf, " ");
         str_cat(buf, item_name(I_POTION, d));
         str_cat(buf, ".");
-    } else if (r < 62) {
+    } else if (r < 56) {
         pl.items[I_DRAUGHT]++;
         str_cat(buf, "A vial of blue glass, faintly humming: a mana draught.");
-    } else if (r < 80) {
+    } else if (r < 70) {
         r = rng_range(10);
         i = r < 4 ? I_FIRE : r < 7 ? I_RECALL : I_SIGHT;
         pl.items[i]++;
         str_cat(buf, "A bone scroll case, sealed with wax: a ");
         str_cat(buf, item_name(i, 1));
+        str_cat(buf, ".");
+    } else if (r < 86) {
+        r = rng_range(10);
+        i = r < 3 ? I_RAGS : r < 5 ? I_STICKS : r < 7 ? I_FUR : r < 8 ? I_CANDLE : r < 9 ? I_FIRESTICK : I_FLINT;
+        d = i == I_FLINT ? 1 : 1 + rng_range(2);
+        pl.items[i] += d;
+        str_cat(buf, "Dry, wrapped in waxed cloth: ");
+        str_num(buf, d);
+        str_cat(buf, " ");
+        str_cat(buf, item_name(i, d));
         str_cat(buf, ".");
     } else {
         d = (10 + rng_range(30)) * pl.depth;

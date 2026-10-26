@@ -267,18 +267,7 @@ void dungeon_make(void) {
         put(spot(v), O_CHEST);
         put(spot(v), O_CHEST);
         break;
-    }
-
-    /* things to find */
-    for (k = 0; k < 2 + rng_range(2); k++) put(spot(1 + rng_range(last)), O_CHEST);
-    if (rng_range(4)) put(spot(1 + rng_range(last)), O_IDOL);
-    for (k = 0; k < 2; k++) put(spot(rng_range(nrooms)), O_POTION);
-    if (rng_range(2)) put(spot(rng_range(nrooms)), O_DRAUGHT);
-    for (k = 0; k < 1 + rng_range(2); k++) put(spot(rng_range(nrooms)), O_SCROLL);
-    for (k = 0; k < 3; k++) put(spot(rng_range(nrooms)), O_GOLD);
-    for (k = 0; k < 5; k++) put(spot(rng_range(nrooms)), O_BONES);
-
-    /* the vault's key: somewhere the player can walk to without it */
+    }    /* the vault's key: somewhere the player can walk to without it */
     if (v) {
         reach();
         for (k = 0; k < 30; k++) {
@@ -291,6 +280,21 @@ void dungeon_make(void) {
         put(i, O_KEY);
         dma_fill_far(SEEN_LIN, MAP_N, 0);
     }
+
+
+    /* things to find */
+    for (k = 0; k < 2 + rng_range(2); k++) put(spot(1 + rng_range(last)), O_CHEST);
+    if (rng_range(4)) put(spot(1 + rng_range(last)), O_IDOL);
+    for (k = 0; k < 2; k++) put(spot(rng_range(nrooms)), O_POTION);
+    if (rng_range(2)) put(spot(rng_range(nrooms)), O_DRAUGHT);
+    for (k = 0; k < 1 + rng_range(2); k++) put(spot(rng_range(nrooms)), O_SCROLL);
+    for (k = 0; k < 3; k++) put(spot(rng_range(nrooms)), O_GOLD);
+    for (k = 0; k < 5; k++) put(spot(rng_range(nrooms)), O_BONES);
+
+    /* fuel for the torch, and now and then something to light it */
+    for (k = 0; k < 3 + rng_range(3); k++) put(spot(rng_range(nrooms)), O_RAGS + rng_range(4));
+    if (rng_range(2)) put(spot(rng_range(nrooms)), O_FIRESTICK);
+    if (rng_range(4) == 0) put(spot(rng_range(nrooms)), O_FLINT);
 
     /* creatures: more, and worse, deeper down; none in the first room */
     for (k = 0; k < 6 + d * 2; k++)

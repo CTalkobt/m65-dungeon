@@ -1,4 +1,5 @@
 /* game.c — the creatures, the player, the names of things */
+#include "hw.h"
 #include "game.h"
 #include "assets.h"
 
@@ -130,11 +131,19 @@ void memory_sweep(void) {
 
 
 
+/* each item's colour in lists and messages */
+const unsigned char item_col[I_COUNT] = {
+    C_RED, C_BLUE, C_BONE, C_BONE, C_BONE, C_GOLD, C_ORANGE, C_ORANGE, C_ORANGE, C_ORANGE, C_GREY, C_ORANGE,
+};
+
 /* the things one carries, one and many */
 const char *item_name(unsigned char i, unsigned char n) {
     return nth("healing potion\0healing potions\0mana draught\0mana draughts\0"
                "scroll of fire\0scrolls of fire\0scroll of recall\0scrolls of recall\0"
-               "scroll of far sight\0scrolls of far sight\0iron key\0iron keys", i * 2 + (n != 1));
+               "scroll of far sight\0scrolls of far sight\0iron key\0iron keys\0"
+               "twist of rags\0twists of rags\0bundle of sticks\0bundles of sticks\0"
+               "scrap of fur\0scraps of fur\0tallow candle\0tallow candles\0"
+               "flint\0flints\0firestick\0firesticks", i * 2 + (n != 1));
 }
 
 /* the weapons: dice, sides, plus */
@@ -169,6 +178,10 @@ void player_new(void) {
     pl.level = 1;
     for (k = 0; k < I_COUNT; k++) pl.items[k] = 0;
     pl.items[I_POTION] = 2;
+    pl.items[I_STICKS] = 1;
+    pl.items[I_FIRESTICK] = 2;
+    pl.fuel = 400;
+    pl.lit = 1;
     pl.gold = 0;
     pl.xp = 0;
     pl.depth = 1;

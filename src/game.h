@@ -54,7 +54,13 @@ unsigned char vault_at(unsigned char x, unsigned char y);
 #define O_SCROLL      9       /* which, when it is picked up */
 #define O_KEY         10
 #define O_DRAUGHT     11
-#define MAX_OBJ       40
+#define O_RAGS        12      /* O_RAGS + n: the fuel, as I_RAGS + n */
+#define O_STICKS      13
+#define O_FUR         14
+#define O_CANDLE      15
+#define O_FLINT       16
+#define O_FIRESTICK   17
+#define MAX_OBJ       56
 extern unsigned int thing_at[MAX_OBJ];       /* where (AT) */
 extern unsigned char thing_kind[MAX_OBJ];    /* O_NONE: a free entry */
 unsigned char obj_at(unsigned int at);
@@ -100,8 +106,21 @@ extern unsigned char nmons;
 #define I_RECALL   3          /* scroll of recall: what was seen, fresh again */
 #define I_SIGHT    4          /* scroll of far sight: the level's shape */
 #define I_KEY      5          /* iron key: opens a locked door */
-#define I_COUNT    6
+#define I_RAGS     6          /* the torch's fuel: rags, sticks, fur, tallow */
+#define I_STICKS   7
+#define I_FUR      8
+#define I_CANDLE   9
+#define I_FLINT    10         /* lights the torch, now and then; kept */
+#define I_FIRESTICK 11        /* lights the torch, once */
+#define I_COUNT    12
 const char *item_name(unsigned char i, unsigned char n);   /* game.c: as for n of them */
+extern const unsigned char item_col[I_COUNT];               /* game.c: its colour in text */
+/* pack.c: the things carried, used on the map; 1 if that took the turn */
+unsigned char inventory(void);
+unsigned char drink(void);
+unsigned char feed_any(void);
+unsigned char light_any(void);
+unsigned char light(unsigned char k);   /* I_FLINT, I_FIRESTICK, I_COUNT: a brazier's coals */
 
 /* the weapons and the armour, worst to best: their names, what they do */
 #define WEAPONS    5
@@ -121,7 +140,14 @@ struct player {
     unsigned char depth;
     unsigned char fade;       /* how fast memories fade: 1 slow, 2 normal, 4 fast */
     unsigned char weapon, armour;   /* 0 .. WEAPONS - 1, ARMOURS - 1 */
+    unsigned int fuel;        /* the torch: turns of burning left (TORCH_MAX at most) */
+    unsigned char lit;        /* 1 while it burns */
 };
+#define TORCH_MAX  600
+#define TORCH_LOW  150        /* below: it burns lower (the light shorter) */
+#define TORCH_GUTTER 60       /* below: it gutters (shorter still) */
+#define TORCH_OUT  0xFF       /* torch_dim: no light of one's own */
+unsigned char torch_dim(void);        /* view.c: how much shorter the light is: 0, 1, 2, TORCH_OUT */
 extern struct player pl;
 extern unsigned int turn;
 const char *depth_name(unsigned char depth);   /* view.c */

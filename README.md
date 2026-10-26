@@ -31,7 +31,8 @@ saves `build/shot.png`. `TEST=-DTEST_FIGHT=<0-6>` starts a fight at once
 `TEST=-DTEST_VIEW=1` / `2` opens a chest / an idol; `TEST=-DTEST_TIME` shows,
 top right, the frames each turn's sight and drawing take; `TEST=-DTEST_ITEMS`
 gives two of everything one can carry; `TEST=-DTEST_VAULT` starts beside a
-locked door and says where it is and whether the key lies outside the vault.
+locked door and says where it is and whether the key lies outside the vault. `TEST=-DTEST_FUEL=<n>` starts with n turns
+of fuel on the torch.
 Other letters in `KEYS` are typed as they are (`KEYS='F__i'` opens the
 inventory).
 `python3 tools/probe.py build/dungeon.d81 <seconds> r m<addr>` boots the disk
@@ -56,6 +57,7 @@ game builds with its SID effects only.
 | RETURN | FIRE | go down the stairs | do the chosen action |
 | P | | drink a healing potion | parry |
 | I | | what you carry (a letter uses it) | |
+| F / L | | feed the torch / light it | |
 | S P C A R I | | | strike, parry, cast, advance, retreat, item |
 | F I H W | | | (casting) firebolt, frost, heal, ward |
 | H M F | | | (items) potion, draught, scroll of fire |
@@ -72,15 +74,26 @@ behind as faint blue outlines of the walls, doors and stairs, dimming over
 some hundreds of turns until it is gone. Some idols sharpen your memory,
 others make it slip.
 
+**The torch** burns a turn at a time (the bar at the top). Below 150
+turns its light reaches less far, below 60 it gutters, and at 0 it goes
+out: then only the braziers' rooms are lit, creatures are eyes in the
+dark, and the way is found by what you remember. Feed it (F, or from the
+inventory) with a twist of rags (80 turns), a bundle of sticks (120), a
+scrap of fur (160) or a tallow candle (220); it holds 600. Out, it is lit
+again (L) with a flint (kept, but it catches one strike in three), a
+firestick (used up, sure), or by walking into a brazier. You start with
+400 turns, a bundle of sticks and two firesticks.
+
 **What you carry** (I). Healing potions and mana draughts; a *scroll of
 fire* (for a fight: fire that no guard stops); a *scroll of recall* (all
 you have seen comes back fresh); a *scroll of far sight* (the level's
-walls, doors and stairs, seen or not); *iron keys*. Most levels have a
+walls, doors and stairs, seen or not); *iron keys*; the torch's fuel and
+flints and firesticks. Most levels have a
 vault: a room whose doors are locked, with two chests that hold two finds
 each and the better ones. Its key lies somewhere you can reach without it.
 Chests give weapons and armour (each better than the last), potions,
-draughts, scrolls or gold; creatures leave gold, potions, draughts and
-scrolls behind now and then.
+draughts, scrolls, fuel, flints and firesticks, or gold; creatures leave
+gold, potions, draughts, scrolls, rags and fur behind now and then.
 
 **Fighting.** Each round the creature shows what it means to do, and you
 answer:
@@ -216,18 +229,21 @@ the levels' tune leaves free. `build/music/*.wav` (`tune45 play --wav`)
 are the tunes to listen to on the PC.
 
 **Memory** (bank 0 is tight). The resident part (video, keys, the UI,
-sound, the tables) ends near $7F00. The code overlays `walk` (explore +
-view), `battle`, `gen` (the dungeon generator) and `scenes` (chest, idol,
-title, endings) are kept in attic RAM and copied by DMA into one region at
-$9000 when called. The game needs the MEGA65's attic RAM (every
+sound, the tables) ends near $8500. The code overlays `walk` (explore +
+view), `pack` (the inventory, items, the torch), `battle`, `gen` (the
+dungeon generator) and `scenes` (chest, idol, title, endings) are kept in
+attic RAM and copied by DMA into one region at $8D00 when called. A call
+from one overlay into another brings the caller back on return, but not
+the caller's text in the meantime: `pack` copies a message into a buffer
+before handing it to `msg` (in `walk`). The game needs the MEGA65's attic RAM (every
 production MEGA65 and xemu have it). The level itself is the map of
 characters in bank 4; things lying about are a short list, sight a window
 round the player, memory a byte a place in colour RAM.
 
 | Where | What |
 |---|---|
-| $2001-$7EFF | the program, its data and variables |
-| $9000-$BBFF | the code overlay region |
+| $2001-$84FF | the program, its data and variables |
+| $8D00-$BBFF | the code overlay region |
 | $BC00-$BFFF | the stack |
 | $12000-$197FF | DG<NAME>B: a close-up's last characters |
 | $19800-$1F7FF | the sounds' play slots (16 KB, 8 KB) |

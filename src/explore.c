@@ -1,9 +1,11 @@
 /* explore.c — walking the levels a turn at a time
  *
  * The player moves (8 ways), opens doors by walking into them (a locked
- * one with an iron key), picks up gold, potions, draughts, scrolls and
- * keys, opens chests and prays at idols (the close-ups), fights what it
- * walks into, uses what it carries (I), goes down the stairs. Then every creature
+ * one with an iron key), picks up gold and what can be carried, opens
+ * chests and prays at idols (the close-ups), fights what it walks into,
+ * uses what it carries (I), goes down the stairs. The torch burns a turn
+ * at a time: fed with rags, sticks, fur or tallow (F), lit again with
+ * flint, a firestick (L) or a brazier's coals. Then every creature
  * moves: asleep until it notices the player, hunting while it sees the
  * player, wandering when it loses track. One that walks into the player
  * starts the fight close (an ambush).
@@ -65,11 +67,11 @@ static void level_enter(void) {
 static void help(void) {
     msg("Move: arrows, WASD (QEZC diagonal), joystick. Space: wait.", C_TEXT);
     msg("Walk into doors, chests, idols and foes.", C_TEXT);
-    msg("I: what you carry. P: drink a healing potion.", C_TEXT);
+    msg("I: inventory. P: potion. F: feed torch. L: light it.", C_TEXT);
     msg("RETURN on the stairs: go down. RUN/STOP: give up.", C_TEXT);
 }
 
-static const unsigned char drops[6] = {O_GOLD, O_GOLD, O_GOLD, O_POTION, O_SCROLL, O_DRAUGHT};
+static const unsigned char drops[8] = {O_GOLD, O_GOLD, O_GOLD, O_POTION, O_SCROLL, O_DRAUGHT, O_RAGS, O_FUR};
 
 /* the fight with creature i; WON / FLED / DIED, the screen back */
 static unsigned char fight(unsigned char i, unsigned char ambush) {
@@ -167,6 +169,12 @@ static unsigned char creatures_move(void) {
 
 /* ---------------------------------------------------------------- the player */
 
+/* the things on the floor one carries: their item (0xFF: not carried) */
+static const unsigned char obj_item[18] = {
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, I_POTION, 0xFF, 0xFF, 0xFF,
+    0xFF, I_KEY, I_DRAUGHT, I_RAGS, I_STICKS, I_FUR, I_CANDLE, I_FLINT, I_FIRESTICK,
+};
+
 /* what lay at i taken: one more of item */
 static void take(unsigned int i, unsigned char item, const char *s, unsigned char c) {
     pl.items[item]++;
@@ -175,109 +183,16 @@ static void take(unsigned int i, unsigned char item, const char *s, unsigned cha
     sfx(SFX_CHIME);
 }
 
-/* a healing potion drunk; 1 if it was (a turn) */
-static unsigned char drink(void) {
-    unsigned char d;
-    if (!pl.items[I_POTION]) msg("You have no healing potions.", C_DIM);
-    else if (pl.hp == pl.maxhp) msg("You are unhurt.", C_DIM);
-    else {
-        pl.items[I_POTION]--;
-        d = 15 + pl.level * 2;
-        pl.hp = pl.hp + d > pl.maxhp ? pl.maxhp : pl.hp + d;
-        msg("You drink. Warmth spreads through you.", C_GREEN);
-        sfx(SFX_DRINK);
-        return 1;
+/* a turn's burning, and the warnings */
+static void torch_burn(void) {
+    if (!pl.lit) return;
+    if (pl.fuel) pl.fuel--;
+    if (pl.fuel == TORCH_LOW) msg("Your torch burns lower.", C_ORANGE);
+    else if (pl.fuel == TORCH_GUTTER) msg("Your torch gutters. Feed it, or it will die.", C_ORANGE);
+    else if (!pl.fuel) {
+        pl.lit = 0;
+        msg("Your torch sputters out. Darkness closes in.", C_RED);
     }
-    return 0;
-}
-
-/* an item used on the map; 1 if that took the turn */
-static unsigned char use(unsigned char k) {
-    unsigned char d;
-    switch (k) {
-    case I_POTION:
-        return drink();
-    case I_DRAUGHT:
-        if (pl.mp == pl.maxmp) {
-            msg("Your mana is full.", C_DIM);
-            return 0;
-        }
-        pl.items[I_DRAUGHT]--;
-        d = 10 + pl.level;
-        pl.mp = pl.mp + d > pl.maxmp ? pl.maxmp : pl.mp + d;
-        msg("The draught hums on your tongue. Mana returns.", C_BLUE);
-        sfx(SFX_DRINK);
-        return 1;
-    case I_FIRE:
-        msg("A scroll of fire is for a fight.", C_DIM);
-        return 0;
-    case I_RECALL:
-        pl.items[I_RECALL]--;
-        memory_renew();
-        msg("The halls you have walked come back to you.", C_CYAN);
-        sfx(SFX_CHIME);
-        return 1;
-    case I_SIGHT:
-        pl.items[I_SIGHT]--;
-        level_reveal();
-        msg("The shape of this level unfolds in your mind.", C_CYAN);
-        sfx(SFX_BELL);
-        return 1;
-    }
-    msg("Walk into a locked door to turn the key.", C_DIM);
-    return 0;
-}
-
-/* what the player carries, over the map; a letter uses it. 1 if that took
- * the turn */
-#define INV_COL 18
-#define INV_ROW 8
-#define INV_W   44
-#define INV_H   17
-
-static unsigned char inventory(void) {
-    unsigned char k, n = 0, row = INV_ROW + 6, has[I_COUNT];
-    char buf[48];
-    video_blank(INV_COL, INV_ROW, INV_W, INV_H);
-    ui_frame(INV_COL, INV_ROW, INV_W, INV_H);
-    video_text(INV_COL + 3, INV_ROW + 1, "You carry", C_GOLD);
-    buf[0] = 0;
-    str_cat(buf, "Weapon  ");
-    str_cat(buf, weapon_name(pl.weapon));
-    str_cat(buf, "  ");
-    str_num(buf, pl.wdice);
-    str_cat(buf, "d");
-    str_num(buf, pl.wsides);
-    str_cat(buf, "+");
-    str_num(buf, pl.wplus);
-    video_text(INV_COL + 3, INV_ROW + 3, buf, C_TEXT);
-    buf[0] = 0;
-    str_cat(buf, "Armour  ");
-    str_cat(buf, armour_name(pl.armour));
-    str_cat(buf, "  +");
-    str_num(buf, pl.def);
-    video_text(INV_COL + 3, INV_ROW + 4, buf, C_TEXT);
-    for (k = 0; k < I_COUNT; k++) {
-        if (!pl.items[k]) continue;
-        buf[0] = (char)('a' + n);
-        buf[1] = buf[2] = ' ';
-        buf[3] = 0;
-        str_num(buf, pl.items[k]);
-        str_cat(buf, " ");
-        str_cat(buf, item_name(k, pl.items[k]));
-        video_text(INV_COL + 3, row++, buf, k == I_KEY ? C_GOLD : k == I_POTION ? C_RED : k == I_DRAUGHT ? C_BLUE : C_BONE);
-        has[n++] = k;
-    }
-    if (!n) video_text(INV_COL + 3, row, "Nothing else.", C_DIM);
-    buf[0] = 0;
-    str_cat(buf, "Gold    ");
-    str_num(buf, pl.gold);
-    video_text(INV_COL + 3, INV_ROW + 13, buf, C_GOLD);
-    video_text(INV_COL + 3, INV_ROW + 15, n ? "A letter: use it.  Another key: back." : "Any key: back.", C_DIM);
-    k = key_wait();
-    view_draw();
-    if (k >= 'a' && k < 'a' + n) return use(has[k - 'a']);
-    return 0;
 }
 
 /* moving (or bumping) toward dx, dy: 1 if it took a turn; the outcome of
@@ -312,6 +227,7 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
     }
     n = obj_at(i);
     if (n == O_BRAZIER) {
+        if (!pl.lit) return light(I_COUNT);
         msg("The brazier's coals glow too hot to pass.", C_ORANGE);
         return 0;
     }
@@ -329,15 +245,6 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
         str_cat(buf, " gold coins.");
         msg(buf, C_GOLD);
         sfx(SFX_COIN);
-        break;
-    case O_POTION:
-        take(i, I_POTION, "You pocket a healing potion.", C_RED);
-        break;
-    case O_DRAUGHT:
-        take(i, I_DRAUGHT, "You pocket a mana draught.", C_BLUE);
-        break;
-    case O_KEY:
-        take(i, I_KEY, "An iron key, heavy and cold. You take it.", C_GOLD);
         break;
     case O_SCROLL:
         n = rng_range(10);
@@ -367,6 +274,14 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
         break;
     case O_IDOL_SPENT:
         msg("The idol's eyes are dark now.", C_DIM);
+        break;
+    default:
+        if (n >= sizeof obj_item || obj_item[n] == 0xFF) break;
+        buf[0] = 0;
+        str_cat(buf, "You pick up a ");
+        str_cat(buf, item_name(obj_item[n], 1));
+        str_cat(buf, ".");
+        take(i, obj_item[n], buf, item_col[obj_item[n]]);
         break;
     case O_BONES:
         msg(nth("Old bones crunch underfoot.\0A skull grins up at you from the dust.\0"
@@ -425,6 +340,9 @@ static unsigned char explore_run(void) {
 #ifdef TEST_VAULT
     test_vault();
 #endif
+#ifdef TEST_FUEL
+    pl.fuel = TEST_FUEL;             /* (tests: the torch near its end) */
+#endif
 #ifdef TEST_VIEW
     /* (tests: a chest (1) or an idol (2) at once) */
     if (TEST_VIEW == 1) chest_view(AT(pl.x, pl.y));
@@ -472,6 +390,12 @@ static unsigned char explore_run(void) {
         case 'i':
             took = inventory();
             break;
+        case 'f':
+            took = feed_any();
+            break;
+        case 'l':
+            took = light_any();
+            break;
         case K_FIRE: case '>':
             if (terrain(pl.x, pl.y) == TR_STAIRS) {
                 pl.depth++;
@@ -496,6 +420,7 @@ static unsigned char explore_run(void) {
         if (turn % 12 == 0 && pl.hp < pl.maxhp) pl.hp++;
         if (turn % 18 == 0 && pl.mp < pl.maxmp) pl.mp++;
         if (turn % 64 == 0) memory_sweep();
+        torch_burn();
         view_fov();
         r = creatures_move();
         if (r == DIED || r == WON) return r;

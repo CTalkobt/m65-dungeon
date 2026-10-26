@@ -4,7 +4,9 @@
  * (a Bresenham line through nothing solid). Within the torch's reach it is
  * lit, brighter the nearer; in a room with a brazier all of it is lit;
  * further and dark, it is in shadow: only what shines by itself shows
- * (eyes). A lit place is remembered (seen_set: the epoch).
+ * (eyes). A lit place is remembered (seen_set: the epoch). The torch's
+ * reach shortens as it burns low (torch_dim); out, only the braziers'
+ * rooms are lit, and the way is found by memory.
  *
  * Memory: a place out of sight shows only its edges - the walls' faces,
  * the doors, the stairs - as faint lines, the shape of the place, fading
@@ -88,11 +90,17 @@ static unsigned char clear_to(unsigned char tx, unsigned char ty) {
     }
 }
 
+unsigned char torch_dim(void) {
+    if (!pl.lit) return TORCH_OUT;
+    if (pl.fuel >= TORCH_LOW) return 0;
+    return pl.fuel >= TORCH_GUTTER ? 1 : 2;
+}
+
 void view_fov(void) {
     signed char dx, dy;
     signed int x, y;
     unsigned int d2;
-    unsigned char v;
+    unsigned char v, dim = torch_dim();
     unsigned char now = epoch();
     unsigned int w = 0;
     win_x = (signed int)pl.x - SEE;
@@ -113,6 +121,8 @@ void view_fov(void) {
             else if (d2 <= 22) v = 3;
             else if (d2 <= 38) v = 4;
             else v = VIS_SHADOW;
+            if (dim == TORCH_OUT || v + dim > 4) v = VIS_SHADOW;
+            else v += dim;
             if (v > 2 && lit_at((unsigned char)x, (unsigned char)y)) v = 2;
             win[w] = v;
             if (v != VIS_SHADOW) seen_set(AT(x, y), now);
@@ -151,9 +161,9 @@ static unsigned char torch(signed int dxq, signed int dyq, unsigned char b) {
 static unsigned char ov_n, ov_x[MAX_OV], ov_y[MAX_OV], ov_k[MAX_OV], ov_v[MAX_OV];
 static unsigned char row_ov[MAX_OV];
 
-static const unsigned char obj_tile[12] = {
+static const unsigned char obj_tile[18] = {
     0, T_CHEST, T_CHEST_OPEN, T_IDOL, T_IDOL_SPENT, T_POTION, T_GOLD, T_BONES, T_BRAZIER,
-    T_SCROLL, T_KEY, T_DRAUGHT,
+    T_SCROLL, T_KEY, T_DRAUGHT, T_RAGS, T_STICKS, T_FUR, T_CANDLE, T_FLINT, T_FIRESTICK,
 };
 
 static void ov_add(unsigned char x, unsigned char y, unsigned char k, unsigned char v) {
@@ -168,7 +178,8 @@ static void ov_add(unsigned char x, unsigned char y, unsigned char k, unsigned c
 static void ov_gather(void) {
     unsigned char k, v, x, y;
     ov_n = 0;
-    ov_add(pl.x, pl.y, T_PLAYER, 0);
+    if (pl.lit) ov_add(pl.x, pl.y, T_PLAYER, 0);
+    else ov_add(pl.x, pl.y, T_PLAYER_DARK, 3);
     for (k = 0; k < nmons; k++) {
         if (!mons[k].hp) continue;
         v = vis_at(mons[k].x, mons[k].y);
@@ -185,7 +196,7 @@ static void ov_gather(void) {
 }
 
 void view_draw(void) {
-    unsigned char tx, ty, c, k, q, lv, mem, lit, room, o, nr, v, x, y, b;
+    unsigned char tx, ty, c, k, q, lv, mem, lit, room, o, nr, v, x, y, b, dim = torch_dim();
     unsigned int ch, age;
     unsigned long at;
     signed int dx, dy;
@@ -236,8 +247,9 @@ void view_draw(void) {
                 b = c + (q & 1);
                 lv = 0xFF;
                 if (lit) {
-                    lv = torch(dx * 4 + (q & 1) * 2 - 1, dy * 4 + (q >> 1) * 2 - 1,
-                               bayer[(((ty * 2 + (q >> 1)) & 3) << 2) | ((c + (q & 1)) & 3)]);
+                    lv = dim == TORCH_OUT ? 4 :
+                         torch(dx * 4 + (q & 1) * 2 - 1, dy * 4 + (q >> 1) * 2 - 1,
+                               bayer[(((ty * 2 + (q >> 1)) & 3) << 2) | ((c + (q & 1)) & 3)]) + dim;
                     if (room && lv > 1) lv = 1;
                     if (lv > 3) lv = 0xFF;          /* beyond the light: as remembered */
                 }
@@ -302,12 +314,15 @@ void view_hud(void) {
     str_cat(buf, ": ");
     str_cat(buf, depth_name(pl.depth));
     video_text(2, 0, buf, C_GOLD);
+    video_text(31, 0, "Torch", C_ORANGE);
+    if (pl.lit) ui_bar(37, 0, 10, (unsigned char)(pl.fuel / 4), TORCH_MAX / 4, pl.fuel < TORCH_GUTTER ? UI_BAR_R0 : UI_BAR_G0);
+    else video_text(37, 0, pl.fuel ? "unlit" : "out", C_RED);
     buf[0] = 0;
     str_cat(buf, "Turn ");
     str_num(buf, turn);
-    video_text(68, 0, buf, C_DARK);
-    if (pl.fade > 2) video_text(44, 0, "your memory slips", C_PURPLE);
-    else if (pl.fade < 2) video_text(44, 0, "your memory is keen", C_CYAN);
+    video_text(70, 0, buf, C_DARK);
+    if (pl.fade > 2) video_text(49, 0, "your memory slips", C_PURPLE);
+    else if (pl.fade < 2) video_text(49, 0, "your memory is keen", C_CYAN);
     ui_stats(STAT_COL, MSG_ROW);
 }
 
