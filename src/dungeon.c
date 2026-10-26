@@ -265,9 +265,11 @@ void dungeon_make(void) {
         mons[nmons - 1].awake = 0;
     }
 
-    /* braziers: some rooms are lit (always the first and the last) */
+    /* braziers: some rooms are lit (always the first and the last); in
+     * some of the dark ones a cold brazier waits for the torch */
     for (r = 0; r < nrooms; r++) {
-        if (r != 0 && r != last && rng_range(5) >= 2) continue;
+        w = r == 0 || r == last || rng_range(5) < 2;     /* (w: it burns) */
+        if (!w && rng_range(2)) continue;
         /* in a corner, but never one next to a way in (a brazier there
          * would leave only a diagonal step into the room) */
         t = rng_range(4);
@@ -276,11 +278,11 @@ void dungeon_make(void) {
             y = ry[r] + (t & 2 ? rh[r] - 1 : 0);
             i = AT(x, y);
             if (in_room(x, y) && !obj_at(i) && !by_way_in(x, y)) {
-                obj_set(i, O_BRAZIER);
+                obj_set(i, w ? O_BRAZIER : O_BRAZIER_COLD);
                 break;
             }
         }
-        lit_add(rx[r] - 1, ry[r] - 1, rx[r] + rw[r], ry[r] + rh[r]);
+        if (w || k < 4) lit_add(rx[r] - 1, ry[r] - 1, rx[r] + rw[r], ry[r] + rh[r], w);
     }
 
     /* the vault: a room every way into which is a door (not the first, not

@@ -83,10 +83,12 @@ unsigned char terrain(unsigned char x, unsigned char y) {
 }
 
 unsigned char lit_x0[MAX_LIT], lit_y0[MAX_LIT], lit_x1[MAX_LIT], lit_y1[MAX_LIT];   /* (keep.c saves them) */
+unsigned char lit_on[MAX_LIT];
 unsigned char lit_n;
 
-void lit_add(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1) {
+void lit_add(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1, unsigned char on) {
     if (lit_n >= MAX_LIT) return;
+    lit_on[lit_n] = on;
     lit_x0[lit_n] = x0;
     lit_y0[lit_n] = y0;
     lit_x1[lit_n] = x1;
@@ -111,8 +113,14 @@ unsigned char vault_at(unsigned char x, unsigned char y) {
 unsigned char lit_at(unsigned char x, unsigned char y) {
     unsigned char k;
     for (k = 0; k < lit_n; k++)
-        if (x >= lit_x0[k] && x <= lit_x1[k] && y >= lit_y0[k] && y <= lit_y1[k]) return 1;
+        if (lit_on[k] && x >= lit_x0[k] && x <= lit_x1[k] && y >= lit_y0[k] && y <= lit_y1[k]) return 1;
     return 0;
+}
+
+void lit_light(unsigned char x, unsigned char y) {
+    unsigned char k;
+    for (k = 0; k < lit_n; k++)
+        if (x >= lit_x0[k] && x <= lit_x1[k] && y >= lit_y0[k] && y <= lit_y1[k]) lit_on[k] = 1;
 }
 
 unsigned char mon_at(unsigned char x, unsigned char y) {
@@ -223,6 +231,7 @@ void player_new(void) {
     pl.fade = 2;
     weapon_take(0);
     armour_take(0);
+    pl.ups = pl.keen = pl.steady = pl.aim = pl.wary = 0;
     turn = 1;
 }
 
@@ -234,10 +243,11 @@ unsigned char gain_xp(unsigned int xp) {
     pl.xp += xp;
     while (pl.level < 10 && pl.xp >= next_level[pl.level - 1]) {
         pl.level++;
-        pl.maxhp += 7;
-        pl.maxmp += 3;
+        pl.maxhp += 4;
+        pl.maxmp += 2;
         pl.hp = pl.maxhp;
         pl.mp = pl.maxmp;
+        pl.ups++;
         up++;
     }
     return up;

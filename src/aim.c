@@ -181,7 +181,7 @@ unsigned char shoot(unsigned char gun) {
     fly(pl.x, pl.y, m->x, m->y);
     m->awake = 2;
     buf[0] = 0;
-    chance = 80 + pl.level * 2 - tdist[t] * 4;
+    chance = 80 + pl.level * 2 + pl.aim * 8 - tdist[t] * 4;
     if (vis_at(m->x, m->y) == VIS_SHADOW) chance -= 20;
     k = rng_range(100) < chance;
     /* the arrow lies where it ended, unless it broke (a hit breaks one in
@@ -199,7 +199,7 @@ unsigned char shoot(unsigned char gun) {
         return 1;
     }
     if (m->hp == FRESH) m->hp = mon_hp[m->kind];
-    d = rng_dice(r_dice[r], r_sides[r]) + r_plus[r] + (pl.level - 1) / 2;
+    d = rng_dice(r_dice[r], r_sides[r]) + r_plus[r] + (pl.level - 1) / 2 + pl.aim;
     d = d > mon_def[m->kind] ? d - mon_def[m->kind] : 1;
     sfx(SFX_HIT);
     str_cat(buf, gun ? "The ball strikes " : "The arrow strikes ");

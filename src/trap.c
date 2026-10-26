@@ -57,7 +57,7 @@ unsigned char trap_spring(void) {
     unsigned char d, k;
     char buf[48];
     reveal(pl.x, pl.y);
-    if (rng_range(4) == 0) {
+    if (rng_range(8) < 2 + pl.wary) {         /* (wary feet: 3, 4, 5 in 8) */
         msg("A plate shifts underfoot. You step off in time.", C_DIM);
         return 0;
     }

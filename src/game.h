@@ -37,10 +37,12 @@ void vm_set(unsigned char x, unsigned char y, unsigned char kind);
 #define SOLID(t)   ((t) == TR_ROCK || (t) == TR_DOOR || (t) == TR_LOCKED)   /* nothing seen through */
 unsigned char terrain(unsigned char x, unsigned char y);
 
-/* the rooms a brazier lights (with their walls): seen from afar */
+/* the rooms with a brazier (with their walls): while it burns, the room
+ * is lit, seen from afar; a cold one (on 0) is lit by the player's torch */
 #define MAX_LIT    14
 unsigned char lit_at(unsigned char x, unsigned char y);
-void lit_add(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1);
+void lit_add(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1, unsigned char on);
+void lit_light(unsigned char x, unsigned char y);   /* the room round (x, y) lit from now on */
 extern unsigned char lit_n;
 
 /* the vault: a room behind locked doors, its chests the richer (none: x1 0) */
@@ -69,6 +71,7 @@ unsigned char vault_at(unsigned char x, unsigned char y);
 #define O_ARROWS      18      /* a few arrows */
 #define O_SHOT        19      /* a few cartridges */
 #define O_TRAP        20      /* a pressure plate, hidden (found: the tile TK_TRAP) */
+#define O_BRAZIER_COLD 21     /* a brazier not burning: the torch lights it */
 #define O_PILE        32      /* O_PILE + I_*: so many (thing_n) of a thing carried, put down */
 #define MAX_OBJ       56
 extern unsigned int thing_at[MAX_OBJ];       /* where (AT) */
@@ -177,7 +180,10 @@ struct player {
     unsigned char bow, gun;         /* 0 none .. RANGED_BEST */
     unsigned int fuel;        /* the torch: turns of burning left (TORCH_MAX at most) */
     unsigned char lit;        /* 1 while it burns */
+    unsigned char ups;        /* levels gained whose gift is yet to be chosen (pack.c level_up) */
+    unsigned char keen, steady, aim, wary;   /* the gifts chosen, 0-3 each (GIFT_MAX) */
 };
+#define GIFT_MAX   3
 #define TORCH_MAX  600
 #define TORCH_LOW  150        /* below: it burns lower (the light shorter) */
 #define TORCH_GUTTER 60       /* below: it gutters (shorter still) */
@@ -305,4 +311,5 @@ void ending(unsigned char how);
 
 /* game.c */
 void player_new(void);
-unsigned char gain_xp(unsigned int xp);   /* the levels gained */
+unsigned char gain_xp(unsigned int xp);   /* the levels gained (each a gift to choose: pl.ups) */
+void level_up(void);                       /* pack.c: the gifts chosen, over the map */

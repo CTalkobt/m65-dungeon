@@ -34,7 +34,8 @@ gives two of everything one can carry; `TEST=-DTEST_VAULT` starts beside a
 locked door and says where it is and whether the key lies outside the vault. `TEST=-DTEST_FUEL=<n>` starts with n turns
 of fuel on the torch; `TEST=-DTEST_SHOOT=<kind>` puts a sleeping creature of
 that kind a few places away. `TEST=-DTEST_SECRET` starts beside a secret door,
-`TEST=-DTEST_TRAP` with a hidden trap a step east.
+`TEST=-DTEST_TRAP` with a hidden trap a step east, `TEST=-DTEST_UPS=<n>` with n
+levels' gifts to choose, `TEST=-DTEST_BRAZIER` just west of a cold brazier.
 Other letters in `KEYS` are typed as they are (`KEYS='F__i'` opens the
 inventory).
 `python3 tools/probe.py build/dungeon.d81 <seconds> r m<addr>` boots the disk
@@ -131,8 +132,18 @@ dark, and the way is found by what you remember. Feed it (F, or from the
 inventory) with a twist of rags (80 turns), a bundle of sticks (120), a
 scrap of fur (160) or a tallow candle (220); it holds 600. Out, it is lit
 again (L) with a flint (kept, but it catches one strike in three), a
-firestick (used up, sure), or by walking into a brazier. You start with
+firestick (used up, sure), or by walking into a brazier. Some dark rooms
+have a cold brazier: walk into it with the torch alight and it takes a
+flame (30 turns of fuel) and lights the room for good. You start with
 400 turns, a bundle of sticks and two firesticks.
+
+**Growing.** Each level gained gives 4 more life and 2 more mana and a
+gift, chosen (back on the map) from three of: *Hardy* (6 more life),
+*Deep well* (4 more mana), *Keen memory* (what you have seen fades more
+slowly), *Steady torch* (it burns one turn in 4, then 3, then 2 less),
+*Sure aim* (shots hit more often and harder), *Wary feet* (traps found
+sooner and stepped off more often). The last four can be chosen three
+times each.
 
 **What you carry** (I). Choose with up and down; RETURN (or U) uses it,
 D puts all of it down where you stand (or on a free place beside you),

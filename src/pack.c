@@ -342,3 +342,80 @@ unsigned char inventory(void) {
         }
     }
 }
+
+/* ---------------------------------------------------------------- growing */
+
+/* a level's gift: three of these offered (the last four, up to GIFT_MAX
+ * each) */
+#define GIFTS 6
+
+static unsigned char *gift_of(unsigned char g) {
+    return g == 2 ? &pl.keen : g == 3 ? &pl.steady : g == 4 ? &pl.aim : &pl.wary;
+}
+
+static void gift_take(unsigned char g) {
+    if (g == 0) {
+        pl.maxhp += 6;
+        pl.hp = pl.maxhp;
+    } else if (g == 1) {
+        pl.maxmp += 4;
+        pl.mp = pl.maxmp;
+    } else (*gift_of(g))++;
+}
+
+#define UP_COL 14
+#define UP_ROW 12
+#define UP_W   52
+#define UP_H   12
+
+void level_up(void) {
+    unsigned char k, n, j, sel, offer[3], can[GIFTS];
+    char buf[64];
+    while (pl.ups) {
+        /* three different gifts of those still to be had */
+        for (k = 0, n = 0; k < GIFTS; k++)
+            if (k < 2 || *gift_of(k) < GIFT_MAX) can[n++] = k;
+        for (k = 0; k < 3; k++) {
+            j = k + rng_range(n - k);
+            offer[k] = can[j];
+            can[j] = can[k];
+            can[k] = offer[k];
+        }
+        video_blank(UP_COL, UP_ROW, UP_W, UP_H);
+        ui_frame(UP_COL, UP_ROW, UP_W, UP_H);
+        buf[0] = 0;
+        str_cat(buf, "You have grown. Choose a gift:");
+        video_text(UP_COL + 3, UP_ROW + 1, buf, C_GOLD);
+        video_text(UP_COL + 3, UP_ROW + 10, "Up, down: choose.  RETURN: take it.", C_DIM);
+        sel = 0;
+        for (;;) {
+            for (k = 0; k < 3; k++) {
+                video_blank(UP_COL + 2, UP_ROW + 3 + k * 2, UP_W - 4, 1);
+                video_text(UP_COL + 2, UP_ROW + 3 + k * 2, k == sel ? ">" : " ", C_HILITE);
+                video_text(UP_COL + 4, UP_ROW + 3 + k * 2,
+                           nth("Hardy\0Deep well\0Keen memory\0Steady torch\0Sure aim\0Wary feet", offer[k]),
+                           k == sel ? C_HILITE : C_TEXT);
+                video_text(UP_COL + 18, UP_ROW + 3 + k * 2,
+                           nth("six more life\0four more mana\0what you see fades slower\0"
+                               "your torch burns slower\0your shots fly truer and harder\0"
+                               "you find and dodge traps", offer[k]), C_DIM);
+            }
+            k = key_wait();
+            if (k == K_UP) sel = sel ? sel - 1 : 2;
+            else if (k == K_DOWN) sel = sel < 2 ? sel + 1 : 0;
+            else if (k == K_FIRE) break;
+        }
+        gift_take(offer[sel]);
+        pl.ups--;
+        buf[0] = 0;
+        str_cat(buf, nth("Hardy\0Deep well\0Keen memory\0Steady torch\0Sure aim\0Wary feet", offer[sel]));
+        str_cat(buf, ": ");
+        str_cat(buf, nth("you are hardier.\0your mana runs deeper.\0your memory sharpens.\0"
+                         "you tend your torch better.\0your aim steadies.\0your feet grow wary.", offer[sel]));
+        msg(buf, C_GOLD);
+        sfx(SFX_LEVEL);
+    }
+    view_draw();
+    view_hud();
+}
+

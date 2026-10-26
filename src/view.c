@@ -172,10 +172,10 @@ static unsigned char ov_n;
 #define row_ov (ov_v + MAX_OV)
 typedef char scratch_fits[COLS * 8 + MAX_OV * 5 <= SCRATCH_SIZE ? 1 : -1];
 
-static const unsigned char obj_tile[20] = {
+static const unsigned char obj_tile[22] = {
     0, T_CHEST, T_CHEST_OPEN, T_IDOL, T_IDOL_SPENT, T_POTION, T_GOLD, T_BONES, T_BRAZIER,
     T_SCROLL, T_KEY, T_DRAUGHT, T_RAGS, T_STICKS, T_FUR, T_CANDLE, T_FLINT, T_FIRESTICK,
-    T_ARROWS, T_SHOT,
+    T_ARROWS, T_SHOT, 0, T_BRAZIER_COLD,
 };
 
 static void ov_add(unsigned char x, unsigned char y, unsigned char k, unsigned char v) {
@@ -241,7 +241,7 @@ void view_draw(void) {
             mem = MAP_DARK;
             k = seen_get(AT(x, y));
             if (k) {
-                age = (unsigned int)epoch_age(k) * 4 * pl.fade;
+                age = (unsigned int)epoch_age(k) * 4 * pl.fade * 2 / (2 + pl.keen);   /* (keen: slower) */
                 if (age < MEM1) mem = MAP_MEM;
                 else if (age < MEM2) mem = MAP_MEM + 1;
                 else if (age < MEM3) mem = MAP_MEM + 2;
@@ -267,7 +267,9 @@ void view_draw(void) {
                 }
                 if (o != 0xFF) {
                     k = ov_v[o] == OV_TORCH ? lv : ov_v[o];
-                    if (k < TV_EYES + 1 && (ch = tile_char[ov_k[o]][k]) != 0) {
+                    ch = k < TV_EYES + 1 ? tile_char[ov_k[o]][k] : 0;
+                    if (!ch && k < TV_EYES) ch = tile_char[ov_k[o]][k & 2];   /* (a tile with only levels 0 and 2) */
+                    if (ch) {
                         row[b] = ch + q;
                         crow[b] = 0;
                         continue;

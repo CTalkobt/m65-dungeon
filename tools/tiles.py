@@ -549,6 +549,10 @@ def _fire(name, rows, cols, letters):
     ART[name] = ["".join(r) for r in art]
 
 
+# a cold brazier: no flame, grey ash and dead coals
+ART["brazier_cold"] = ["." * 16 if 1 <= y <= 4 else
+                       (r.replace('Z', 'F').replace('o', 'h') if y == 5 else r)
+                       for y, r in enumerate(ART["brazier"])]
 # the player with the torch out: its head charred
 ART["player_dark"] = [r[:10] + r[10:].replace('y', 'h').replace('o', 'k') if y < 5 else r
                       for y, r in enumerate(ART["player"])]
@@ -764,7 +768,7 @@ def terrain_kinds():
 
 
 SPRITES = ("chest", "chest_open", "idol", "idol_spent", "potion", "gold", "bones", "brazier",
-           "scroll", "key", "draught", "rags", "sticks", "fur", "candle", "flint", "firestick",
+           "brazier_cold", "scroll", "key", "draught", "rags", "sticks", "fur", "candle", "flint", "firestick",
            "arrows", "shot", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich")
 
 
@@ -792,6 +796,8 @@ def sprite_kinds(base):
             v = [lit(comp, 0, glow)] * 4 + [None]      # it lights itself
         elif name in ("aim", "missile"):
             v = [v[4]] * 5                              # only what glows, over anything
+        elif name == "brazier_cold":
+            v = [v[0], None, v[2], None, None]          # (view.c: the nearest level there is)
         elif name == "player":
             v = [v[0], None, None, None, None]          # (view.c: always bright with the torch lit)
         elif name == "player_dark":

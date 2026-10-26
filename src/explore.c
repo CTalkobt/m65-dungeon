@@ -127,7 +127,10 @@ static void door_open(unsigned char x, unsigned char y) {
 
 static unsigned char free_for(struct mon *c, unsigned char x, unsigned char y) {
     unsigned char t = terrain(x, y);
-    if (t == TR_ROCK || t == TR_LOCKED || obj_at(AT(x, y)) == O_BRAZIER || mon_at(x, y)) return 0;
+    if (t == TR_ROCK || t == TR_LOCKED || mon_at(x, y)) return 0;
+    t = obj_at(AT(x, y));
+    if (t == O_BRAZIER || t == O_BRAZIER_COLD) return 0;
+    t = terrain(x, y);
     if (t == TR_DOOR) {
         door_open(x, y);                            /* it opens the door: that is its move */
         if (vis_at(x, y)) {
@@ -224,6 +227,7 @@ static unsigned char creatures_move(void) {
 /* a turn's burning, and the warnings */
 static void torch_burn(void) {
     if (!pl.lit) return;
+    if (pl.steady && turn % (5 - pl.steady) == 0) return;   /* (a steady torch: 1 turn in 4, 3, 2 free) */
     if (pl.fuel) pl.fuel--;
     if (pl.fuel == TORCH_LOW) msg("Your torch burns lower.", C_ORANGE);
     else if (pl.fuel == TORCH_GUTTER) msg("Your torch gutters. Feed it, or it will die.", C_ORANGE);
@@ -268,10 +272,24 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
         msg("The brazier's coals glow too hot to pass.", C_ORANGE);
         return 0;
     }
+    if (n == O_BRAZIER_COLD) {
+        /* the torch lights it, spending some of itself: the room lit for good */
+        if (!pl.lit) msg("A cold brazier, and your torch is out.", C_DIM);
+        else if (pl.fuel < TORCH_GUTTER) msg("Your torch is too low to spare a flame.", C_DIM);
+        else {
+            pl.fuel -= 30;
+            obj_set(i, O_BRAZIER);
+            lit_light(x, y);
+            msg("You light the brazier. The dark draws back.", C_ORANGE);
+            sfx(SFX_FIRE);
+            return 1;
+        }
+        return 0;
+    }
     pl.x = x;
     pl.y = y;
     sfx(SFX_STEP);
-    search(12);                      /* (now and then, what hides is seen in passing) */
+    search(12 - pl.wary * 3);        /* (now and then, what hides is seen in passing) */
     switch (n) {
     case O_TRAP:
         *out = trap_spring();
@@ -409,6 +427,19 @@ static unsigned char explore_run(unsigned char resume) {
 #ifdef TEST_SECRET
     test_secret();
 #endif
+#ifdef TEST_BRAZIER
+    /* (tests: the player just west of a cold brazier, if there is one) */
+    for (k = 0; k < MAX_OBJ; k++)
+        if (thing_kind[k] == O_BRAZIER_COLD && terrain(thing_at[k] % MAP_W - 1, thing_at[k] / MAP_W) == TR_FLOOR) {
+            pl.x = thing_at[k] % MAP_W - 1;
+            pl.y = thing_at[k] / MAP_W;
+            msg("(a cold brazier to the east)", C_RED);
+            break;
+        }
+#endif
+#ifdef TEST_UPS
+    pl.ups = TEST_UPS;               /* (tests: gifts to choose) */
+#endif
 #ifdef TEST_TRAP
     obj_set(AT(pl.x + 1, pl.y), O_TRAP);   /* (tests: a hidden trap one step east) */
 #endif
@@ -432,6 +463,7 @@ static unsigned char explore_run(unsigned char resume) {
     if (r == DIED || r == WON) return r;
 #endif
     for (;;) {
+        if (pl.ups) level_up();      /* (a level gained: its gift chosen, on the map) */
 #ifdef TEST_TIME
         k = FRAMECOUNT;              /* (tests: the frames the sight and the drawing take) */
 #endif

@@ -506,11 +506,11 @@ static unsigned char player_acts(unsigned char a) {
         }
         sfx(a ? SFX_HEAVY : SFX_SWING);
         if (a) video_shake(4);
-        if (rng_range(100) >= (dist == 1 ? 85 : 70)) {
+        if (rng_range(100) >= (dist == 1 ? 85 : 70) + pl.aim * 5) {
             say(a ? "The shot goes wide." : "The arrow goes wide.", C_DIM);
         } else {
             d = a ? pl.gun + 1 : pl.bow - 1;          /* (game.h: r = gun * 2 + w - 1) */
-            d = rng_dice(r_dice[d], r_sides[d]) + r_plus[d] + (pl.level - 1) / 2;
+            d = rng_dice(r_dice[d], r_sides[d]) + r_plus[d] + (pl.level - 1) / 2 + pl.aim;
             d = d > mt.def ? d - mt.def : 1;
             sfx(SFX_HIT);
             say(a ? "The ball strikes home!" : "Your arrow strikes!", C_TEXT);
