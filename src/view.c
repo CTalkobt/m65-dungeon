@@ -189,18 +189,24 @@ static unsigned char cell(unsigned char x, unsigned char y) {
 
 /* the torch's light on a quarter of a tile (a character): its centre's
  * distance from the player's, in quarter tiles, squared; 0 bright .. 3
- * dim, 4 dark. Per character, so the edge of the light is round. */
+ * dim, 4 dark. Per character, so the edge of the light is round; and
+ * where one level meets the next the boundary moves a little from one
+ * character to the next (a 4 x 4 ordered dither, b 0-15), so the levels
+ * shade into each other instead of making rings. */
 static unsigned int sq[96];
+static const unsigned int edge[4] = {52, 170, 360, 600};
+static const unsigned char bayer[16] = {0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5};
 
-static unsigned char torch(signed int dxq, signed int dyq) {
-    unsigned int d2;
+static unsigned char torch(signed int dxq, signed int dyq, unsigned char b) {
+    unsigned int d2, t;
+    unsigned char k;
     if (dxq < 0) dxq = -dxq;
     if (dyq < 0) dyq = -dyq;
     d2 = sq[dxq] + sq[dyq];
-    if (d2 <= 52) return 0;
-    if (d2 <= 170) return 1;
-    if (d2 <= 360) return 2;
-    if (d2 <= 600) return 3;
+    for (k = 0; k < 4; k++) {
+        t = edge[k];
+        if (d2 <= t + (t >> 5) * b - (t >> 2)) return k;      /* t * (b / 32 - 1/4) either way */
+    }
     return 4;
 }
 
@@ -229,7 +235,8 @@ void view_draw(void) {
                 if (k != NONE) {
                     lv = cell_var;
                     if (cell_lit) {
-                        lv = torch(dx * 4 + (q & 1) * 2 - 1, dy * 4 + (q >> 1) * 2 - 1);
+                        lv = torch(dx * 4 + (q & 1) * 2 - 1, dy * 4 + (q >> 1) * 2 - 1,
+                                   bayer[(((ty * 2 + (q >> 1)) & 3) << 2) | ((c + (q & 1)) & 3)]);
                         if (cell_room && lv > 1) lv = 1;
                         if (lv > 3) lv = 0xFF;          /* beyond the light: dark */
                     }
