@@ -35,7 +35,8 @@ locked door and says where it is and whether the key lies outside the vault. `TE
 of fuel on the torch; `TEST=-DTEST_SHOOT=<kind>` puts a sleeping creature of
 that kind a few places away. `TEST=-DTEST_SECRET` starts beside a secret door,
 `TEST=-DTEST_TRAP` with a hidden trap a step east, `TEST=-DTEST_UPS=<n>` with n
-levels' gifts to choose, `TEST=-DTEST_BRAZIER` just west of a cold brazier.
+levels' gifts to choose, `TEST=-DTEST_BRAZIER` just west of a cold brazier;
+`TEST=-DTEST_WIN` goes straight to the end, won.
 Other letters in `KEYS` are typed as they are (`KEYS='F__i'` opens the
 inventory).
 `python3 tools/probe.py build/dungeon.d81 <seconds> r m<addr>` boots the disk
@@ -70,6 +71,7 @@ game builds with its SID effects only.
 | H | | help | |
 | RUN/STOP | | save and stop (S), or give up (Y) | back out of the spells or items |
 | C (on the title) | | continue the saved descent | |
+| F (on the title) | | the Hall of the Deep: the best descents | |
 
 **Exploring.** Walk into doors to open them, into creatures to fight them.
 Gold, healing potions (red), mana draughts (blue), scrolls and keys are
@@ -87,6 +89,13 @@ is one save (`DGSAVE`, 29 blocks on the game's disk); dying or winning
 ends it. On the disk it is the player, the creatures, what lies about,
 each place's terrain tile (a byte; the map's characters are drawn again
 from them) and its memory.
+
+**The end.** Dying shows what did it and where ("Slain by a cave spider,
+in The Bone Galleries."); destroying the lich shows it come apart, then
+its hoard. Either way the tally follows: depth, level, turns, gold,
+creatures slain, the gifts taken. The five best descents (the won first,
+then the deepest, the highest level, the richest) are kept on the disk
+(`DGFAME`) as the Hall of the Deep: F on the title shows them.
 
 **Settings** (O on the map, S on the title). The music's and the sounds'
 levels, 1-15, or off (RETURN turns the chosen one off and back on). The

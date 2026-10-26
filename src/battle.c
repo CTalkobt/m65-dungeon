@@ -717,6 +717,7 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
         if (!m->hp) break;
         pause(10);
         if (!creature_acts()) {
+            pl.cause = CAUSE_SLAIN + m->kind;
             say("You fall...", C_BLOOD);
             sfx(SFX_DEFEAT);
             pause(60);
@@ -730,6 +731,7 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
             sfx(SFX_POISON);
             say("The venom burns.", C_GREEN);
             if (!hurt(2, 0)) {
+                pl.cause = CAUSE_SLAIN + m->kind;
                 video_fade(0);
                 return DIED;
             }
@@ -745,6 +747,7 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
     v_wash_r = v_wash_g = v_wash_b = 0;
     for (v_wash = 0; v_wash < 16; v_wash++) pause(3);
     said_num("You gain ", mt.xp, " experience.", C_GOLD);
+    pl.kills++;
     if (gain_xp(mt.xp)) {
         say("You have grown stronger!", C_GOLD);
         sfx(SFX_LEVEL);

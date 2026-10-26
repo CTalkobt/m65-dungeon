@@ -221,6 +221,7 @@ unsigned char shoot(unsigned char gun) {
     str_cat(buf, " falls.");
     msg(buf, C_HILITE);
     sfx(SFX_DEATH);
+    pl.kills++;
     if (gain_xp(mon_xp[m->kind])) {
         msg("You have grown stronger!", C_GOLD);
         sfx(SFX_LEVEL);
@@ -263,6 +264,7 @@ unsigned char foe_shoots(unsigned char k) {
     if (rng_range(4) == 0) put_down(pl.x, pl.y, I_ARROWS, 1);
     if (pl.hp <= d) {
         pl.hp = 0;
+        pl.cause = CAUSE_SHOT + m->kind;
         return 1;
     }
     pl.hp -= d;

@@ -427,6 +427,10 @@ static unsigned char explore_run(unsigned char resume) {
 #ifdef TEST_SECRET
     test_secret();
 #endif
+#ifdef TEST_WIN
+    pl.kills = 9;                    /* (tests: the end, won) */
+    return WON;
+#endif
 #ifdef TEST_BRAZIER
     /* (tests: the player just west of a cold brazier, if there is one) */
     for (k = 0; k < MAX_OBJ; k++)
@@ -526,7 +530,10 @@ static unsigned char explore_run(unsigned char resume) {
         case K_STOP:
             msg("S: save and stop. Y: give up. Another key: go on.", C_RED);
             k = key_wait();
-            if (k == 'y') return DIED;
+            if (k == 'y') {
+                pl.cause = CAUSE_QUIT;
+                return DIED;
+            }
             if (k == 's') {
                 if (game_save()) return SAVED;
                 msg("The disk will not take it.", C_RED);

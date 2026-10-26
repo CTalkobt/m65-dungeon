@@ -182,7 +182,13 @@ struct player {
     unsigned char lit;        /* 1 while it burns */
     unsigned char ups;        /* levels gained whose gift is yet to be chosen (pack.c level_up) */
     unsigned char keen, steady, aim, wary;   /* the gifts chosen, 0-3 each (GIFT_MAX) */
+    unsigned int kills;       /* creatures slain */
+    unsigned char cause;      /* what ended the descent (CAUSE_*) */
 };
+#define CAUSE_QUIT  1         /* given up */
+#define CAUSE_DART  2         /* a trap's dart */
+#define CAUSE_SLAIN 16        /* + the creature's kind: in a fight */
+#define CAUSE_SHOT  32        /* + the archer's kind */
 #define GIFT_MAX   3
 #define TORCH_MAX  600
 #define TORCH_LOW  150        /* below: it burns lower (the light shorter) */
@@ -191,7 +197,7 @@ struct player {
 unsigned char torch_dim(void);        /* view.c: how much shorter the light is: 0, 1, 2, TORCH_OUT */
 extern struct player pl;
 extern unsigned int turn;
-const char *depth_name(unsigned char depth);   /* view.c */
+const char *depth_name(unsigned char depth);   /* game.c */
 
 /* the outcome of a fight */
 #define WON    1

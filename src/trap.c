@@ -76,6 +76,7 @@ unsigned char trap_spring(void) {
         if (pl.hp <= d) {
             pl.hp = 0;
             msg("Its poison is quick. You fall...", C_BLOOD);
+            pl.cause = CAUSE_DART;
             return DIED;
         }
         pl.hp -= d;

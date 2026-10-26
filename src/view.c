@@ -285,9 +285,6 @@ void view_draw(void) {
     }
 }
 
-const char *depth_name(unsigned char depth) {
-    return nth("\0The Sunken Cellars\0The Weeping Halls\0The Bone Galleries\0The Web-Choked Deep\0The Lich's Sanctum", depth);
-}
 
 void view_hud(void) {
     char buf[40];

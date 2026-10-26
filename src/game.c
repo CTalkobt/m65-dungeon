@@ -210,3 +210,8 @@ void armour_take(unsigned char a) {
     pl.armour = a;
     pl.def = a + 1;
 }
+
+/* each level's name (resident: the title's overlay names it too) */
+const char *depth_name(unsigned char depth) {
+    return nth("\0The Sunken Cellars\0The Weeping Halls\0The Bone Galleries\0The Web-Choked Deep\0The Lich's Sanctum", depth);
+}

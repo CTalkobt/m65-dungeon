@@ -19,7 +19,7 @@
 #define KEEP_KINDS 1024
 #define KEEP_SEEN  (KEEP_KINDS + MAP_N)
 #define KEEP_END   (KEEP_SEEN + MAP_N)
-#define VERSION    2
+#define VERSION    3
 
 extern unsigned char lit_x0[MAX_LIT], lit_y0[MAX_LIT], lit_x1[MAX_LIT], lit_y1[MAX_LIT], lit_on[MAX_LIT];
 extern unsigned char vault_x0, vault_y0, vault_x1, vault_y1;
@@ -138,6 +138,8 @@ void player_new(void) {
     weapon_take(0);
     armour_take(0);
     pl.ups = pl.keen = pl.steady = pl.aim = pl.wary = 0;
+    pl.kills = 0;
+    pl.cause = 0;
     turn = 1;
 }
 
