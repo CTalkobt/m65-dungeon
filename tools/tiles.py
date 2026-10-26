@@ -263,6 +263,42 @@ ART = {
         "................",
         "................",
     ],
+    "scroll": [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        ".kkk........kkk.",
+        "kbbBkkkkkkkkbbBk",
+        "kbBBbbbbbbbbbBBk",
+        "kbBBbBBbBBbbbBBk",
+        "kbBBbbbbbrrbbBBk",
+        "kbBBbBBbbrrbbBBk",
+        "kbbBkkkkkkkkbbBk",
+        ".kkk........kkk.",
+        "................",
+        "................",
+        "................",
+    ],
+    "key": [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "..kkkk..........",
+        ".kssSSk.........",
+        "ksk..kSkkkkkkkk.",
+        "ksk..kSssssssssk",
+        "ksk..kSSSSSSkSSk",
+        ".kSSSSk....kSkSk",
+        "..kkkk.....kk.k.",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
     "gold": [
         "................",
         "................",
@@ -319,6 +355,7 @@ ART = {
     ],
 }
 ART["idol_spent"] = [r.replace('z', 'T') for r in ART["idol"]]
+ART["draught"] = [r.replace('r', 'u').replace('R', 'U') for r in ART["potion"]]
 
 
 def _fire(name, rows, cols, letters):
@@ -437,9 +474,10 @@ def wall(mask):
     return img, edge
 
 
-def door(vertical, open_):
-    """a door in a gap of the wall: planks and iron, or swung open. Its
-    edges: the iron bands (the door swung back, when open)"""
+def door(vertical, open_, locked=False):
+    """a door in a gap of the wall: planks and iron (and a lock plate, when
+    locked), or swung open. Its edges: the iron bands and the lock (the
+    door swung back, when open)"""
     img = floor(5)
     edge = np.zeros((T, T), bool)
     if open_:
@@ -469,6 +507,13 @@ def door(vertical, open_):
         img[:, 11:13] = np.array([0.35, 0.35, 0.38], np.float32)
         img[10:12, 7:9] = np.array([0.8, 0.7, 0.3], np.float32)
         edge[:, 3:5] = edge[:, 11:13] = True
+    if locked:
+        brass = np.array([0.78, 0.62, 0.25], np.float32)
+        img[5:11, 5:11] = brass * 0.6
+        img[6:10, 6:10] = brass
+        img[7:10, 7:9] = 0.06
+        img[7, 7:9] = 0.06
+        edge[5:11, 5:11] = True
     img[0, :] *= 0.4
     img[:, 0] *= 0.4
     return img, edge
@@ -514,11 +559,13 @@ def terrain_kinds():
     for name, v, o in (("DOOR_H", 0, 0), ("DOOR_V", 1, 0), ("DOOR_OPEN_H", 0, 1), ("DOOR_OPEN_V", 1, 1)):
         out.append((name,) + door(v, o))
     out.append(("STAIRS",) + stairs())
+    for name, v in (("DOOR_LOCKED_H", 0), ("DOOR_LOCKED_V", 1)):
+        out.append((name,) + door(v, 0, True))
     return out
 
 
 SPRITES = ("chest", "chest_open", "idol", "idol_spent", "potion", "gold", "bones", "brazier",
-           "player", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich")
+           "scroll", "key", "draught", "player", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich")
 
 
 def sprite_kinds(base):

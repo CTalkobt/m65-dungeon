@@ -206,7 +206,7 @@ void ui_stats(unsigned char col, unsigned char row) {
     video_text(col, row + 2, buf, C_GOLD);
     buf[0] = 0;
     str_cat(buf, "Potions ");
-    str_num(buf, pl.potions);
+    str_num(buf, pl.items[I_POTION]);
     video_text(col + 12, row + 2, buf, C_RED);
     buf[0] = 0;
     str_cat(buf, "Level ");
@@ -214,6 +214,7 @@ void ui_stats(unsigned char col, unsigned char row) {
     str_cat(buf, "  XP ");
     str_num(buf, pl.xp);
     video_text(col, row + 3, buf, C_DIM);
+    if (pl.items[I_KEY]) video_text(col + 19, row + 3, "Key", C_GOLD);
 }
 
 /* ---------------------------------------------------------------- the log */

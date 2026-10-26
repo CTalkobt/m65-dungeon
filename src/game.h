@@ -27,6 +27,8 @@ void vm_set(unsigned char x, unsigned char y, unsigned char kind);
 #define TR_DOOR    3          /* shut */
 #define TR_OPEN    4          /* an open door */
 #define TR_STAIRS  5
+#define TR_LOCKED  6          /* shut, and an iron key's to open */
+#define SOLID(t)   ((t) == TR_ROCK || (t) == TR_DOOR || (t) == TR_LOCKED)   /* nothing seen through */
 unsigned char terrain(unsigned char x, unsigned char y);
 
 /* the rooms a brazier lights (with their walls): seen from afar */
@@ -34,6 +36,10 @@ unsigned char terrain(unsigned char x, unsigned char y);
 unsigned char lit_at(unsigned char x, unsigned char y);
 void lit_add(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1);
 extern unsigned char lit_n;
+
+/* the vault: a room behind locked doors, its chests the richer (none: x1 0) */
+void vault_set(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1);
+unsigned char vault_at(unsigned char x, unsigned char y);
 
 /* obj[]: what lies there */
 #define O_NONE        0
@@ -45,6 +51,9 @@ extern unsigned char lit_n;
 #define O_GOLD        6
 #define O_BONES       7
 #define O_BRAZIER     8
+#define O_SCROLL      9       /* which, when it is picked up */
+#define O_KEY         10
+#define O_DRAUGHT     11
 #define MAX_OBJ       40
 extern unsigned int thing_at[MAX_OBJ];       /* where (AT) */
 extern unsigned char thing_kind[MAX_OBJ];    /* O_NONE: a free entry */
@@ -61,6 +70,8 @@ void seen_set(unsigned int i, unsigned char v);
 unsigned char epoch(void);                     /* now */
 unsigned char epoch_age(unsigned char e);      /* epochs since e */
 void memory_sweep(void);                       /* the long forgotten to 0 */
+void memory_renew(void);                       /* all remembered as if just seen */
+void level_reveal(void);                       /* the walls, doors, stairs remembered */
 /* this turn, in a window round the player: 0 out of sight, 1-4 lit
  * (bright to dim), 5 in shadow */
 #define VIS_SHADOW 5
@@ -82,16 +93,34 @@ extern struct mon mons[MAX_MON];
 extern unsigned char nmons;
 
 
+/* what the player carries: so many of each */
+#define I_POTION   0          /* healing */
+#define I_DRAUGHT  1          /* mana */
+#define I_FIRE     2          /* scroll of fire: for a fight */
+#define I_RECALL   3          /* scroll of recall: what was seen, fresh again */
+#define I_SIGHT    4          /* scroll of far sight: the level's shape */
+#define I_KEY      5          /* iron key: opens a locked door */
+#define I_COUNT    6
+const char *item_name(unsigned char i, unsigned char n);   /* game.c: as for n of them */
+
+/* the weapons and the armour, worst to best: their names, what they do */
+#define WEAPONS    5
+#define ARMOURS    5
+const char *weapon_name(unsigned char w);
+const char *armour_name(unsigned char a);
+void weapon_take(unsigned char w);
+void armour_take(unsigned char a);
+
 /* the player */
 struct player {
     unsigned char x, y;
     unsigned char hp, maxhp, mp, maxmp;
     unsigned char level, wdice, wsides, wplus, def;
-    unsigned char potions;
+    unsigned char items[I_COUNT];
     unsigned int gold, xp;
     unsigned char depth;
     unsigned char fade;       /* how fast memories fade: 1 slow, 2 normal, 4 fast */
-    unsigned char weapon, armour;   /* names: game.c */
+    unsigned char weapon, armour;   /* 0 .. WEAPONS - 1, ARMOURS - 1 */
 };
 extern struct player pl;
 extern unsigned int turn;

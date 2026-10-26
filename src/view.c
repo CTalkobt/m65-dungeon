@@ -84,7 +84,7 @@ static unsigned char clear_to(unsigned char tx, unsigned char ty) {
         if (e2 < dx) { err += dx; y += sy; }
         if (x == tx && y == ty) return 1;
         t = terrain((unsigned char)x, (unsigned char)y);
-        if (t == TR_ROCK || t == TR_DOOR) return 0;
+        if (SOLID(t)) return 0;
     }
 }
 
@@ -151,8 +151,9 @@ static unsigned char torch(signed int dxq, signed int dyq, unsigned char b) {
 static unsigned char ov_n, ov_x[MAX_OV], ov_y[MAX_OV], ov_k[MAX_OV], ov_v[MAX_OV];
 static unsigned char row_ov[MAX_OV];
 
-static const unsigned char obj_tile[9] = {
+static const unsigned char obj_tile[12] = {
     0, T_CHEST, T_CHEST_OPEN, T_IDOL, T_IDOL_SPENT, T_POTION, T_GOLD, T_BONES, T_BRAZIER,
+    T_SCROLL, T_KEY, T_DRAUGHT,
 };
 
 static void ov_add(unsigned char x, unsigned char y, unsigned char k, unsigned char v) {

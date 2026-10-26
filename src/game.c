@@ -38,7 +38,7 @@ void obj_set(unsigned int at, unsigned char kind) {
 }
 
 /* the terrain from the tile kind: TK_ROCK, FLOOR0-3, CORR0-1, WALL0-15,
- * DOOR_H/V, DOOR_OPEN_H/V, STAIRS (gen_art.py's order) */
+ * DOOR_H/V, DOOR_OPEN_H/V, STAIRS, DOOR_LOCKED_H/V (gen_art.py's order) */
 unsigned char terrain(unsigned char x, unsigned char y) {
     unsigned char k = vm_kind(x, y);
     if (k < TK_FLOOR0) return TR_ROCK;
@@ -47,7 +47,8 @@ unsigned char terrain(unsigned char x, unsigned char y) {
     if (k < TK_DOOR_H) return TR_ROCK;
     if (k < TK_DOOR_OPEN_H) return TR_DOOR;
     if (k < TK_STAIRS) return TR_OPEN;
-    return TR_STAIRS;
+    if (k == TK_STAIRS) return TR_STAIRS;
+    return TR_LOCKED;
 }
 
 static unsigned char lit_x0[MAX_LIT], lit_y0[MAX_LIT], lit_x1[MAX_LIT], lit_y1[MAX_LIT];
@@ -60,6 +61,38 @@ void lit_add(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char
     lit_x1[lit_n] = x1;
     lit_y1[lit_n] = y1;
     lit_n++;
+}
+
+/* the vault: a room behind locked doors (none: x1 0) */
+static unsigned char vault_x0, vault_y0, vault_x1, vault_y1;
+
+void vault_set(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1) {
+    vault_x0 = x0;
+    vault_y0 = y0;
+    vault_x1 = x1;
+    vault_y1 = y1;
+}
+
+unsigned char vault_at(unsigned char x, unsigned char y) {
+    return x >= vault_x0 && x <= vault_x1 && y >= vault_y0 && y <= vault_y1;
+}
+
+/* every place remembered, as if just seen (an idol, a scroll) */
+void memory_renew(void) {
+    unsigned int i;
+    unsigned char now = epoch();
+    for (i = 0; i < MAP_N; i++)
+        if (seen_get(i)) seen_set(i, now);
+}
+
+/* the level's walls, doors and stairs remembered, seen or not */
+void level_reveal(void) {
+    unsigned char x, y, k, now = epoch();
+    for (y = 0; y < MAP_H; y++)
+        for (x = 0; x < MAP_W; x++) {
+            k = vm_kind(x, y);
+            if (IS_WALL(k) || k >= TK_DOOR_H) seen_set(AT(x, y), now);   /* the doors, the stairs */
+        }
 }
 
 unsigned char lit_at(unsigned char x, unsigned char y) {
@@ -97,21 +130,51 @@ void memory_sweep(void) {
 
 
 
+/* the things one carries, one and many */
+const char *item_name(unsigned char i, unsigned char n) {
+    return nth("healing potion\0healing potions\0mana draught\0mana draughts\0"
+               "scroll of fire\0scrolls of fire\0scroll of recall\0scrolls of recall\0"
+               "scroll of far sight\0scrolls of far sight\0iron key\0iron keys", i * 2 + (n != 1));
+}
+
+/* the weapons: dice, sides, plus */
+static const unsigned char w_dice[WEAPONS] = {1, 1, 1, 1, 2};
+static const unsigned char w_sides[WEAPONS] = {8, 8, 10, 10, 10};
+static const unsigned char w_plus[WEAPONS] = {0, 2, 4, 6, 8};
+
+const char *weapon_name(unsigned char w) {
+    return nth("short sword\0long sword\0war axe\0rune blade\0dragonbone sword", w);
+}
+
+const char *armour_name(unsigned char a) {
+    return nth("leather jerkin\0studded leather\0mail shirt\0plate\0rune plate", a);
+}
+
+void weapon_take(unsigned char w) {
+    pl.weapon = w;
+    pl.wdice = w_dice[w];
+    pl.wsides = w_sides[w];
+    pl.wplus = w_plus[w];
+}
+
+void armour_take(unsigned char a) {
+    pl.armour = a;
+    pl.def = a + 1;
+}
+
 void player_new(void) {
+    unsigned char k;
     pl.hp = pl.maxhp = 30;
     pl.mp = pl.maxmp = 12;
     pl.level = 1;
-    pl.wdice = 1;
-    pl.wsides = 8;
-    pl.wplus = 0;
-    pl.def = 1;
-    pl.potions = 2;
+    for (k = 0; k < I_COUNT; k++) pl.items[k] = 0;
+    pl.items[I_POTION] = 2;
     pl.gold = 0;
     pl.xp = 0;
     pl.depth = 1;
     pl.fade = 2;
-    pl.weapon = 0;
-    pl.armour = 0;
+    weapon_take(0);
+    armour_take(0);
     turn = 1;
 }
 

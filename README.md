@@ -29,7 +29,11 @@ plays the keys (U D L R cursor keys, F RETURN, X RUN/STOP, _ a pause) and
 saves `build/shot.png`. `TEST=-DTEST_FIGHT=<0-6>` starts a fight at once
 (0 rat, 1 skeleton, 2 spider, 3 ooze, 4 orc, 5 wraith, 6 lich), and
 `TEST=-DTEST_VIEW=1` / `2` opens a chest / an idol; `TEST=-DTEST_TIME` shows,
-top right, the frames each turn's sight and drawing take.
+top right, the frames each turn's sight and drawing take; `TEST=-DTEST_ITEMS`
+gives two of everything one can carry; `TEST=-DTEST_VAULT` starts beside a
+locked door and says where it is and whether the key lies outside the vault.
+Other letters in `KEYS` are typed as they are (`KEYS='F__i'` opens the
+inventory).
 `python3 tools/probe.py build/dungeon.d81 <seconds> r m<addr>` boots the disk
 and asks xemu's monitor for the registers and memory.
 
@@ -50,20 +54,33 @@ game builds with its SID effects only.
 | Q E Z C (or the number keys) | | move diagonally | |
 | SPACE | | wait a turn | |
 | RETURN | FIRE | go down the stairs | do the chosen action |
-| P | | drink a potion | parry |
-| S P C A R Q | | | strike, parry, cast, advance, retreat, potion |
+| P | | drink a healing potion | parry |
+| I | | what you carry (a letter uses it) | |
+| S P C A R I | | | strike, parry, cast, advance, retreat, item |
 | F I H W | | | (casting) firebolt, frost, heal, ward |
+| H M F | | | (items) potion, draught, scroll of fire |
 | H | | help | |
-| RUN/STOP | | give up | back out of the spells |
+| RUN/STOP | | give up | back out of the spells or items |
 
 **Exploring.** Walk into doors to open them, into creatures to fight them.
-Gold and potions are picked up as you walk over them, and stepping onto a
-chest or an idol opens its close-up. Rooms with a brazier are lit from
+Gold, healing potions (red), mana draughts (blue), scrolls and keys are
+picked up as you walk over them, and stepping onto a chest or an idol opens
+its close-up. Rooms with a brazier are lit from
 wall to wall. Elsewhere you see as far as your torch reaches. Beyond it,
 in the shadows, you see only what shines: eyes. What you have seen stays
 behind as faint blue outlines of the walls, doors and stairs, dimming over
 some hundreds of turns until it is gone. Some idols sharpen your memory,
 others make it slip.
+
+**What you carry** (I). Healing potions and mana draughts; a *scroll of
+fire* (for a fight: fire that no guard stops); a *scroll of recall* (all
+you have seen comes back fresh); a *scroll of far sight* (the level's
+walls, doors and stairs, seen or not); *iron keys*. Most levels have a
+vault: a room whose doors are locked, with two chests that hold two finds
+each and the better ones. Its key lies somewhere you can reach without it.
+Chests give weapons and armour (each better than the last), potions,
+draughts, scrolls or gold; creatures leave gold, potions, draughts and
+scrolls behind now and then.
 
 **Fighting.** Each round the creature shows what it means to do, and you
 answer:
@@ -78,7 +95,7 @@ answer:
 - *Advance* / *Retreat*: the range is close, near or far. Blows need close.
   A lunge reaches from near. Retreating when already far is an attempt to
   flee. Silk keeps you from moving.
-- *Potion*.
+- *Item*: a healing potion, a mana draught, or a scroll of fire.
 
 ## How it works
 
@@ -95,7 +112,7 @@ and spell colours wash the palette, never the pixels.
 
 **The map** (`src/view.c`, `src/vmap.s45`). A place is 2 x 2 characters
 (16 x 16 pixels), and the view is 40 x 22 places of a 64 x 48 level. The
-level is made straight into a map of characters in chip RAM ($48000,
+level is made straight into a map of characters in chip RAM ($4A000,
 128 x 96 characters, laid out like the screen): rock, floors, corridors,
 walls, doors and stairs, each drawn once and only changed when a door
 opens. There is no other copy of the level: what a place is, is read back
@@ -216,8 +233,8 @@ round the player, memory a byte a place in colour RAM.
 | $19800-$1F7FF | the sounds' play slots (16 KB, 8 KB) |
 | $2A000-$2BFFF | the backdrop's first 128 characters (the C64 BASIC's space) |
 | $2E000-$2FFFF | the backdrop's other 128 (the C64 KERNAL's space) |
-| $40000-$47FFF | DGTILES: the palette (and the map's banks), the terrain's 16-colour tiles, the full-colour tiles, frame and bar characters |
-| $48000-$4DFFF | the level's map: its terrain as characters |
+| $40000-$49FFF | DGTILES: the palette (and the map's banks), the terrain's 16-colour tiles, the full-colour tiles, frame and bar characters |
+| $4A000-$4FFFF | the level's map: its terrain as characters |
 | $50000-$5DFFF | DG<NAME>A: a close-up's palette, maps, characters |
 | $5E000-$5FF3F | the screen |
 | $8000000- | attic RAM: DUNGEON.OV1, the overlays |

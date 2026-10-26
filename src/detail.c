@@ -57,9 +57,53 @@ static void leave(void) {
     video_fade(0);
 }
 
+/* one find in a chest, its line of text at line; the next line. good: the
+ * weapons, the armour and the potions more likely */
+static unsigned char find(unsigned char line, unsigned char good) {
+    unsigned char r = rng_range(good ? 60 : 100), d, i;
+    char buf[80];
+    buf[0] = 0;
+    if (r < 20 && pl.weapon < WEAPONS - 1) {
+        weapon_take(pl.weapon + 1);
+        str_cat(buf, "Wrapped in oilcloth: a ");
+        str_cat(buf, weapon_name(pl.weapon));
+        str_cat(buf, ". You take it up.");
+    } else if (r < 36 && pl.armour < ARMOURS - 1) {
+        armour_take(pl.armour + 1);
+        str_cat(buf, "Folded at the bottom: ");
+        str_cat(buf, armour_name(pl.armour));
+        str_cat(buf, ". You put it on.");
+    } else if (r < 52) {
+        d = 1 + rng_range(2);
+        pl.items[I_POTION] += d;
+        str_cat(buf, "Stoppered flasks of red cordial: ");
+        str_num(buf, d);
+        str_cat(buf, " ");
+        str_cat(buf, item_name(I_POTION, d));
+        str_cat(buf, ".");
+    } else if (r < 62) {
+        pl.items[I_DRAUGHT]++;
+        str_cat(buf, "A vial of blue glass, faintly humming: a mana draught.");
+    } else if (r < 80) {
+        r = rng_range(10);
+        i = r < 4 ? I_FIRE : r < 7 ? I_RECALL : I_SIGHT;
+        pl.items[i]++;
+        str_cat(buf, "A bone scroll case, sealed with wax: a ");
+        str_cat(buf, item_name(i, 1));
+        str_cat(buf, ".");
+    } else {
+        d = (10 + rng_range(30)) * pl.depth;
+        pl.gold += d;
+        str_cat(buf, "Old coins, cold to the touch: ");
+        str_num(buf, d);
+        str_cat(buf, " gold.");
+    }
+    ui_wrap(TEXT_COL, line, TEXT_W, buf, C_GOLD);
+    return line + 2;
+}
+
 void chest_view(unsigned int at) {
-    unsigned char r, d, line = TEXT_ROW + 3;
-    char buf[64];
+    unsigned char d, good, line = TEXT_ROW + 3;
     view_open(S_CHEST);
     ui_wrap(TEXT_COL, TEXT_ROW, TEXT_W,
             "An iron-bound chest, its wood swollen black with damp. The lock is rusted, but it holds. "
@@ -86,46 +130,19 @@ void chest_view(unsigned int at) {
     sfx(SFX_COIN);
     wash(255, 220, 120, 14);
     obj_set(at, O_CHEST_OPEN);
-    r = rng_range(100);
-    buf[0] = 0;
-    if (r < 22 && pl.weapon < 4) {
-        pl.weapon++;
-        pl.wplus += 2;
-        if (pl.weapon == 2) pl.wsides = 10;
-        if (pl.weapon == 4) pl.wdice = 2;
-        str_cat(buf, "Wrapped in oilcloth: a ");
-        str_cat(buf, nth("short sword\0long sword\0war axe\0rune blade\0dragonbone sword", pl.weapon));
-        str_cat(buf, ". You take it up.");
-    } else if (r < 40 && pl.armour < 4) {
-        pl.armour++;
-        pl.def += 1;
-        str_cat(buf, "Folded at the bottom: ");
-        str_cat(buf, nth("leather jerkin\0studded leather\0mail shirt\0plate\0rune plate", pl.armour));
-        str_cat(buf, ". You put it on.");
-    } else if (r < 62) {
-        d = 1 + rng_range(2);
-        pl.potions += d;
-        str_cat(buf, "Stoppered flasks of red cordial: ");
-        str_num(buf, d);
-        str_cat(buf, d > 1 ? " healing potions." : " healing potion.");
-    } else {
-        d = (10 + rng_range(30)) * pl.depth;
-        pl.gold += d;
-        str_cat(buf, "Old coins, cold to the touch: ");
-        str_num(buf, d);
-        str_cat(buf, " gold.");
-    }
-    ui_wrap(TEXT_COL, line, TEXT_W, buf, C_GOLD);
-    if (r >= 62 && rng_range(3) == 0) {
-        pl.potions++;
-        ui_wrap(TEXT_COL, line + 2, TEXT_W, "And beneath them, a healing potion.", C_GOLD);
+    /* a vault's chests hold two finds, and the better ones */
+    good = vault_at((unsigned char)(at % MAP_W), (unsigned char)(at / MAP_W));
+    line = find(line, good);
+    if (good) line = find(line, good);
+    else if (rng_range(4) == 0) {
+        pl.items[I_POTION]++;
+        ui_wrap(TEXT_COL, line, TEXT_W, "And beneath it all, a healing potion.", C_GOLD);
     }
     leave();
 }
 
 void idol_view(unsigned int at) {
-    unsigned int i;
-    unsigned char r, x, y, k;
+    unsigned char r;
     const char *s;
     unsigned char c = C_GREEN;
     view_open(S_IDOL);
@@ -146,16 +163,11 @@ void idol_view(unsigned int at) {
     r = rng_range(7);
     switch (r) {
     case 0:
-        for (i = 0; i < MAP_N; i++)
-            if (seen_get(i)) seen_set(i, epoch());
+        memory_renew();
         s = "The halls you have walked blaze again in your mind.";
         break;
     case 1:
-        for (y = 0; y < MAP_H; y++)
-            for (x = 0; x < MAP_W; x++) {
-                k = vm_kind(x, y);
-                if (IS_WALL(k) || k >= TK_DOOR_H) seen_set(AT(x, y), epoch());   /* doors, the stairs */
-            }
+        level_reveal();
         s = "The shape of this level unfolds behind your eyes.";
         break;
     case 2:

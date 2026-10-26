@@ -19,8 +19,8 @@
  * (v_map), 128-255 are the map's palette banks and flicker with the tiles.
  *
  * Colour RAM: a cell's first byte its attributes (0 for text and the
- * full-colour characters; view.c sets the map's 16-colour ones), the
- * second its colour.
+ * full-colour characters, which blanking sets; view.c sets the map's
+ * 16-colour ones), the second its colour.
  */
 #include <dma.h>
 #include <audio_tune.h>
@@ -250,6 +250,7 @@ void video_fill(unsigned char col, unsigned char row, unsigned char n, unsigned 
     unsigned char i;
     for (i = 0; i < n; i++) row_buf[i] = ch;
     video_cells(col, row, row_buf, n);
+    dma_fill_far_step(COLOR_LIN + ((unsigned int)row * COLS + col) * 2, 2, n, 0);   /* plain attributes */
     colour(col, row, n, c);
 }
 
@@ -258,7 +259,6 @@ void video_blank(unsigned char col, unsigned char row, unsigned char w, unsigned
 }
 
 void video_clear(void) {
-    dma_fill_far(COLOR_LIN, COLS * ROWS * 2, 0);   /* the map's 16-colour attributes off */
     video_blank(0, 0, COLS, ROWS);
 }
 

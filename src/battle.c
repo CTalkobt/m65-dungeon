@@ -2,7 +2,8 @@
  *
  * Each round the creature shows what it means to do (its intent: a blow,
  * a great blow, venom, silk, a spell...); the player answers: strike,
- * parry, cast, step in or back, or drink. Then the creature acts, if it
+ * parry, cast, step in or back, or use something carried (a potion, a
+ * draught, a scroll of fire). Then the creature acts, if it
  * still can. Reading the intent is the game: parry a great blow and strike
  * back; step back from a lunge; ward against what armour cannot stop.
  *
@@ -38,7 +39,10 @@ static char words[SCENE_HDR_SIZE - 32];      /* its name, lines, lore, death: NU
 static unsigned char dist, intent, last_intent, mhp_max;
 static unsigned char frozen, staggered, roar, parrying;
 static unsigned char poison, snared, ward;
-static unsigned char sel, casting;
+static unsigned char sel, menu, casting;     /* menu: MENU_*; casting: a spell lands (no guard stops it) */
+#define MENU_ACTS   0
+#define MENU_SPELLS 1
+#define MENU_ITEMS  2
 static char buf[64];
 static const char *mon_name(void);
 
@@ -153,40 +157,59 @@ static void draw_intent(void) {
     video_text(40 - n / 2, 33, buf, c);
 }
 
-/* the actions: what each is called and whether it can be done now */
+/* the actions: what each is called and whether it can be done now; Cast
+ * and Item open lists of their own (menu) */
 #define NACT 6
-static const char act_key[NACT] = {'s', 'p', 'c', 'a', 'r', 'q'};
+#define ACT_CAST 2
+#define ACT_ITEM 5
+static const char act_key[NACT] = {'s', 'p', 'c', 'a', 'r', 'i'};
 static const char spell_key[4] = {'f', 'i', 'h', 'w'};
 static const unsigned char spell_cost[4] = {3, 4, 5, 4};
 static const unsigned char spell_sfx[4] = {SFX_FIRE, SFX_FROST, SFX_HEAL, SFX_WARD};
+#define NITEM 3
+static const char item_key[NITEM] = {'h', 'm', 'f'};
+static const unsigned char item_of[NITEM] = {I_POTION, I_DRAUGHT, I_FIRE};
+
+static unsigned char menu_n(void) {
+    return menu == MENU_SPELLS ? 4 : menu == MENU_ITEMS ? NITEM : NACT;
+}
+
+static char menu_key(unsigned char k) {
+    return menu == MENU_SPELLS ? spell_key[k] : menu == MENU_ITEMS ? item_key[k] : act_key[k];
+}
 
 static unsigned char can(unsigned char a) {
-    if (casting) return pl.mp >= spell_cost[a];
+    if (menu == MENU_SPELLS) return pl.mp >= spell_cost[a];
+    if (menu == MENU_ITEMS) return pl.items[item_of[a]] > 0;
     switch (a) {
     case 0: return dist == 0;
     case 2: return pl.mp >= 3;
     case 3: return dist > 0 && !snared;
     case 4: return !snared;
-    case 5: return pl.potions > 0;
+    case 5: return pl.items[I_POTION] || pl.items[I_DRAUGHT] || pl.items[I_FIRE];
     }
     return 1;
 }
 
 static void draw_menu(void) {
-    unsigned char k, n = casting ? 4 : NACT, c;
+    unsigned char k, n = menu_n(), c;
     video_blank(MENU_COL, MENU_ROW - 1, 18, 13);
-    video_text(MENU_COL, MENU_ROW - 1, casting ? "Spells" : "Actions", C_GOLD);
+    video_text(MENU_COL, MENU_ROW - 1, nth("Actions\0Spells\0Items", menu), C_GOLD);
     for (k = 0; k < n; k++) {
         c = !can(k) ? C_DARK : k == sel ? C_HILITE : C_TEXT;
         buf[0] = k == sel ? '>' : ' ';
-        buf[1] = (char)((casting ? spell_key[k] : act_key[k]) - 0x20);
+        buf[1] = (char)(menu_key(k) - 0x20);
         buf[2] = ' ';
         buf[3] = 0;
-        str_cat(buf, casting ? nth("Firebolt  3\0Frost     4\0Heal      5\0Ward      4", k)
-                             : k == 4 && dist == 2 ? "Flee" : nth("Strike\0Parry\0Cast\0Advance\0Retreat\0Potion", k));
+        if (menu == MENU_SPELLS) str_cat(buf, nth("Firebolt  3\0Frost     4\0Heal      5\0Ward      4", k));
+        else if (menu == MENU_ITEMS) {
+            str_cat(buf, nth("Potion     \0Draught    \0Fire scroll", k));
+            str_cat(buf, " ");
+            str_num(buf, pl.items[item_of[k]]);
+        } else str_cat(buf, k == 4 && dist == 2 ? "Flee" : nth("Strike\0Parry\0Cast\0Advance\0Retreat\0Item", k));
         video_text(MENU_COL, MENU_ROW + 1 + k * 2, buf, c);
     }
-    if (casting) video_text(MENU_COL, MENU_ROW + 10, "  Esc: back", C_DARK);
+    if (menu) video_text(MENU_COL, MENU_ROW + 10, "  Esc: back", C_DARK);
 }
 
 static void draw_all(void) {
@@ -450,8 +473,41 @@ static void wound(unsigned char d) {
 static unsigned char player_acts(unsigned char a) {
     unsigned char d;
     parrying = 0;
-    if (casting) {
-        casting = 0;
+    if (menu == MENU_ITEMS) {
+        menu = MENU_ACTS;
+        pl.items[item_of[a]]--;
+        switch (a) {
+        case 0:
+            d = 15 + pl.level * 2;
+            pl.hp = pl.hp + d > pl.maxhp ? pl.maxhp : pl.hp + d;
+            said_num("You drink. +", d, " life.", C_GREEN);
+            sfx(SFX_DRINK);
+            break;
+        case 1:
+            d = 10 + pl.level;
+            pl.mp = pl.mp + d > pl.maxmp ? pl.maxmp : pl.mp + d;
+            said_num("The draught hums in you. +", d, " mana.", C_BLUE);
+            sfx(SFX_DRINK);
+            break;
+        case 2:
+            sfx(SFX_FIRE);
+            say("The scroll flares, and fire pours from it!", C_ORANGE);
+            flash(255, 120, 20, 16);
+            d = rng_dice(3, 6) + pl.depth * 3;
+            if (mt.flags & MF_FIREWEAK) {
+                d += d / 2;
+                say("It burns fiercely!", C_ORANGE);
+            }
+            casting = 1;               /* (no guard stops it) */
+            wound(d);
+            casting = 0;
+            break;
+        }
+        draw_you();
+        return 0;
+    }
+    if (menu == MENU_SPELLS) {
+        menu = MENU_ACTS;
         pl.mp -= spell_cost[a];
         sfx(spell_sfx[a]);
         switch (a) {
@@ -536,13 +592,6 @@ static unsigned char player_acts(unsigned char a) {
         dist++;
         say("You fall back.", C_TEXT);
         break;
-    case 5:
-        pl.potions--;
-        d = 15 + pl.level * 2;
-        pl.hp = pl.hp + d > pl.maxhp ? pl.maxhp : pl.hp + d;
-        said_num("You drink. +", d, " life.", C_GREEN);
-        sfx(SFX_DRINK);
-        break;
     }
     draw_range();
     draw_you();
@@ -553,26 +602,29 @@ static unsigned char player_acts(unsigned char a) {
 static unsigned char pick(void) {
     unsigned char k, i, n;
     for (;;) {
-        n = casting ? 4 : NACT;
+        n = menu_n();
         draw_menu();
         k = key_wait();
         if (k == K_UP) { sel = sel ? sel - 1 : n - 1; continue; }
         if (k == K_DOWN) { sel = sel + 1 < n ? sel + 1 : 0; continue; }
-        if (k == K_STOP || (casting && k == K_LEFT)) {
-            if (casting) { casting = 0; sel = 2; }
+        if (k == K_STOP || (menu && k == K_LEFT)) {
+            if (menu) {
+                sel = menu == MENU_SPELLS ? ACT_CAST : ACT_ITEM;
+                menu = MENU_ACTS;
+            }
             continue;
         }
         i = 0xFF;
-        if (k == K_FIRE || (k == K_RIGHT && !casting && sel == 2)) i = sel;
-        for (n = 0; n < (casting ? 4 : NACT); n++)
-            if (k == (casting ? spell_key[n] : act_key[n])) i = n;
+        if (k == K_FIRE || (k == K_RIGHT && !menu && (sel == ACT_CAST || sel == ACT_ITEM))) i = sel;
+        for (n = 0; n < menu_n(); n++)
+            if (k == menu_key(n)) i = n;
         if (i == 0xFF) continue;
         if (!can(i)) {
             sfx(SFX_DOOR);
             continue;
         }
-        if (!casting && i == 2) {
-            casting = 1;
+        if (!menu && (i == ACT_CAST || i == ACT_ITEM)) {
+            menu = i == ACT_CAST ? MENU_SPELLS : MENU_ITEMS;
             sel = 0;
             continue;
         }
@@ -590,7 +642,7 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
     if (m->hp == FRESH) m->hp = mt.hp;
     dist = ambush ? 0 : 1;
     frozen = staggered = roar = parrying = poison = snared = ward = 0;
-    sel = casting = 0;
+    sel = menu = casting = 0;
     intent = last_intent = A_NONE;
 
     video_fade(0);

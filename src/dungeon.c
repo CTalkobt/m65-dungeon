@@ -5,6 +5,10 @@
  * It is made straight in the map (game.h vm_*): the rooms' floors, then
  * the corridors cut through the rock between them, the doors, and last the
  * walls round anything one can walk on, each tile as it will be drawn.
+ *
+ * Most levels have a vault: a room whose ways in are all doors, locked,
+ * with two chests; its iron key lies where the player can walk to without
+ * it, so no level is ever shut.
  */
 #pragma cc45 overlay(gen)
 #pragma cc45 noescape_strings
@@ -84,6 +88,60 @@ static void put(unsigned int at, unsigned char kind) {
     if (at) obj_set(at, kind);
 }
 
+/* the ring of places round room r (its walls, its doors): mode 0 asks
+ * whether every way through it is a door, or a corridor a door would fit
+ * in (between two walls), and there is one; 1 locks them all */
+static unsigned char rim(unsigned char r, unsigned char mode) {
+    unsigned char x, y, k, doors = 0, side;
+    for (y = ry[r] - 1; y <= ry[r] + rh[r]; y++)
+        for (x = rx[r] - 1; x <= rx[r] + rw[r]; x++) {
+            side = x == rx[r] - 1 || x == rx[r] + rw[r];
+            if (!side && y >= ry[r] && y < ry[r] + rh[r]) continue;
+            k = vm_kind(x, y);
+            if (k == TK_ROCK || IS_WALL(k)) continue;
+            if (y < ry[r] || y >= ry[r] + rh[r]) {
+                if (side) return 0;              /* a corner: a way in aslant */
+                if (!solid(x - 1, y) || !solid(x + 1, y)) return 0;
+                k = TK_DOOR_LOCKED_H;
+            } else {
+                if (!solid(x, y - 1) || !solid(x, y + 1)) return 0;
+                k = TK_DOOR_LOCKED_V;
+            }
+            if (mode) vm_set(x, y, k);
+            doors++;
+        }
+    return doors != 0;
+}
+
+/* the places the player can walk to from the start without a key: 1 in
+ * seen[] (free until the level begins). Sweeps down and up in turn till
+ * nothing more is reached. */
+static void reach(void) {
+    unsigned char x, y, k, n, more, back = 0, t;
+    dma_fill_far(SEEN_LIN, MAP_N, 0);
+    seen_set(AT(pl.x, pl.y), 1);
+    do {
+        more = 0;
+        for (n = 1; n < MAP_H - 1; n++) {
+            video_poll();
+            y = back ? MAP_H - 1 - n : n;
+            for (k = 1; k < MAP_W - 1; k++) {
+                x = back ? MAP_W - 1 - k : k;
+                if (seen_get(AT(x, y))) continue;
+                t = terrain(x, y);
+                if (t == TR_ROCK || t == TR_LOCKED) continue;
+                for (t = 0; t < 9; t++)
+                    if (seen_get(AT(x + t % 3 - 1, y + t / 3 - 1))) break;
+                if (t < 9) {
+                    seen_set(AT(x, y), 1);
+                    more = 1;
+                }
+            }
+        }
+        back ^= 1;
+    } while (more);
+}
+
 static void add_mon(unsigned char kind, unsigned int at) {
     struct mon *m;
     if (!at || nmons >= MAX_MON) return;
@@ -98,7 +156,7 @@ static void add_mon(unsigned char kind, unsigned int at) {
 
 void dungeon_make(void) {
     unsigned int i;
-    unsigned char k, t, x, y, w, h, r, last, d = pl.depth - 1;
+    unsigned char k, t, x, y, w, h, r, v, last, d = pl.depth - 1;
 
     for (y = 0; y < MAP_H; y++) {
         video_poll();
@@ -196,12 +254,43 @@ void dungeon_make(void) {
         lit_add(rx[r] - 1, ry[r] - 1, rx[r] + rw[r], ry[r] + rh[r]);
     }
 
+    /* the vault: a room every way into which is a door (not the first, not
+     * the last), the doors locked; two chests inside */
+    vault_set(0, 0, 0, 0);
+    v = 0;
+    for (k = 0; k < 8 && nrooms > 3; k++) {
+        r = 1 + rng_range(last - 1);
+        if (!rim(r, 0)) continue;
+        rim(r, 1);
+        vault_set(rx[r] - 1, ry[r] - 1, rx[r] + rw[r], ry[r] + rh[r]);
+        v = r;
+        put(spot(v), O_CHEST);
+        put(spot(v), O_CHEST);
+        break;
+    }
+
     /* things to find */
     for (k = 0; k < 2 + rng_range(2); k++) put(spot(1 + rng_range(last)), O_CHEST);
     if (rng_range(4)) put(spot(1 + rng_range(last)), O_IDOL);
     for (k = 0; k < 2; k++) put(spot(rng_range(nrooms)), O_POTION);
+    if (rng_range(2)) put(spot(rng_range(nrooms)), O_DRAUGHT);
+    for (k = 0; k < 1 + rng_range(2); k++) put(spot(rng_range(nrooms)), O_SCROLL);
     for (k = 0; k < 3; k++) put(spot(rng_range(nrooms)), O_GOLD);
     for (k = 0; k < 5; k++) put(spot(rng_range(nrooms)), O_BONES);
+
+    /* the vault's key: somewhere the player can walk to without it */
+    if (v) {
+        reach();
+        for (k = 0; k < 30; k++) {
+            r = rng_range(nrooms);
+            if (r == v) continue;
+            i = spot(r);
+            if (i && seen_get(i)) break;
+        }
+        if (k == 30) i = spot(0);
+        put(i, O_KEY);
+        dma_fill_far(SEEN_LIN, MAP_N, 0);
+    }
 
     /* creatures: more, and worse, deeper down; none in the first room */
     for (k = 0; k < 6 + d * 2; k++)

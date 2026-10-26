@@ -1,6 +1,6 @@
 ; vmap.s45 — the level's map (game.h vm_kind / vm_set): the terrain's
 ; 16-colour tiles as the screen shows them, 2 x 2 characters a place, a
-; row of 128 characters (256 bytes) at MAP_LIN ($48000) on; reached through
+; row of 128 characters (256 bytes) at MAP_LIN ($4A000) on; reached through
 ; a 32-bit pointer (lda [ptr],z)
 ;
 ; A tile kind k (TK_*) is the characters TCHAR0 + k * 4 + quarter, TCHAR0 =
@@ -30,7 +30,7 @@ proc at
     lda $12
     asl
     clc
-    adc #$80                ; MAP_LIN = $00048000
+    adc #$A0                ; MAP_LIN = $0004A000
     sta ptr+1
     lda #$04
     sta ptr+2

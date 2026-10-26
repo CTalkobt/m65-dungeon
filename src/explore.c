@@ -1,8 +1,9 @@
 /* explore.c — walking the levels a turn at a time
  *
- * The player moves (8 ways), opens doors by walking into them, picks up
- * gold and potions, opens chests and prays at idols (the close-ups),
- * fights what it walks into, goes down the stairs. Then every creature
+ * The player moves (8 ways), opens doors by walking into them (a locked
+ * one with an iron key), picks up gold, potions, draughts, scrolls and
+ * keys, opens chests and prays at idols (the close-ups), fights what it
+ * walks into, uses what it carries (I), goes down the stairs. Then every creature
  * moves: asleep until it notices the player, hunting while it sees the
  * player, wandering when it loses track. One that walks into the player
  * starts the fight close (an ambush).
@@ -63,9 +64,12 @@ static void level_enter(void) {
 
 static void help(void) {
     msg("Move: arrows, WASD (QEZC diagonal), joystick. Space: wait.", C_TEXT);
-    msg("Walk into doors, chests, idols and foes. P: drink a potion.", C_TEXT);
+    msg("Walk into doors, chests, idols and foes.", C_TEXT);
+    msg("I: what you carry. P: drink a healing potion.", C_TEXT);
     msg("RETURN on the stairs: go down. RUN/STOP: give up.", C_TEXT);
 }
+
+static const unsigned char drops[6] = {O_GOLD, O_GOLD, O_GOLD, O_POTION, O_SCROLL, O_DRAUGHT};
 
 /* the fight with creature i; WON / FLED / DIED, the screen back */
 static unsigned char fight(unsigned char i, unsigned char ambush) {
@@ -75,7 +79,9 @@ static unsigned char fight(unsigned char i, unsigned char ambush) {
     if (r == DIED) return DIED;
     if (r == WON) {
         if (mon_flags[mons[i].kind] & MF_BOSS) return WON;
-        if (!obj_at(AT(mons[i].x, mons[i].y)) && rng_range(3) == 0) obj_set(AT(mons[i].x, mons[i].y), O_GOLD);
+        /* what it leaves: gold, now and then a potion, a draught, a scroll */
+        r = rng_range(10);
+        if (!obj_at(AT(mons[i].x, mons[i].y)) && r < sizeof drops) obj_set(AT(mons[i].x, mons[i].y), drops[r]);
         msg("The way is clear.", C_DIM);
     } else {
         mons[i].stun = 3;
@@ -98,7 +104,7 @@ static void door_open(unsigned char x, unsigned char y) {
 
 static unsigned char free_for(struct mon *c, unsigned char x, unsigned char y) {
     unsigned char t = terrain(x, y);
-    if (t == TR_ROCK || obj_at(AT(x, y)) == O_BRAZIER || mon_at(x, y)) return 0;
+    if (t == TR_ROCK || t == TR_LOCKED || obj_at(AT(x, y)) == O_BRAZIER || mon_at(x, y)) return 0;
     if (t == TR_DOOR) {
         door_open(x, y);                            /* it opens the door: that is its move */
         if (vis_at(x, y)) {
@@ -161,6 +167,119 @@ static unsigned char creatures_move(void) {
 
 /* ---------------------------------------------------------------- the player */
 
+/* what lay at i taken: one more of item */
+static void take(unsigned int i, unsigned char item, const char *s, unsigned char c) {
+    pl.items[item]++;
+    obj_set(i, O_NONE);
+    msg(s, c);
+    sfx(SFX_CHIME);
+}
+
+/* a healing potion drunk; 1 if it was (a turn) */
+static unsigned char drink(void) {
+    unsigned char d;
+    if (!pl.items[I_POTION]) msg("You have no healing potions.", C_DIM);
+    else if (pl.hp == pl.maxhp) msg("You are unhurt.", C_DIM);
+    else {
+        pl.items[I_POTION]--;
+        d = 15 + pl.level * 2;
+        pl.hp = pl.hp + d > pl.maxhp ? pl.maxhp : pl.hp + d;
+        msg("You drink. Warmth spreads through you.", C_GREEN);
+        sfx(SFX_DRINK);
+        return 1;
+    }
+    return 0;
+}
+
+/* an item used on the map; 1 if that took the turn */
+static unsigned char use(unsigned char k) {
+    unsigned char d;
+    switch (k) {
+    case I_POTION:
+        return drink();
+    case I_DRAUGHT:
+        if (pl.mp == pl.maxmp) {
+            msg("Your mana is full.", C_DIM);
+            return 0;
+        }
+        pl.items[I_DRAUGHT]--;
+        d = 10 + pl.level;
+        pl.mp = pl.mp + d > pl.maxmp ? pl.maxmp : pl.mp + d;
+        msg("The draught hums on your tongue. Mana returns.", C_BLUE);
+        sfx(SFX_DRINK);
+        return 1;
+    case I_FIRE:
+        msg("A scroll of fire is for a fight.", C_DIM);
+        return 0;
+    case I_RECALL:
+        pl.items[I_RECALL]--;
+        memory_renew();
+        msg("The halls you have walked come back to you.", C_CYAN);
+        sfx(SFX_CHIME);
+        return 1;
+    case I_SIGHT:
+        pl.items[I_SIGHT]--;
+        level_reveal();
+        msg("The shape of this level unfolds in your mind.", C_CYAN);
+        sfx(SFX_BELL);
+        return 1;
+    }
+    msg("Walk into a locked door to turn the key.", C_DIM);
+    return 0;
+}
+
+/* what the player carries, over the map; a letter uses it. 1 if that took
+ * the turn */
+#define INV_COL 18
+#define INV_ROW 8
+#define INV_W   44
+#define INV_H   17
+
+static unsigned char inventory(void) {
+    unsigned char k, n = 0, row = INV_ROW + 6, has[I_COUNT];
+    char buf[48];
+    video_blank(INV_COL, INV_ROW, INV_W, INV_H);
+    ui_frame(INV_COL, INV_ROW, INV_W, INV_H);
+    video_text(INV_COL + 3, INV_ROW + 1, "You carry", C_GOLD);
+    buf[0] = 0;
+    str_cat(buf, "Weapon  ");
+    str_cat(buf, weapon_name(pl.weapon));
+    str_cat(buf, "  ");
+    str_num(buf, pl.wdice);
+    str_cat(buf, "d");
+    str_num(buf, pl.wsides);
+    str_cat(buf, "+");
+    str_num(buf, pl.wplus);
+    video_text(INV_COL + 3, INV_ROW + 3, buf, C_TEXT);
+    buf[0] = 0;
+    str_cat(buf, "Armour  ");
+    str_cat(buf, armour_name(pl.armour));
+    str_cat(buf, "  +");
+    str_num(buf, pl.def);
+    video_text(INV_COL + 3, INV_ROW + 4, buf, C_TEXT);
+    for (k = 0; k < I_COUNT; k++) {
+        if (!pl.items[k]) continue;
+        buf[0] = (char)('a' + n);
+        buf[1] = buf[2] = ' ';
+        buf[3] = 0;
+        str_num(buf, pl.items[k]);
+        str_cat(buf, " ");
+        str_cat(buf, item_name(k, pl.items[k]));
+        video_text(INV_COL + 3, row++, buf, k == I_KEY ? C_GOLD : k == I_POTION ? C_RED : k == I_DRAUGHT ? C_BLUE : C_BONE);
+        has[n++] = k;
+    }
+    if (!n) video_text(INV_COL + 3, row, "Nothing else.", C_DIM);
+    buf[0] = 0;
+    str_cat(buf, "Gold    ");
+    str_num(buf, pl.gold);
+    video_text(INV_COL + 3, INV_ROW + 13, buf, C_GOLD);
+    video_text(INV_COL + 3, INV_ROW + 15, n ? "A letter: use it.  Another key: back." : "Any key: back.", C_DIM);
+    k = key_wait();
+    view_draw();
+    if (k >= 'a' && k < 'a' + n) return use(has[k - 'a']);
+    return 0;
+}
+
 /* moving (or bumping) toward dx, dy: 1 if it took a turn; the outcome of
  * a fight in *out */
 static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
@@ -174,6 +293,17 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
     }
     t = terrain(x, y);
     if (t == TR_ROCK) return 0;
+    if (t == TR_LOCKED) {
+        if (!pl.items[I_KEY]) {
+            msg("The door is locked. An iron key would turn it.", C_DIM);
+            return 0;
+        }
+        pl.items[I_KEY]--;
+        vm_set(x, y, vm_kind(x, y) - TK_DOOR_LOCKED_H + TK_DOOR_OPEN_H);
+        sfx(SFX_DOOR);
+        msg("The iron key turns. The door swings open.", C_GOLD);
+        return 1;
+    }
     if (t == TR_DOOR) {
         door_open(x, y);
         sfx(SFX_DOOR);
@@ -201,10 +331,22 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
         sfx(SFX_COIN);
         break;
     case O_POTION:
-        pl.potions++;
-        obj_set(i, O_NONE);
-        msg("You pocket a healing potion.", C_RED);
-        sfx(SFX_CHIME);
+        take(i, I_POTION, "You pocket a healing potion.", C_RED);
+        break;
+    case O_DRAUGHT:
+        take(i, I_DRAUGHT, "You pocket a mana draught.", C_BLUE);
+        break;
+    case O_KEY:
+        take(i, I_KEY, "An iron key, heavy and cold. You take it.", C_GOLD);
+        break;
+    case O_SCROLL:
+        n = rng_range(10);
+        n = n < 4 ? I_FIRE : n < 7 ? I_RECALL : I_SIGHT;
+        buf[0] = 0;
+        str_cat(buf, "You take up a ");
+        str_cat(buf, item_name(n, 1));
+        str_cat(buf, ".");
+        take(i, n, buf, C_BONE);
         break;
     case O_CHEST:
         view_fov();
@@ -236,6 +378,33 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
     return 1;
 }
 
+#ifdef TEST_VAULT
+/* (tests: the player outside a locked door, if the level has one; the
+ * message says which way the door is) */
+static void test_vault(void) {
+    static const signed char sx[4] = {-1, 1, 0, 0}, sy[4] = {0, 0, -1, 1};
+    unsigned char x, y, k, t;
+    for (k = 0; k < MAX_OBJ; k++)
+        if (thing_kind[k] == O_KEY)
+            msg(vault_at(thing_at[k] % MAP_W, thing_at[k] / MAP_W) ? "(the key is in the vault!)" : "(the key lies outside)", C_RED);
+    for (y = 1; y < MAP_H - 1; y++)
+        for (x = 1; x < MAP_W - 1; x++) {
+            if (terrain(x, y) != TR_LOCKED) continue;
+            for (k = 0; k < 4; k++) {
+                t = terrain(x + sx[k], y + sy[k]);
+                if ((t == TR_CORR || t == TR_FLOOR) && !vault_at(x + sx[k], y + sy[k])) {
+                    pl.x = x + sx[k];
+                    pl.y = y + sy[k];
+                    msg(nth("(a locked door to the east)\0(a locked door to the west)\0"
+                            "(a locked door to the south)\0(a locked door to the north)", k), C_RED);
+                    return;
+                }
+            }
+        }
+    msg("(no locked door)", C_RED);
+}
+#endif
+
 static unsigned char explore_run(void);
 
 unsigned char explore(void) {
@@ -250,6 +419,12 @@ static unsigned char explore_run(void) {
     unsigned char k, took, r;
     signed char dx, dy;
     level_enter();
+#ifdef TEST_ITEMS
+    for (k = 0; k < I_COUNT; k++) pl.items[k] = 2;    /* (tests: two of everything) */
+#endif
+#ifdef TEST_VAULT
+    test_vault();
+#endif
 #ifdef TEST_VIEW
     /* (tests: a chest (1) or an idol (2) at once) */
     if (TEST_VIEW == 1) chest_view(AT(pl.x, pl.y));
@@ -292,15 +467,10 @@ static unsigned char explore_run(void) {
         case ' ': case '5': case '.': took = 1; break;
         case 'h': case '?': help(); break;
         case 'p':
-            if (!pl.potions) msg("You have no potions.", C_DIM);
-            else if (pl.hp == pl.maxhp) msg("You are unhurt.", C_DIM);
-            else {
-                pl.potions--;
-                pl.hp = pl.hp + 15 + pl.level * 2 > pl.maxhp ? pl.maxhp : pl.hp + 15 + pl.level * 2;
-                msg("You drink. Warmth spreads through you.", C_GREEN);
-                sfx(SFX_DRINK);
-                took = 1;
-            }
+            took = drink();
+            break;
+        case 'i':
+            took = inventory();
             break;
         case K_FIRE: case '>':
             if (terrain(pl.x, pl.y) == TR_STAIRS) {
