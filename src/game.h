@@ -60,6 +60,8 @@ unsigned char vault_at(unsigned char x, unsigned char y);
 #define O_CANDLE      15
 #define O_FLINT       16
 #define O_FIRESTICK   17
+#define O_ARROWS      18      /* a few arrows */
+#define O_SHOT        19      /* a few cartridges */
 #define MAX_OBJ       56
 extern unsigned int thing_at[MAX_OBJ];       /* where (AT) */
 extern unsigned char thing_kind[MAX_OBJ];    /* O_NONE: a free entry */
@@ -112,7 +114,9 @@ extern unsigned char nmons;
 #define I_CANDLE   9
 #define I_FLINT    10         /* lights the torch, now and then; kept */
 #define I_FIRESTICK 11        /* lights the torch, once */
-#define I_COUNT    12
+#define I_ARROWS   12         /* the bow's */
+#define I_SHOT     13         /* the flintlock's: paper cartridges, powder and ball */
+#define I_COUNT    14
 const char *item_name(unsigned char i, unsigned char n);   /* game.c: as for n of them */
 extern const unsigned char item_col[I_COUNT];               /* game.c: its colour in text */
 /* pack.c: the things carried, used on the map; 1 if that took the turn */
@@ -121,6 +125,7 @@ unsigned char drink(void);
 unsigned char feed_any(void);
 unsigned char light_any(void);
 unsigned char light(unsigned char k);   /* I_FLINT, I_FIRESTICK, I_COUNT: a brazier's coals */
+unsigned char shoot(unsigned char gun); /* the bow (0) or the flintlock (1) at a creature in sight */
 
 /* the weapons and the armour, worst to best: their names, what they do */
 #define WEAPONS    5
@@ -129,6 +134,12 @@ const char *weapon_name(unsigned char w);
 const char *armour_name(unsigned char a);
 void weapon_take(unsigned char w);
 void armour_take(unsigned char a);
+
+/* the weapons that reach: a bow (pl.bow: 0 none, 1 short bow, 2 longbow)
+ * and a flintlock (pl.gun: 0 none, 1 pistol, 2 musket); r = gun * 2 + w - 1 */
+#define RANGED_BEST 2
+const char *ranged_name(unsigned char gun, unsigned char w);
+extern const unsigned char r_dice[4], r_sides[4], r_plus[4], r_reach[4];
 
 /* the player */
 struct player {
@@ -140,6 +151,7 @@ struct player {
     unsigned char depth;
     unsigned char fade;       /* how fast memories fade: 1 slow, 2 normal, 4 fast */
     unsigned char weapon, armour;   /* 0 .. WEAPONS - 1, ARMOURS - 1 */
+    unsigned char bow, gun;         /* 0 none .. RANGED_BEST */
     unsigned int fuel;        /* the torch: turns of burning left (TORCH_MAX at most) */
     unsigned char lit;        /* 1 while it burns */
 };
@@ -166,6 +178,9 @@ void view_fov(void);
 void view_draw(void);
 void view_hud(void);
 void view_screen(void);               /* the whole exploration screen anew */
+unsigned char view_line(unsigned char x, unsigned char y);   /* a clear line from the player */
+void view_put(unsigned char x, unsigned char y, unsigned char tile);   /* a tile over a place, for now */
+void view_unput(void);                /* the place back as it was */
 void msg(const char *s, unsigned char colour);
 void msg_clear(void);
 

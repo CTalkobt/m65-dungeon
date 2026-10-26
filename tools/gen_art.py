@@ -365,6 +365,9 @@ def main():
             f.write("#define MF_%s 0x%02X\n" % (fl, 1 << k))
         f.write("#define SPAWN %d\n" % SPAWN)
         f.write("extern const unsigned char mon_tile[M_KINDS], mon_scene[M_KINDS], mon_flags[M_KINDS];\n")
+        f.write("/* for a shot on the map (the rest is in the close-up): life, armour, experience, names (nth) */\n")
+        f.write("extern const unsigned char mon_hp[M_KINDS], mon_def[M_KINDS], mon_xp[M_KINDS];\n")
+        f.write("extern const char mon_names[];\n")
         f.write("extern const unsigned char level_mons[%d][SPAWN];\n" % DEPTHS)
         f.write("extern const char *const scene_file[%d];\n" % len(names))
         f.write("/* where the packed files load: from where they unpack to */\n")
@@ -386,6 +389,10 @@ def main():
                 % ", ".join("S_%s" % m[0].upper() for m in monsters.MONSTERS))
         f.write("const unsigned char mon_flags[M_KINDS] = {%s};\n"
                 % ", ".join("0x%02X" % flags_of(m[2]) for m in monsters.MONSTERS))
+        for t, key in (("mon_hp", "hp"), ("mon_def", "defense"), ("mon_xp", "xp")):
+            f.write("const unsigned char %s[M_KINDS] = {%s};\n"
+                    % (t, ", ".join(str(m[2][key]) for m in monsters.MONSTERS)))
+        f.write("const char mon_names[] = \"%s\";\n" % "\\0".join(m[2]["name"] for m in monsters.MONSTERS))
         f.write("const unsigned char level_mons[%d][SPAWN] = {%s};\n"
                 % (DEPTHS, ", ".join("{%s}" % ", ".join(str(k) for k in row) for row in spawns())))
         f.write("const unsigned int scene_skip[%d][2] = {%s};\n"

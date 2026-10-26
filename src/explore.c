@@ -66,12 +66,12 @@ static void level_enter(void) {
 
 static void help(void) {
     msg("Move: arrows, WASD, QEZC diagonally. Space: wait.", C_TEXT);
-    msg("Walk into doors, chests, idols and foes.", C_TEXT);
+    msg("Walk into doors, chests, idols, foes. T, G: shoot.", C_TEXT);
     msg("I: inventory. P: potion. F: feed torch. L: light it.", C_TEXT);
     msg("RETURN: stairs down. O: settings. RUN/STOP: give up.", C_TEXT);
 }
 
-static const unsigned char drops[8] = {O_GOLD, O_GOLD, O_GOLD, O_POTION, O_SCROLL, O_DRAUGHT, O_RAGS, O_FUR};
+static const unsigned char drops[9] = {O_GOLD, O_GOLD, O_GOLD, O_POTION, O_SCROLL, O_DRAUGHT, O_RAGS, O_FUR, O_ARROWS};
 
 /* the fight with creature i; WON / FLED / DIED, the screen back */
 static unsigned char fight(unsigned char i, unsigned char ambush) {
@@ -246,6 +246,21 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
         msg(buf, C_GOLD);
         sfx(SFX_COIN);
         break;
+    case O_ARROWS:
+    case O_SHOT:
+        m = n == O_ARROWS ? I_ARROWS : I_SHOT;
+        n = n == O_ARROWS ? 3 + rng_range(4) : 2 + rng_range(3);
+        pl.items[m] += n;
+        obj_set(i, O_NONE);
+        buf[0] = 0;
+        str_cat(buf, "You gather ");
+        str_num(buf, n);
+        str_cat(buf, " ");
+        str_cat(buf, item_name(m, n));
+        str_cat(buf, ".");
+        msg(buf, item_col[m]);
+        sfx(SFX_CHIME);
+        break;
     case O_SCROLL:
         n = rng_range(10);
         n = n < 4 ? I_FIRE : n < 7 ? I_RECALL : I_SIGHT;
@@ -320,6 +335,21 @@ static void test_vault(void) {
 }
 #endif
 
+#ifdef TEST_SHOOT
+/* (tests: a creature of that kind, asleep, a few places from the start) */
+static void test_shoot(void) {
+    static const signed char ox[4] = {3, -3, 0, 0}, oy[4] = {0, 0, 2, -2};
+    unsigned char k;
+    for (k = 0; k < 3; k++)
+        if (terrain(pl.x + ox[k], pl.y + oy[k]) == TR_FLOOR) break;
+    mons[0].x = pl.x + ox[k];
+    mons[0].y = pl.y + oy[k];
+    mons[0].kind = TEST_SHOOT;
+    mons[0].hp = FRESH;
+    mons[0].awake = 0;
+}
+#endif
+
 static unsigned char explore_run(void);
 
 unsigned char explore(void) {
@@ -339,6 +369,9 @@ static unsigned char explore_run(void) {
 #endif
 #ifdef TEST_VAULT
     test_vault();
+#endif
+#ifdef TEST_SHOOT
+    test_shoot();
 #endif
 #ifdef TEST_FUEL
     pl.fuel = TEST_FUEL;             /* (tests: the torch near its end) */
@@ -392,6 +425,12 @@ static unsigned char explore_run(void) {
             break;
         case 'f':
             took = feed_any();
+            break;
+        case 't':
+            took = shoot(0);
+            break;
+        case 'g':
+            took = shoot(1);
             break;
         case 'o':
             settings(18, 14);

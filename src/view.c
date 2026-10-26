@@ -90,6 +90,56 @@ static unsigned char clear_to(unsigned char tx, unsigned char ty) {
     }
 }
 
+unsigned char view_line(unsigned char x, unsigned char y) {
+    return (x == pl.x && y == pl.y) || clear_to(x, y);
+}
+
+/* one tile drawn over a place on the screen (a mark, something in flight),
+ * as lit as the place is (glowing alone in the dark); view_unput puts the
+ * place back as it was */
+static unsigned int keep[8];
+static unsigned char kept_x = 0xFF, kept_y;
+
+static unsigned long cell_at(unsigned char x, unsigned char y) {
+    return ((unsigned int)(VIEW_ROW + (y - cam_y) * 2) * COLS + (x - cam_x) * 2) * 2;
+}
+
+void view_unput(void) {
+    unsigned long c;
+    if (kept_x == 0xFF) return;
+    c = cell_at(kept_x, kept_y);
+    dma_copy_far(SCREEN_LIN + c, (unsigned long)(unsigned int)keep, 4);
+    dma_copy_far(SCREEN_LIN + c + COLS * 2, (unsigned long)(unsigned int)(keep + 2), 4);
+    dma_copy_far(COLOR_LIN + c, (unsigned long)(unsigned int)(keep + 4), 4);
+    dma_copy_far(COLOR_LIN + c + COLS * 2, (unsigned long)(unsigned int)(keep + 6), 4);
+    kept_x = 0xFF;
+}
+
+void view_put(unsigned char x, unsigned char y, unsigned char k) {
+    unsigned long c;
+    unsigned int ch, cells[2], zero[2] = {0, 0};
+    unsigned char v = vis_at(x, y);
+    view_unput();
+    if (x < cam_x || y < cam_y || x >= cam_x + VIEW_W || y >= cam_y + VIEW_H) return;
+    ch = tile_char[k][v && v != VIS_SHADOW ? v - 1 : TV_EYES];
+    if (!ch) return;
+    c = cell_at(x, y);
+    dma_copy_far((unsigned long)(unsigned int)keep, SCREEN_LIN + c, 4);
+    dma_copy_far((unsigned long)(unsigned int)(keep + 2), SCREEN_LIN + c + COLS * 2, 4);
+    dma_copy_far((unsigned long)(unsigned int)(keep + 4), COLOR_LIN + c, 4);
+    dma_copy_far((unsigned long)(unsigned int)(keep + 6), COLOR_LIN + c + COLS * 2, 4);
+    kept_x = x;
+    kept_y = y;
+    cells[0] = ch;
+    cells[1] = ch + 1;
+    dma_copy_far(SCREEN_LIN + c, (unsigned long)(unsigned int)cells, 4);
+    dma_copy_far(COLOR_LIN + c, (unsigned long)(unsigned int)zero, 4);
+    cells[0] = ch + 2;
+    cells[1] = ch + 3;
+    dma_copy_far(SCREEN_LIN + c + COLS * 2, (unsigned long)(unsigned int)cells, 4);
+    dma_copy_far(COLOR_LIN + c + COLS * 2, (unsigned long)(unsigned int)zero, 4);
+}
+
 unsigned char torch_dim(void) {
     if (!pl.lit) return TORCH_OUT;
     if (pl.fuel >= TORCH_LOW) return 0;
@@ -161,9 +211,10 @@ static unsigned char torch(signed int dxq, signed int dyq, unsigned char b) {
 static unsigned char ov_n, ov_x[MAX_OV], ov_y[MAX_OV], ov_k[MAX_OV], ov_v[MAX_OV];
 static unsigned char row_ov[MAX_OV];
 
-static const unsigned char obj_tile[18] = {
+static const unsigned char obj_tile[20] = {
     0, T_CHEST, T_CHEST_OPEN, T_IDOL, T_IDOL_SPENT, T_POTION, T_GOLD, T_BONES, T_BRAZIER,
     T_SCROLL, T_KEY, T_DRAUGHT, T_RAGS, T_STICKS, T_FUR, T_CANDLE, T_FLINT, T_FIRESTICK,
+    T_ARROWS, T_SHOT,
 };
 
 static void ov_add(unsigned char x, unsigned char y, unsigned char k, unsigned char v) {
@@ -210,6 +261,7 @@ void view_draw(void) {
     if (cy > MAP_H - VIEW_H) cy = MAP_H - VIEW_H;
     cam_x = (unsigned char)cx;
     cam_y = (unsigned char)cy;
+    kept_x = 0xFF;                            /* (all drawn anew) */
     ov_gather();
     for (ty = 0; ty < VIEW_H; ty++) {
         video_poll();

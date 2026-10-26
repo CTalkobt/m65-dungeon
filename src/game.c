@@ -134,6 +134,7 @@ void memory_sweep(void) {
 /* each item's colour in lists and messages */
 const unsigned char item_col[I_COUNT] = {
     C_RED, C_BLUE, C_BONE, C_BONE, C_BONE, C_GOLD, C_ORANGE, C_ORANGE, C_ORANGE, C_ORANGE, C_GREY, C_ORANGE,
+    C_TEXT, C_GREY,
 };
 
 /* the things one carries, one and many */
@@ -143,7 +144,18 @@ const char *item_name(unsigned char i, unsigned char n) {
                "scroll of far sight\0scrolls of far sight\0iron key\0iron keys\0"
                "twist of rags\0twists of rags\0bundle of sticks\0bundles of sticks\0"
                "scrap of fur\0scraps of fur\0tallow candle\0tallow candles\0"
-               "flint\0flints\0firestick\0firesticks", i * 2 + (n != 1));
+               "flint\0flints\0firestick\0firesticks\0arrow\0arrows\0cartridge\0cartridges", i * 2 + (n != 1));
+}
+
+/* the short bow, the longbow, the flintlock pistol, the musket: their
+ * blow and how far they reach */
+const unsigned char r_dice[4] = {1, 1, 2, 3};
+const unsigned char r_sides[4] = {6, 8, 6, 6};
+const unsigned char r_plus[4] = {0, 2, 2, 4};
+const unsigned char r_reach[4] = {6, 9, 5, 8};
+
+const char *ranged_name(unsigned char gun, unsigned char w) {
+    return nth("short bow\0longbow\0flintlock pistol\0flintlock musket", gun * 2 + w - 1);
 }
 
 /* the weapons: dice, sides, plus */
@@ -180,6 +192,9 @@ void player_new(void) {
     pl.items[I_POTION] = 2;
     pl.items[I_STICKS] = 1;
     pl.items[I_FIRESTICK] = 2;
+    pl.items[I_ARROWS] = 8;
+    pl.bow = 1;
+    pl.gun = 0;
     pl.fuel = 400;
     pl.lit = 1;
     pl.gold = 0;

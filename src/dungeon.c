@@ -295,6 +295,9 @@ void dungeon_make(void) {
     for (k = 0; k < 3 + rng_range(3); k++) put(spot(rng_range(nrooms)), O_RAGS + rng_range(4));
     if (rng_range(2)) put(spot(rng_range(nrooms)), O_FIRESTICK);
     if (rng_range(4) == 0) put(spot(rng_range(nrooms)), O_FLINT);
+    /* something to shoot */
+    for (k = 0; k < 1 + rng_range(2); k++) put(spot(rng_range(nrooms)), O_ARROWS);
+    if (pl.depth > 1 && rng_range(2)) put(spot(rng_range(nrooms)), O_SHOT);
 
     /* creatures: more, and worse, deeper down; none in the first room */
     for (k = 0; k < 6 + d * 2; k++)

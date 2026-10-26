@@ -63,16 +63,24 @@ static unsigned char find(unsigned char line, unsigned char good) {
     unsigned char r = rng_range(good ? 60 : 100), d, i;
     char buf[80];
     buf[0] = 0;
-    if (r < 20 && pl.weapon < WEAPONS - 1) {
+    if (r < 18 && pl.weapon < WEAPONS - 1) {
         weapon_take(pl.weapon + 1);
         str_cat(buf, "Wrapped in oilcloth: a ");
         str_cat(buf, weapon_name(pl.weapon));
         str_cat(buf, ". You take it up.");
-    } else if (r < 34 && pl.armour < ARMOURS - 1) {
+    } else if (r < 30 && pl.armour < ARMOURS - 1) {
         armour_take(pl.armour + 1);
         str_cat(buf, "Folded at the bottom: ");
         str_cat(buf, armour_name(pl.armour));
         str_cat(buf, ". You put it on.");
+    } else if (r < 38 && (pl.bow < RANGED_BEST || pl.gun < RANGED_BEST)) {
+        /* the bow first, then a flintlock, each with something to shoot */
+        i = pl.bow < RANGED_BEST ? 0 : 1;
+        d = i ? ++pl.gun : ++pl.bow;
+        pl.items[i ? I_SHOT : I_ARROWS] += i ? 4 : 8;
+        str_cat(buf, "Under a rotten cloak: a ");
+        str_cat(buf, ranged_name(i, d));
+        str_cat(buf, i ? ", and powder and ball." : ", and a sheaf of arrows.");
     } else if (r < 48) {
         d = 1 + rng_range(2);
         pl.items[I_POTION] += d;
@@ -91,12 +99,21 @@ static unsigned char find(unsigned char line, unsigned char good) {
         str_cat(buf, "A bone scroll case, sealed with wax: a ");
         str_cat(buf, item_name(i, 1));
         str_cat(buf, ".");
-    } else if (r < 86) {
+    } else if (r < 78 || (r < 86 && !pl.bow && !pl.gun)) {
         r = rng_range(10);
         i = r < 3 ? I_RAGS : r < 5 ? I_STICKS : r < 7 ? I_FUR : r < 8 ? I_CANDLE : r < 9 ? I_FIRESTICK : I_FLINT;
         d = i == I_FLINT ? 1 : 1 + rng_range(2);
         pl.items[i] += d;
         str_cat(buf, "Dry, wrapped in waxed cloth: ");
+        str_num(buf, d);
+        str_cat(buf, " ");
+        str_cat(buf, item_name(i, d));
+        str_cat(buf, ".");
+    } else if (r < 86) {
+        i = pl.gun && rng_range(2) ? I_SHOT : I_ARROWS;
+        d = i == I_SHOT ? 3 + rng_range(3) : 5 + rng_range(6);
+        pl.items[i] += d;
+        str_cat(buf, "Bundled in oilskin: ");
         str_num(buf, d);
         str_cat(buf, " ");
         str_cat(buf, item_name(i, d));

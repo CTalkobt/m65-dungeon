@@ -32,7 +32,8 @@ saves `build/shot.png`. `TEST=-DTEST_FIGHT=<0-6>` starts a fight at once
 top right, the frames each turn's sight and drawing take; `TEST=-DTEST_ITEMS`
 gives two of everything one can carry; `TEST=-DTEST_VAULT` starts beside a
 locked door and says where it is and whether the key lies outside the vault. `TEST=-DTEST_FUEL=<n>` starts with n turns
-of fuel on the torch.
+of fuel on the torch; `TEST=-DTEST_SHOOT=<kind>` puts a sleeping creature of
+that kind a few places away.
 Other letters in `KEYS` are typed as they are (`KEYS='F__i'` opens the
 inventory).
 `python3 tools/probe.py build/dungeon.d81 <seconds> r m<addr>` boots the disk
@@ -59,6 +60,7 @@ game builds with its SID effects only.
 | I | | what you carry (a letter uses it) | |
 | F / L | | feed the torch / light it | |
 | O (S on the title) | | settings: music and sound levels | |
+| T / G | | shoot the bow / fire the flintlock (again: the next target, RETURN: shoot) | |
 | S P C A R I | | | strike, parry, cast, advance, retreat, item |
 | F I H W | | | (casting) firebolt, frost, heal, ward |
 | H M F | | | (items) potion, draught, scroll of fire |
@@ -79,6 +81,18 @@ others make it slip.
 levels, 1-15, or off (RETURN turns the chosen one off and back on). The
 music's level is the SIDs' volume; the sounds' scales each sample. (`S`
 cannot be the key on the map: it is a step south.)
+
+**Shooting** (T: the bow, G: the flintlock). A red mark blinks on the
+nearest creature you can see (lit, or eyes in the dark) within reach and
+with a clear line; the same key or the cursor keys pick another, RETURN
+shoots, RUN/STOP thinks better of it. The shot flies, and hits more often
+near than far, less often at eyes in the dark; the creature wakes and
+comes. What dies of it gives its experience where it fell. A short bow
+(1d6, reach 6) and a longbow (1d8+2, 9) shoot arrows; a flintlock pistol
+(2d6+2, 5) and a musket (3d6+4, 8) shoot paper cartridges, hit harder,
+misfire one time in six, and wake everything near. The lich is warded:
+it must be faced. You start with a short bow and 8 arrows; chests give
+the better bows, then the flintlocks, and arrows and cartridges lie about.
 
 **The torch** burns a turn at a time (the bar at the top). Below 150
 turns its light reaches less far, below 60 it gutters, and at 0 it goes
@@ -235,10 +249,10 @@ the levels' tune leaves free. `build/music/*.wav` (`tune45 play --wav`)
 are the tunes to listen to on the PC.
 
 **Memory** (bank 0 is tight). The resident part (video, keys, the UI,
-sound, the tables) ends near $8500. The code overlays `walk` (explore +
+sound, the tables) ends near $8700. The code overlays `walk` (explore +
 view), `pack` (the inventory, items, the torch), `battle`, `gen` (the
 dungeon generator) and `scenes` (chest, idol, title, endings) are kept in
-attic RAM and copied by DMA into one region at $8D00 when called. A call
+attic RAM and copied by DMA into one region at $8900 when called. A call
 from one overlay into another brings the caller back on return, but not
 the caller's text in the meantime: `pack` copies a message into a buffer
 before handing it to `msg` (in `walk`). The game needs the MEGA65's attic RAM (every
@@ -248,8 +262,8 @@ round the player, memory a byte a place in colour RAM.
 
 | Where | What |
 |---|---|
-| $2001-$84FF | the program, its data and variables |
-| $8D00-$BBFF | the code overlay region |
+| $2001-$86FF | the program, its data and variables |
+| $8900-$BBFF | the code overlay region |
 | $BC00-$BFFF | the stack |
 | $12000-$197FF | DG<NAME>B: a close-up's last characters |
 | $19800-$1F7FF | the sounds' play slots (16 KB, 8 KB) |

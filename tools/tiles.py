@@ -407,6 +407,78 @@ ART = {
         "..kkkkkkkkkkkkk.",
         "................",
     ],
+    "arrows": [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "bB.........ks...",
+        ".bnnnnnnnnnkss..",
+        "bB.........ks...",
+        "................",
+        "bB.........ks...",
+        ".bnnnnnnnnnkss..",
+        "bB.........ks...",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+    "shot": [
+        "................",
+        "................",
+        "................",
+        "................",
+        "....kk.kk.kk....",
+        "...kSskSskSsk...",
+        "...kbbkbbkbbk...",
+        "...kbBkbBkbBk...",
+        "...kbBkbBkbBk...",
+        "...kbBkbBkbBk...",
+        "...kbbkbbkbbk...",
+        "....kk.kk.kk....",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+    "aim": [
+        "eeee........eeee",
+        "e..............e",
+        "e..............e",
+        "e..............e",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "e..............e",
+        "e..............e",
+        "e..............e",
+        "eeee........eeee",
+    ],
+    "missile": [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "......ZZZZ......",
+        "......ZZZZ......",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
     "gold": [
         "................",
         "................",
@@ -677,7 +749,7 @@ def terrain_kinds():
 
 SPRITES = ("chest", "chest_open", "idol", "idol_spent", "potion", "gold", "bones", "brazier",
            "scroll", "key", "draught", "rags", "sticks", "fur", "candle", "flint", "firestick",
-           "player", "player_dark", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich")
+           "arrows", "shot", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich")
 
 
 def sprite_kinds(base):
@@ -693,7 +765,7 @@ def sprite_kinds(base):
         sh[1:, 1:] = mask[:-1, :-1]
         comp = np.where((sh & ~mask)[..., None], comp * 0.55, comp)
         v = [lit(comp, l, glow) for l in range(4)]
-        creature = name in ("rat", "skeleton", "spider", "slime", "orc", "wraith", "lich")
+        creature = name in ("rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "aim", "missile")
         if creature and glow.any():
             eyes = np.zeros((T, T, 3), np.float32)
             eyes[glow] = img[glow] * 0.8
@@ -702,6 +774,12 @@ def sprite_kinds(base):
             v.append(None)
         if name == "brazier":
             v = [lit(comp, 0, glow)] * 4 + [None]      # it lights itself
+        elif name in ("aim", "missile"):
+            v = [v[4]] * 5                              # only what glows, over anything
+        elif name == "player":
+            v = [v[0], None, None, None, None]          # (view.c: always bright with the torch lit)
+        elif name == "player_dark":
+            v = [None, None, None, v[3], None]          # (and dim with it out)
         out.append((name.upper(), v))
     return out
 
