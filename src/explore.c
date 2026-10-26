@@ -10,6 +10,7 @@
 #pragma cc45 overlay(walk)
 #pragma cc45 noescape_strings
 #include "hw.h"
+#include "assets.h"
 #include "video.h"
 #include "rng.h"
 #include "game.h"
@@ -213,6 +214,9 @@ unsigned char explore(void) {
     if (TEST_VIEW == 1) chest_view(AT(pl.x, pl.y));
     else idol_view(AT(pl.x, pl.y));
     screen_in();
+#endif
+#ifdef TEST_CACHE
+    scene_load(S_RAT);               /* (tests: the next close-up from the cache) */
 #endif
 #ifdef TEST_FIGHT
     /* (tests: a fight with that kind of creature at once) */

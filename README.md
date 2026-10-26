@@ -100,27 +100,30 @@ backdrop is a wall of rough stone in a pool of torchlight. Each has two
 frames (waiting and attacking, shut and open, dormant and awake). Both get
 one 119-colour palette plus an 8-colour glow ramp, with ordered (Bayer)
 dithering: smooth, and its patterns repeat, so fewer characters differ. Their 8 x 8 characters
-are shared between the frames and, past 1000 characters, merged: the
-pair of characters whose merging costs least (colour difference times the
-cells using them) first, so the losses go to the dark corners. A
-close-up is two files, DG<NAME>A in bank 5 (palette, header, both frames'
-maps, 778 characters) and DG<NAME>B in bank 1 (the rest), loaded through
-the KERNAL when needed (`src/scene.c`). A frame is shown by DMA-copying its
-map into the screen, a row at a time.
+are shared between the frames and, past 1641 (all that banks 5 and 1
+hold), merged: the pair of characters whose merging costs least (colour
+difference times the cells using them) first, so the few losses go to
+the dark corners. A close-up is two files, DG<NAME>A in bank 5 (palette,
+header, both frames' maps, 778 characters) and DG<NAME>B in bank 1 (the
+rest), loaded through the KERNAL the first time it is needed
+(`src/scene.c`) and then kept in attic RAM, so the next fight with that
+creature is two DMA copies. A frame is shown by DMA-copying its map into
+the screen, a row at a time.
 
 **Packing** (`tools/pack.py`, `unpack` in `src/scene.c`). Every art file
 is packed with a byte-oriented LZ (literal runs, fills, and copies from 1
 or 2 bytes back that never overlap what they write). Each file loads near
 the end of the area it unpacks to, at an offset the packer works out so
 that the writing never overtakes the reading, and unpacks in place, a DMA
-job per token. The art is 478 KB on the disk instead of 707 KB (the tiles
-to 31%, the close-ups to 62-85%).
+job per token. The art is about 700 KB on the disk instead of 1.03 MB, which
+would not fit (the tiles to 31%, the close-ups to 58-82%).
 
 **Memory** (bank 0 is tight). The resident part (video, keys, the UI,
 sound, the tables) ends near $8300. The code overlays `walk` (explore +
 view), `battle`, `gen` (the dungeon generator) and `scenes` (chest, idol,
-title, endings) are kept in bank 1 at $16000 and copied by DMA into one
-region at $9800 when called. Things lying about are a short list, sight a
+title, endings) are kept in attic RAM and copied by DMA into one region at
+$9800 when called. The game needs the MEGA65's attic RAM (every
+production MEGA65 and xemu have it). Things lying about are a short list, sight a
 window round the player, memory a byte a place.
 
 | Where | What |
@@ -128,8 +131,9 @@ window round the player, memory a byte a place.
 | $2001-$82FF | the program, its data and variables |
 | $9800-$BBFF | the code overlay region |
 | $BC00-$BFFF | the stack |
-| $12000- | DG<NAME>B: a close-up's last characters |
-| $16000-$1F7FF | DUNGEON.OV1: the overlays |
+| $12000-$1F7FF | DG<NAME>B: a close-up's last characters |
 | $40000-$4FFFF | DGTILES: tile palette, tiles, frame and bar characters |
 | $50000-$5DFFF | DG<NAME>A: a close-up's palette, maps, characters |
 | $5E000-$5FF3F | the screen |
+| $8000000- | attic RAM: DUNGEON.OV1, the overlays |
+| $8100000- | attic RAM: the close-ups seen so far, 128 KB each |

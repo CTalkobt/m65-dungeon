@@ -32,9 +32,9 @@ CFLAGS  := -O2 -I$(M65)/lib/include -Isrc -I$(ART) $(DEFS)
 
 TARGET  := $(BUILD)/dungeon.prg
 # the code overlays (walk, battle, gen, scenes), written by ln45 with the
-# program and kept at the top of bank 1 (bank 5 holds the close-ups)
+# program and kept in attic RAM (loaded through bank 5 at the start)
 OVL     := $(BUILD)/dungeon.ov1
-OVL_STORE := 0x16000-0x1F7FF
+OVL_STORE := 0x8000000-0x800FFFF
 C_MODS  := main video load rng game dungeon view ui explore battle detail front scene sfx
 OBJS    := $(C_MODS:%=$(BUILD)/%.o45) $(BUILD)/ld.o45 $(BUILD)/assets.o45
 HEADERS := $(wildcard src/*.h) $(ART)/assets.h

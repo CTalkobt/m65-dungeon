@@ -34,11 +34,10 @@ SCENE_A = 0x50000
 SCENE_A_END = 0x5E000          # the screen is above
 SCENE_B = 0x12000
 SCENE_B_END = 0x1F800          # colour RAM's window above
-OVL_STORE = 0x16000            # the code overlays (Makefile OVL_STORE)
 FRAMES = 2
 FIRE0 = 120                    # the tiles' fire: 4 palette entries the program turns round
 FIRE_RAMP = [(150, 30, 4), (235, 100, 14), (255, 190, 50), (255, 240, 160)]
-SCENE_CHARS = 1000             # a close-up's characters at most: nine of them must fit on the disk
+SCENE_CHARS = 1641             # a close-up's characters at most (all bank 5 and bank 1 hold)
 SW, SH = W // 8, H // 8
 
 
@@ -134,7 +133,7 @@ def build_scene(out, name, pv):
     hdr_end = PAL_BYTES + 64 + FRAMES * SW * SH * 2
     assert hdr_end % 64 == 0
     na = (SCENE_A_END - SCENE_A - hdr_end) // 64
-    nb = (OVL_STORE - SCENE_B) // 64
+    nb = (SCENE_B_END - SCENE_B) // 64 - 1          # (room for the packed file's last bytes)
     uniq, maps = shrink_charset(blks, pal, min(na + nb, SCENE_CHARS))
     nums = np.where(np.arange(len(uniq)) < na,
                     (SCENE_A + hdr_end) // 64 + np.arange(len(uniq)),
@@ -148,7 +147,7 @@ def build_scene(out, name, pv):
     b = uniq[na:].tobytes()
     base = "dg%s" % name
     skip_a, pa = write(os.path.join(out, base + "a.bin"), SCENE_A, a, 0x60000)   # (a few bytes into the screen: it is dark then)
-    skip_b, pb = write(os.path.join(out, base + "b.bin"), SCENE_B, b if b else bytes(64), OVL_STORE)
+    skip_b, pb = write(os.path.join(out, base + "b.bin"), SCENE_B, b if b else bytes(64), SCENE_B_END)
     # the preview: what the screen will show, after the merging
     for f, m in enumerate(maps):
         img = uniq[m].reshape(SH, SW, 8, 8).transpose(0, 2, 1, 3).reshape(H, W)

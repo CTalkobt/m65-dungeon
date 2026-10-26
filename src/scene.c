@@ -8,6 +8,10 @@
  * The files are packed (tools/pack.py): each loads near the end of the
  * area it unpacks to and unpacks in place, by DMA: a copy of the bytes as
  * they are, a fill, or a copy of what is unpacked already.
+ *
+ * Once unpacked, a close-up is kept in attic RAM (128 KB each from
+ * CACHE_LIN; the code overlays are below, at $8000000): the next time it
+ * is two DMA copies, not the disk.
  */
 #include <dma.h>
 #include "hw.h"
@@ -18,6 +22,12 @@
 
 #define SC_COL 12
 #define SC_ROW 1
+#define BANK1_LIN 0x0012000UL
+#define BANK5_LEN 0xE000                 /* $50000-$5DFFF */
+#define BANK1_LEN 0xD800                 /* $12000-$1F7FF */
+#define CACHE_LIN 0x8100000UL
+
+static unsigned int cached;              /* a bit a close-up */
 
 static unsigned char loaded = 0xFF;
 
@@ -60,7 +70,15 @@ void unpack(unsigned long src) {
 unsigned char scene_load(unsigned char s) {
     char name[16];
     unsigned char n = 0, ok;
+    unsigned long at = CACHE_LIN + ((unsigned long)s << 17);
     if (loaded == s) return 1;
+    if (cached & (1U << s)) {
+        dma_copy_far(SCENE_LIN, at, BANK5_LEN);
+        dma_copy_far(BANK1_LIN, at + 0x10000UL, BANK1_LEN);
+        loaded = s;
+        video_pal_load(SCENE_LIN, PAL_SCENE, 255 - PAL_SCENE);
+        return 1;
+    }
     while (scene_file[s][n]) {
         name[n] = scene_file[s][n];
         n++;
@@ -71,8 +89,13 @@ unsigned char scene_load(unsigned char s) {
     if (ok) unpack(SCENE_LIN + scene_skip[s][0]);
     name[n] = 'B';
     if (ok) ok = load_file(name, 1);
-    if (ok) unpack(0x12000UL + scene_skip[s][1]);
+    if (ok) unpack(BANK1_LIN + scene_skip[s][1]);
     loaded = ok ? s : 0xFF;
+    if (ok) {
+        dma_copy_far(at, SCENE_LIN, BANK5_LEN);
+        dma_copy_far(at + 0x10000UL, BANK1_LIN, BANK1_LEN);
+        cached |= 1U << s;
+    }
     video_pal_load(SCENE_LIN, PAL_SCENE, 255 - PAL_SCENE);
     return ok;
 }
