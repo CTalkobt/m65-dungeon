@@ -299,7 +299,9 @@ sound, the tables, the message line) ends near $8200; the overlay
 region starts at $8E00. The code overlays `walk` (explore +
 view), `pack` (the inventory, items, the torch), `aim` (shooting, the
 creatures' tricks), `battle`, `gen` (the dungeon generator, saving, traps
-and secrets) and `scenes` (chest, idol, title, endings, settings) are kept in
+and secrets, a new player, levels gained), `scenes` (loading and showing
+the close-ups; the chest and the idol) and `front` (the title, settings,
+endings, the start) are kept in
 attic RAM ($8000000-$801FFFF: two 64 KB banks, a file each, DUNGEON.OV1
 and, once the first is full, DUNGEON.OV2) and copied by DMA into one
 region at $8E00 when called. A call

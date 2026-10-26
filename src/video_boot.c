@@ -1,6 +1,6 @@
 /* video_boot.c — the display set up at the start, and put back as it was
- * at the end (the overlay "scenes": only main calls them) */
-#pragma cc45 overlay(scenes)
+ * at the end (the overlay "front": only main calls them) */
+#pragma cc45 overlay(front)
 #include <dma.h>
 #include "hw.h"
 #include "video.h"

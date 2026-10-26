@@ -1,7 +1,7 @@
 /* settings.c — the music's and the effects' levels, on and off: a panel
  * over whatever is on the screen (the caller draws it again after) (the
- * overlay "scenes") */
-#pragma cc45 overlay(scenes)
+ * overlay "front") */
+#pragma cc45 overlay(front)
 #pragma cc45 noescape_strings
 #include "hw.h"
 #include "assets.h"

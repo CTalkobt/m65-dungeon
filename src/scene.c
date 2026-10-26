@@ -12,7 +12,11 @@
  * Once unpacked, a close-up is kept in attic RAM (128 KB each from
  * CACHE_LIN; the code overlays are below, at $8000000): the next time it
  * is two DMA copies, not the disk.
+ *
+ * In the overlay "scenes" (with the chest and the idol): the title and the
+ * fights call into it for a frame now and then.
  */
+#pragma cc45 overlay(scenes)
 #include <dma.h>
 #include "hw.h"
 #include "assets.h"

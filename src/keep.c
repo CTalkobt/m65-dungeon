@@ -1,5 +1,5 @@
-/* keep.c — the game written to the disk and taken up again (DGSAVE) (the
- * overlay "gen")
+/* keep.c — the game written to the disk and taken up again (DGSAVE); a new
+ * player, and the levels gained (the overlay "gen")
  *
  * The file is built in bank 1 at KEEP_LIN (the long sounds' play slot: the
  * sounds are stopped meanwhile) and loads back there: the player and the
@@ -113,4 +113,48 @@ unsigned char game_load(void) {
 
 void game_unsave(void) {
     scratch_file("DGSAVE");
+}
+
+/* ---------------------------------------------------------------- the player */
+
+void player_new(void) {
+    unsigned char k;
+    pl.hp = pl.maxhp = 30;
+    pl.mp = pl.maxmp = 12;
+    pl.level = 1;
+    for (k = 0; k < I_COUNT; k++) pl.items[k] = 0;
+    pl.items[I_POTION] = 2;
+    pl.items[I_STICKS] = 1;
+    pl.items[I_FIRESTICK] = 2;
+    pl.items[I_ARROWS] = 8;
+    pl.bow = 1;
+    pl.gun = 0;
+    pl.fuel = 400;
+    pl.lit = 1;
+    pl.gold = 0;
+    pl.xp = 0;
+    pl.depth = 1;
+    pl.fade = 2;
+    weapon_take(0);
+    armour_take(0);
+    pl.ups = pl.keen = pl.steady = pl.aim = pl.wary = 0;
+    turn = 1;
+}
+
+/* the experience to reach each level after the first */
+static const unsigned int next_level[] = {20, 50, 100, 170, 260, 380, 530, 700, 900, 65535};
+
+unsigned char gain_xp(unsigned int xp) {
+    unsigned char up = 0;
+    pl.xp += xp;
+    while (pl.level < 10 && pl.xp >= next_level[pl.level - 1]) {
+        pl.level++;
+        pl.maxhp += 4;
+        pl.maxmp += 2;
+        pl.hp = pl.maxhp;
+        pl.mp = pl.maxmp;
+        pl.ups++;
+        up++;
+    }
+    return up;
 }

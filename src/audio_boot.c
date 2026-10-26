@@ -1,8 +1,8 @@
 /* audio_boot.c — the sampled sounds decoded into attic RAM, once, at the
- * start (the overlay "scenes", with the title they load under; audio.c
+ * start (the overlay "front", with the title they load under; audio.c
  * plays them)
  */
-#pragma cc45 overlay(scenes)
+#pragma cc45 overlay(front)
 #include <dma.h>
 #include "hw.h"
 #include "load.h"

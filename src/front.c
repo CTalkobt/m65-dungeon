@@ -1,5 +1,5 @@
-/* front.c — the title and the endings (the overlay "scenes") */
-#pragma cc45 overlay(scenes)
+/* front.c — the title and the endings (the overlay "front") */
+#pragma cc45 overlay(front)
 #pragma cc45 noescape_strings
 #include "hw.h"
 #include "assets.h"
