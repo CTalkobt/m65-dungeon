@@ -19,7 +19,8 @@ make SEED=1234  # the same dungeons every time
 make clean
 ```
 
-Needs Python 3 with numpy and PIL for the art, the M65Compiler tree next to
+Needs Python 3 with numpy and PIL for the art and the sound packs (below)
+for the sampled sounds, the M65Compiler tree next to
 this one (`../m65compiler`, or `make M65=<path>`), and xemu to run it. On a
 MEGA65, copy `build/dungeon.d81` to the SD card, mount it and run DUNGEON.
 
@@ -30,6 +31,16 @@ saves `build/shot.png`. `TEST=-DTEST_FIGHT=<0-6>` starts a fight at once
 `TEST=-DTEST_VIEW=1` / `2` opens a chest / an idol.
 `python3 tools/probe.py build/dungeon.d81 <seconds> r m<addr>` boots the disk
 and asks xemu's monitor for the registers and memory.
+
+## Sound
+
+The sampled sounds come from free sound packs (zip files) that are not in
+this repository: their licences allow the sounds in a game but not the
+files passed on. `make` reads them from `SFX_DIR` (default
+`~/Downloads/sfx`): NimbeKit's Fantasy RPG collection, the free Fantasy,
+Roguelike and Lost Temple packs from moneywithjj, and the Packsmithy
+sampler. `tools/gen_sfx.py` lists which file each sound comes from. Without
+the packs the game builds with its SID effects only.
 
 ## Playing
 
@@ -100,8 +111,8 @@ backdrop is a wall of rough stone in a pool of torchlight. Each has two
 frames (waiting and attacking, shut and open, dormant and awake). Both get
 one 119-colour palette plus an 8-colour glow ramp, with ordered (Bayer)
 dithering: smooth, and its patterns repeat, so fewer characters differ. Their 8 x 8 characters
-are shared between the frames and, past 1641 (all that banks 5 and 1
-hold), merged: the pair of characters whose merging costs least (colour
+are shared between the frames and, past 1257 (what banks 5 and 1
+hold beside the sounds' slots), merged: the pair of characters whose merging costs least (colour
 difference times the cells using them) first, so the few losses go to
 the dark corners. A close-up is two files, DG<NAME>A in bank 5 (palette,
 header, both frames' maps, 778 characters) and DG<NAME>B in bank 1 (the
@@ -118,6 +129,15 @@ that the writing never overtakes the reading, and unpacks in place, a DMA
 job per token. The art is about 700 KB on the disk instead of 1.03 MB, which
 would not fit (the tiles to 31%, the close-ups to 58-82%).
 
+**Sound** (`tools/gen_sfx.py`, `src/audio.c`). 28 sounds, 22 s at 12 kHz:
+cut, resampled, normalised, and coded in blocks of 16 samples (a predictor
+and a shift a block, 4-bit residues: 4.5 bits a sample, 150 KB on the
+disk). They are decoded at the start into attic RAM. The audio DMA reads
+chip RAM only, so a sound is copied into one of two play slots in bank 1
+when it is wanted: a 16 KB one for the long sounds (channel 0) and an 8 KB
+one for the short (channel 1). On the map, now and then, a drip, a chain,
+a far footfall, off to one side. The SIDs play where there is no sample.
+
 **Memory** (bank 0 is tight). The resident part (video, keys, the UI,
 sound, the tables) ends near $8300. The code overlays `walk` (explore +
 view), `battle`, `gen` (the dungeon generator) and `scenes` (chest, idol,
@@ -131,9 +151,11 @@ window round the player, memory a byte a place.
 | $2001-$82FF | the program, its data and variables |
 | $9800-$BBFF | the code overlay region |
 | $BC00-$BFFF | the stack |
-| $12000-$1F7FF | DG<NAME>B: a close-up's last characters |
+| $12000-$197FF | DG<NAME>B: a close-up's last characters |
+| $19800-$1F7FF | the sounds' play slots (16 KB, 8 KB) |
 | $40000-$4FFFF | DGTILES: tile palette, tiles, frame and bar characters |
 | $50000-$5DFFF | DG<NAME>A: a close-up's palette, maps, characters |
 | $5E000-$5FF3F | the screen |
 | $8000000- | attic RAM: DUNGEON.OV1, the overlays |
+| $8080000- | attic RAM: the sounds, decoded |
 | $8100000- | attic RAM: the close-ups seen so far, 128 KB each |

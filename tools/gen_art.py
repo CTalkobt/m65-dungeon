@@ -33,11 +33,11 @@ TILES_LIN = 0x40000
 SCENE_A = 0x50000
 SCENE_A_END = 0x5E000          # the screen is above
 SCENE_B = 0x12000
-SCENE_B_END = 0x1F800          # colour RAM's window above
+SCENE_B_END = 0x19800          # the sounds' play slots above (src/audio.c)
 FRAMES = 2
 FIRE0 = 120                    # the tiles' fire: 4 palette entries the program turns round
 FIRE_RAMP = [(150, 30, 4), (235, 100, 14), (255, 190, 50), (255, 240, 160)]
-SCENE_CHARS = 1641             # a close-up's characters at most (all bank 5 and bank 1 hold)
+SCENE_CHARS = 1641             # a close-up's characters at most (bank 5 and bank 1 hold fewer)
 SW, SH = W // 8, H // 8
 
 

@@ -70,10 +70,11 @@ void chest_view(unsigned int at) {
         video_fade(0);
         return;
     }
-    sfx(SFX_CREAK);
+    sfx(SFX_CHEST);
     if (rng_range(5) == 0) {
         d = 2 + rng_range(3) * pl.depth;
         pl.hp = pl.hp > d ? pl.hp - d : 1;
+        sfx(SFX_TRAP);
         ui_wrap(TEXT_COL, line, TEXT_W, "A needle springs from the lock and bites your hand!", C_RED);
         line += 2;
         REG(0xD020) = C_BLOOD;
@@ -137,7 +138,7 @@ void idol_view(unsigned int at) {
         video_fade(0);
         return;
     }
-    sfx(SFX_CHIME);
+    sfx(SFX_BELL);
     pause(20);
     scene_show(1);
     wash(140, 255, 190, 16);

@@ -10,6 +10,7 @@
 #
 # Variables: M65 (the M65Compiler tree, default ../m65compiler), XEMU,
 # SEED (a fixed dungeon seed, e.g. make SEED=1234), SHOT_DELAY (seconds),
+# SFX_DIR (the sound packs' zip files, default ~/Downloads/sfx),
 # DEFS (extra -D options).
 
 M65     ?= ../m65compiler
@@ -23,24 +24,29 @@ PYTHON  ?= python3
 
 BUILD   ?= build
 ART     := build/art
+SFX     := build/sfx
+# the sound packs (zip files) the sampled sounds come from; without them
+# the game has its SID effects only
+SFX_DIR ?= $(HOME)/Downloads/sfx
 DEFS    ?=
 ifdef SEED
 DEFS    += -DSEED=$(SEED)
 endif
 
-CFLAGS  := -O2 -I$(M65)/lib/include -Isrc -I$(ART) $(DEFS)
+CFLAGS  := -O2 -I$(M65)/lib/include -Isrc -I$(ART) -I$(SFX) $(DEFS)
 
 TARGET  := $(BUILD)/dungeon.prg
 # the code overlays (walk, battle, gen, scenes), written by ln45 with the
 # program and kept in attic RAM (loaded through bank 5 at the start)
 OVL     := $(BUILD)/dungeon.ov1
 OVL_STORE := 0x8000000-0x800FFFF
-C_MODS  := main video load rng game dungeon view ui explore battle detail front scene sfx
-OBJS    := $(C_MODS:%=$(BUILD)/%.o45) $(BUILD)/ld.o45 $(BUILD)/assets.o45
-HEADERS := $(wildcard src/*.h) $(ART)/assets.h
+C_MODS  := main video load rng game dungeon view ui explore battle detail front scene sfx audio
+OBJS    := $(C_MODS:%=$(BUILD)/%.o45) $(BUILD)/ld.o45 $(BUILD)/assets.o45 $(BUILD)/sfxdata.o45
+HEADERS := $(wildcard src/*.h) $(ART)/assets.h $(SFX)/sfxdata.h
 
 # the art: one file a monster, the tiles, the chest and the idol
 ART_STAMP := $(ART)/art.stamp
+SFX_STAMP := $(SFX)/sfx.stamp
 DISK    := $(BUILD)/dungeon.d81
 
 .PHONY: all run disk art screenshot shot clean
@@ -56,6 +62,14 @@ $(ART_STAMP) $(ART)/assets.h &: $(wildcard tools/*.py)
 	touch $(ART_STAMP)
 
 art: $(ART_STAMP)
+
+$(SFX_STAMP) $(SFX)/sfxdata.h &: tools/gen_sfx.py $(wildcard $(SFX_DIR)/*.zip)
+	mkdir -p $(SFX)
+	$(PYTHON) tools/gen_sfx.py $(SFX_DIR) $(SFX)
+	touch $(SFX_STAMP)
+
+$(BUILD)/sfxdata.o45: $(SFX_STAMP) | $(BUILD)
+	$(CC45) $(CFLAGS) -c $(SFX)/sfxdata.c -o $@
 
 $(BUILD)/%.o45: src/%.c $(HEADERS) | $(BUILD)
 	$(CC45) $(CFLAGS) -c $< -o $@
@@ -73,12 +87,13 @@ disk: $(DISK)
 
 # the program first (-autoload runs the first program), then the art under
 # the names the program loads it by (build/files.txt, from gen_art.py)
-$(DISK): $(TARGET) $(OVL) $(ART_STAMP)
+$(DISK): $(TARGET) $(OVL) $(ART_STAMP) $(SFX_STAMP)
 	rm -f $@
 	$(DISK45) create $@ -n "DUNGEON" -i "DG"
 	$(DISK45) add $@ $(TARGET) DUNGEON
 	$(DISK45) add $@ $(OVL) DUNGEON.OV1
 	while read f n; do $(DISK45) add $@ $(ART)/$$f $$n || exit 1; done < $(ART)/files.txt
+	while read f n; do $(DISK45) add $@ $(SFX)/$$f $$n || exit 1; done < $(SFX)/files.txt
 
 run: $(DISK)
 	$(XEMU) -8 $(abspath $(DISK)) -autoload

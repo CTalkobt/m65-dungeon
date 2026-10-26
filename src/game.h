@@ -187,7 +187,30 @@ void sfx_update(void);
 #define SFX_CHIME  9
 #define SFX_DEATH  10
 #define SFX_FROST  11
+#define SFX_SWING  12
+#define SFX_HEAVY  13
+#define SFX_FIRE   14
+#define SFX_HEAL   15
+#define SFX_WARD   16
+#define SFX_POISON 17
+#define SFX_CURSE  18
+#define SFX_DRINK  19
+#define SFX_VICTORY 20
+#define SFX_LEVEL  21
+#define SFX_DEFEAT 22
+#define SFX_STIR   23
+#define SFX_BELL   24
+#define SFX_TRAP   25
+#define SFX_CHEST  26
+#define SFX_COUNT  27
 void sfx(unsigned char n);
+
+/* audio.c: the sampled sounds (sfx plays them where there is one) */
+extern unsigned char audio_ok;
+void audio_init(void);                /* decoded into attic RAM: at the start */
+void audio_off(void);
+void audio_play(unsigned char id, unsigned char left, unsigned char right);
+void audio_update(void);              /* once a frame */
 
 /* front.c */
 unsigned char title(void);            /* 0: the player wants to leave */

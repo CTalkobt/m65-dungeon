@@ -129,7 +129,10 @@ static void draw_intent(void) {
     unsigned char n = 0, c;
     if (frozen) the("is frozen in place.");
     else if (staggered) the("reels from your blow.");
-    else the(intent == A_MELEE ? mt->melee_tele : tele[intent]);
+    else if (intent == A_MELEE) {
+        the(mt->melee_tele);
+        str_cat(buf, ".");
+    } else the(tele[intent]);
     while (buf[n]) n++;
     video_blank(1, 33, 78, 1);
     c = intent == A_HEAVY || intent == A_BOLT || intent == A_LUNGE ? C_RED : intent == A_GUARD || intent == A_PHASE || intent == A_CLOSE ? C_DIM : C_ORANGE;
@@ -144,6 +147,7 @@ static const char act_key[NACT] = {'s', 'p', 'c', 'a', 'r', 'q'};
 static const char *const spell_name[4] = {"Firebolt  3", "Frost     4", "Heal      5", "Ward      4"};
 static const char spell_key[4] = {'f', 'i', 'h', 'w'};
 static const unsigned char spell_cost[4] = {3, 4, 5, 4};
+static const unsigned char spell_sfx[4] = {SFX_FIRE, SFX_FROST, SFX_HEAL, SFX_WARD};
 
 static unsigned char can(unsigned char a) {
     if (casting) return pl.mp >= spell_cost[a];
@@ -262,9 +266,9 @@ static unsigned char roll(void) {
     return d;
 }
 
-/* the creature lunges in its attacking pose */
-static void lunge(void) {
-    sfx(SFX_GROWL);
+/* the creature lunges in its attacking pose, with a sound */
+static void lunge(unsigned char s) {
+    sfx(s);
     scene_show(1);
     pause(14);
 }
@@ -305,7 +309,7 @@ static unsigned char creature_acts(void) {
             say(buf, C_DIM);
             return 1;
         }
-        lunge();
+        lunge(a == A_HEAVY ? SFX_HEAVY : SFX_SWING);
         if (parrying) {
             sfx(SFX_CLANG);
             flash(255, 255, 255, 10);
@@ -335,13 +339,14 @@ static unsigned char creature_acts(void) {
         if (!hurt(d, 1)) return 0;
         if (a == A_POISON) {
             poison = 3;
+            sfx(SFX_POISON);
             say("Venom burns in your veins.", C_GREEN);
         }
         return 1;
     case A_SPIT:
     case A_CHILL:
     case A_BOLT:
-        lunge();
+        lunge(SFX_GROWL);
         d = roll();
         if (a == A_BOLT) {
             d += rng_dice(2, 6);
@@ -362,7 +367,7 @@ static unsigned char creature_acts(void) {
         scene_show(0);
         return hurt(d, a == A_SPIT);
     case A_WEB:
-        lunge();
+        lunge(SFX_GROWL);
         scene_show(0);
         snared = 2;
         say("Sticky silk binds your legs!", C_BONE);
@@ -370,7 +375,7 @@ static unsigned char creature_acts(void) {
         return 1;
     case A_DRAIN:
         if (dist == 2) return 1;
-        lunge();
+        lunge(SFX_GROWL);
         d = roll();
         if (parrying) d = d / 2 + 1;
         say("It drinks your warmth!", C_PURPLE);
@@ -387,7 +392,7 @@ static unsigned char creature_acts(void) {
         draw_foe();
         return 1;
     case A_ROAR:
-        lunge();
+        lunge(SFX_GROWL);
         roar = 1;
         the("roars! Its next blow will be terrible.");
         say(buf, C_RED);
@@ -396,7 +401,7 @@ static unsigned char creature_acts(void) {
         draw_foe();
         return 1;
     case A_CURSE:
-        sfx(SFX_SPELL);
+        sfx(SFX_CURSE);
         flash(80, 0, 120, 14);
         d = 3 + rng_range(4);
         pl.mp = pl.mp > d ? pl.mp - d : 0;
@@ -435,7 +440,7 @@ static unsigned char player_acts(unsigned char a) {
     if (casting) {
         casting = 0;
         pl.mp -= spell_cost[a];
-        sfx(a == 1 ? SFX_FROST : SFX_SPELL);
+        sfx(spell_sfx[a]);
         switch (a) {
         case 0:
             say("You hurl a bolt of fire!", C_ORANGE);
@@ -479,6 +484,8 @@ static unsigned char player_acts(unsigned char a) {
     }
     switch (a) {
     case 0:
+        sfx(SFX_SWING);
+        pause(6);
         sfx(SFX_HIT);
         d = rng_dice(pl.wdice, pl.wsides) + pl.wplus + pl.level - 1;
         d = d > mt->def ? d - mt->def : 1;
@@ -520,7 +527,7 @@ static unsigned char player_acts(unsigned char a) {
         d = 15 + pl.level * 2;
         pl.hp = pl.hp + d > pl.maxhp ? pl.maxhp : pl.hp + d;
         said_num("You drink. +", d, " life.", C_GREEN);
-        sfx(SFX_CHIME);
+        sfx(SFX_DRINK);
         break;
     }
     draw_range();
@@ -596,7 +603,7 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
         pause(10);
         if (!creature_acts()) {
             say("You fall...", C_BLOOD);
-            sfx(SFX_DEATH);
+            sfx(SFX_DEFEAT);
             pause(60);
             video_fade(0);
             return DIED;
@@ -605,6 +612,7 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
         if (!m->hp) break;
         if (poison) {
             poison--;
+            sfx(SFX_POISON);
             say("The venom burns.", C_GREEN);
             if (!hurt(2, 0)) {
                 video_fade(0);
@@ -616,7 +624,7 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
         draw_you();
     }
     /* the creature falls: it fades into the dark */
-    sfx(SFX_DEATH);
+    sfx(SFX_VICTORY);
     the(m->kind == M_SLIME ? "dissolves." : m->kind == M_WRAITH ? "comes apart in the wind." : "falls, and moves no more.");
     say(buf, C_HILITE);
     v_wash_r = v_wash_g = v_wash_b = 0;
@@ -624,7 +632,7 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
     said_num("You gain ", mt->xp, " experience.", C_GOLD);
     if (gain_xp(mt->xp)) {
         say("You have grown stronger!", C_GOLD);
-        sfx(SFX_CHIME);
+        sfx(SFX_LEVEL);
         draw_you();
     }
     m->hp = 0;

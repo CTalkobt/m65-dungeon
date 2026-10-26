@@ -1,9 +1,11 @@
-/* sfx.c — sound effects on the SIDs: SID 1 (left) and SID 3 (right) play
- * the same; three voices, the oldest effect gives way. An effect is a
+/* sfx.c — sound effects: a sampled sound where there is one (audio.c,
+ * the sound packs), else the SIDs: SID 1 (left) and SID 3 (right) play the
+ * same; three voices, the oldest effect gives way. A SID effect is a
  * waveform, a pitch sliding each frame, an envelope and a length.
  */
 #include "hw.h"
 #include "game.h"
+#include "sfxdata.h"
 
 #define SID_L 0xD400
 #define SID_R 0xD440
@@ -35,6 +37,19 @@ static const struct fx fxs[] = {
     {NOISE, 0x7000, -0x280, 22, 0x2B, 0x00},    /* frost */
 };
 
+/* the sampled sound for each effect */
+static const unsigned char sampled[SFX_COUNT] = {
+    SND_STEP, SND_HIT, SND_HURT, SND_CLANG, SND_FIRE, SND_DOOR, SND_GROWL, SND_COIN, SND_DOOR,
+    SND_COIN, SND_DEFEAT, SND_FROST, SND_SWING, SND_HEAVY, SND_FIRE, SND_HEAL, SND_WARD,
+    SND_POISON, SND_CURSE, SND_DRINK, SND_VICTORY, SND_LEVEL, SND_DEFEAT, SND_STIR, SND_BELL,
+    SND_TRAP, SND_CHEST,
+};
+/* without samples, the effects past the SID's own: the nearest SID one */
+static const unsigned char sid_like[SFX_COUNT - SFX_SWING] = {
+    SFX_HIT, SFX_HURT, SFX_SPELL, SFX_CHIME, SFX_SPELL, SFX_FROST, SFX_SPELL, SFX_CHIME,
+    SFX_CHIME, SFX_CHIME, SFX_DEATH, SFX_GROWL, SFX_CHIME, SFX_HIT, SFX_CREAK,
+};
+
 static unsigned char left[3], next;
 static unsigned int freq[3];
 static signed int slide[3];
@@ -61,8 +76,14 @@ void sfx_off(void) {
 }
 
 void sfx(unsigned char n) {
-    const struct fx *f = &fxs[n];
+    const struct fx *f;
     unsigned char v = next;
+    if (audio_ok && sampled[n] != SND_NONE) {
+        audio_play(sampled[n], 200, 200);
+        return;
+    }
+    if (n >= SFX_SWING) n = sid_like[n - SFX_SWING];
+    f = &fxs[n];
     next = next == 2 ? 0 : next + 1;
     put(v, 4, 0);                                /* gate off: the envelope starts again */
     put(v, 5, f->ad);
@@ -81,6 +102,7 @@ void sfx(unsigned char n) {
 /* once a frame: the slides, the gates let go */
 void sfx_update(void) {
     unsigned char v;
+    audio_update();
     for (v = 0; v < 3; v++) {
         if (!left[v]) continue;
         if (--left[v] == 0) {

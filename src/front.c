@@ -47,7 +47,7 @@ unsigned char title(void) {
     rng_state ^= t * 31 + REG(0xD012);
     if (!rng_state) rng_state = 0xACE1;
 #endif
-    sfx(SFX_CHIME);
+    sfx(SFX_BELL);
     video_fade(0);
     return 1;
 }
@@ -89,7 +89,7 @@ void ending(unsigned char how) {
     video_centre(42, buf, C_BONE);
     video_centre(46, "Press a key.", C_DARK);
     video_fade(16);
-    sfx(how == WON ? SFX_CHIME : SFX_DEATH);
+    sfx(how == WON ? SFX_VICTORY : SFX_DEFEAT);
     video_frames(50);
     while (key_get()) {}
     key_wait();

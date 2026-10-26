@@ -48,6 +48,7 @@ int main(void) {
         return 1;
     }
     unpack(TILES_LIN + TILES_SKIP);
+    audio_init();
     video_on();
     video_pal_load(TILES_LIN, PAL_TILES, PAL_SCENE - PAL_TILES);
     sfx_on();
@@ -58,6 +59,7 @@ int main(void) {
     }
     video_fade(0);
     sfx_off();
+    audio_off();
     video_off();
     rom_print("\x93");
     return 0;

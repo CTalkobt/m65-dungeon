@@ -107,6 +107,7 @@ static unsigned char creatures_move(void) {
             if (sees && d <= 6 && rng_range(3) == 0) {
                 c->awake = 2;
                 if (vis_at(c->x, c->y) != VIS_SHADOW) msg("Something stirs.", C_ORANGE);
+                sfx(SFX_STIR);
             }
             continue;
         }
@@ -251,7 +252,7 @@ unsigned char explore(void) {
                 pl.potions--;
                 pl.hp = pl.hp + 15 + pl.level * 2 > pl.maxhp ? pl.maxhp : pl.hp + 15 + pl.level * 2;
                 msg("You drink. Warmth spreads through you.", C_GREEN);
-                sfx(SFX_CHIME);
+                sfx(SFX_DRINK);
                 took = 1;
             }
             break;
