@@ -30,6 +30,19 @@ static void rom_print(const char *s) {
     }
 }
 
+/* the ROM's space ($20000-$3FFFF) writable or not: the hypervisor's
+ * memory trap, $D641 (A = 2 writes on, 0 off). In C65 mode the C64 BASIC
+ * and KERNAL there are never used: the close-ups' backdrop goes in their
+ * place (GO64 will not work after the game; a reset puts them back).
+ * (CTalkobt/M65Compiler#339 asks the library for this.) */
+static void rom_writable(void) {
+    asm("lda #$02\n sta $d641\n clv");
+}
+
+static void rom_protected(void) {
+    asm("lda #$00\n sta $d641\n clv");
+}
+
 static void seed(void) {
 #ifdef SEED
     rng_state = SEED;
@@ -50,6 +63,15 @@ int main(void) {
         return 1;
     }
     unpack(TILES_LIN + TILES_SKIP);
+    /* the close-ups' shared backdrop into the C64 ROM's space */
+    if (!load_file("DGBACK", 5)) {
+        rom_print("dgback missing: run dungeon from its disk\r");
+        return 1;
+    }
+    rom_writable();
+    unpack(SCENE_LIN);
+    unpack(SCENE_LIN + BACK_STREAM2);
+    rom_protected();
     video_on();
     video_pal_load(TILES_LIN, PAL_TILES, PAL_SCENE - PAL_TILES);
     sfx_on();

@@ -115,26 +115,42 @@ def compose(sc, lit, mask, back, cast=0.75, pools=(), exposure=1.0, haze=0.0):
     return out, glow
 
 
+def compose_on(sc, lit, mask, back, cast=0.75, pools=(), exposure=1.0):
+    """the creature over the shared backdrop (back: its RGB as the screen
+    shows it), its shadow and pools of dark darkening the backdrop: the
+    picture (0..1 RGB), which pixels differ from the backdrop, the glow"""
+    h, w = mask.shape
+    dark = shadow_of(mask) * cast
+    for (cx, cy, rx, ry, k) in pools:
+        dark = 1 - (1 - dark) * (1 - contact(w, h, cx, cy, rx, ry) * k)
+    crea = tonemap(lit * vignette(w, h)[..., None], exposure)
+    img = np.where(mask[..., None], crea, back * (1 - dark)[..., None])
+    changed = mask | ((dark > 0.10) & (back.max(-1) > 0.004))
+    glow = np.where(mask & (sc.glow > 0), sc.glow, 0.0)
+    return img, changed, glow
+
+
 GLOW_N = 8               # the glow's palette entries (247-254)
 SCENE_N = 119            # the rest of the scene's (128-246)
 
 
 def palette_for(frames, glow_col):
-    """one palette (128-254) for all the frames of a scene: 119 colours by
-    median cut over the frames, then the glow ramp; each frame as indices"""
-    rgb = [to8(f) for f, g in frames]
-    big = np.concatenate([r.reshape(-1, 3) for r in rgb])[None, ...]
+    """one palette (128-254) for all the frames of a scene, from the pixels
+    they change: 119 colours by median cut, then the glow ramp. Each frame
+    as indices (-1 where it shows the backdrop as it is)."""
+    rgb = [to8(f) for f, ch, g in frames]
+    big = np.concatenate([r[ch] for r, (f, ch, g) in zip(rgb, frames)])[None, ...]
     pal, _ = quantize(big, SCENE_N, dither=False)
     gc = np.array(glow_col, np.float32)
     ramp = np.array([to8(np.clip(gc * (0.25 + 0.75 * k / (GLOW_N - 1)), 0, 1)) for k in range(GLOW_N)])
     out = []
-    for (f, g), r in zip(frames, rgb):
+    for (f, ch, g), r in zip(frames, rgb):
         idx = remap(to8(bayer(f)), pal, dither=False) + 128
         gl = g > 0
         if gl.any():
             gv = np.clip(np.rint(g / max(g.max(), 1e-6) * (GLOW_N - 1)), 0, GLOW_N - 1).astype(np.int32)
             idx = np.where(gl, 128 + SCENE_N + gv, idx)
-        out.append(idx)
+        out.append(np.where(ch, idx, -1))
     full = np.zeros((256, 3), np.uint8)
     full[128:128 + SCENE_N] = pal
     full[128 + SCENE_N:128 + SCENE_N + GLOW_N] = ramp

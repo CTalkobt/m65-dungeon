@@ -23,6 +23,7 @@ from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import tiles  # noqa: E402
+import backdrop  # noqa: E402
 import scenes  # noqa: E402
 from artlib import to8, quantize, remap, blocks, shrink_charset  # noqa: E402
 from pack import pack, unpack_in_place  # noqa: E402
@@ -37,6 +38,9 @@ SCENE_B_END = 0x19800          # the sounds' play slots above (src/audio.c)
 FRAMES = 2
 FIRE0 = 120                    # the tiles' fire: 4 palette entries the program turns round
 FIRE_RAMP = [(150, 30, 4), (235, 100, 14), (255, 190, 50), (255, 240, 160)]
+BACK1 = 0x2A000                # the backdrop's characters: in the C64 BASIC's space
+BACK2 = 0x2E000                #   and the C64 KERNAL's (8 KB each)
+BACK_HALF = 128
 SCENE_CHARS = 1641             # a close-up's characters at most (bank 5 and bank 1 hold fewer)
 SW, SH = W // 8, H // 8
 
@@ -69,6 +73,7 @@ def build_tiles(out):
             if v is not None:
                 imgs.append(np.clip(v, 0, 1))
     uimgs = [np.clip(c, 0, 1) for n, c in ui]
+    bimgs = [np.clip(c, 0, 1) for c in backdrop.chars()]
 
     def fire_slots(img):
         """which pixels are fire, and which slot (-1 none)"""
@@ -82,7 +87,7 @@ def build_tiles(out):
         img[fire_slots(img) >= 0] = 0
         return img
 
-    mosaic = np.concatenate([unfired(i).reshape(-1, 3) for i in imgs + uimgs])[None, ...]
+    mosaic = np.concatenate([unfired(i).reshape(-1, 3) for i in imgs + uimgs + bimgs])[None, ...]
     pal, _ = quantize(to8(mosaic), FIRE0 - 16, dither=False)
     full = np.zeros((256, 3), np.uint8)
     full[16:16 + len(pal)] = pal
@@ -123,38 +128,82 @@ def build_tiles(out):
     skip, packed = write(os.path.join(out, "dgtiles.bin"), TILES_LIN, data, 0x50000)
     print("DGTILES: %d tiles, %d characters, %d bytes free in bank 4; packed %d -> %d"
           % (len(seen), len(chars), 0x10000 - len(data), len(data), packed))
-    return table, ui_nums, skip
+    back = [idx(c).astype(np.uint8) for c in bimgs]
+    return table, ui_nums, skip, back, full
 
 
-def build_scene(out, name, pv):
-    """a close-up's two files; its map and characters"""
-    frames, pal = scenes.render(name)
-    blks = [blocks(idx) for _, idx in frames]
+def back_char(i):
+    """the character number of backdrop character i: the first half in the
+    C64 BASIC's space, the second in the C64 KERNAL's"""
+    return BACK1 // 64 + i if i < BACK_HALF else BACK2 // 64 + i - BACK_HALF
+
+
+def build_backdrop(out, back):
+    """DGBACK: the backdrop's characters, two packed streams (unpacked into
+    the C64 ROM's space, not in place: the file loads into bank 5); the
+    picture as indices, and each cell's character (0x20 black)"""
+    data = b"".join(c.tobytes() for c in back)
+    s1, _ = pack(data[:BACK_HALF * 64], BACK1)
+    s2, _ = pack(data[BACK_HALF * 64:], BACK2)
+    with open(os.path.join(out, "dgback.bin"), "wb") as f:
+        f.write(b"\x00\x00" + s1 + s2)                  # loads at $50000
+    cells = backdrop.cells()
+    img = np.zeros((H, W), np.int32)
+    nums = np.full((SH, SW), 0x20, np.int64)
+    for cy in range(SH):
+        for cx in range(SW):
+            k = cells[cy, cx]
+            if k >= 0:
+                img[cy * 8:cy * 8 + 8, cx * 8:cx * 8 + 8] = back[k]
+                nums[cy, cx] = back_char(k)
+    print("DGBACK: %d characters, packed %d -> %d" % (len(back), len(data), len(s1) + len(s2)))
+    return len(s1), img, nums
+
+
+def build_scene(out, name, pv, back_img, back_nums, tile_pal):
+    """a close-up's two files; its map and characters: its own only where
+    the creature (its shadow, its glow) changes the shared backdrop"""
+    frames, pal = scenes.render(name, tile_pal[back_img].astype(np.float32) / 255)
+    comb = pal.copy()                            # (the backdrop's colours too, for the merging)
+    comb[16:128] = tile_pal[16:128]
+    owned, blks = [], []
+    for _, idx in frames:
+        own = (idx >= 0).reshape(SH, 8, SW, 8).any(axis=(1, 3)).reshape(-1)
+        b = blocks(np.where(idx >= 0, idx, back_img))
+        owned.append(own)
+        blks.append(b[own])
     hdr_end = PAL_BYTES + 64 + FRAMES * SW * SH * 2
     assert hdr_end % 64 == 0
     na = (SCENE_A_END - SCENE_A - hdr_end) // 64
     nb = (SCENE_B_END - SCENE_B) // 64 - 1          # (room for the packed file's last bytes)
-    uniq, maps = shrink_charset(blks, pal, min(na + nb, SCENE_CHARS))
+    uniq, maps = shrink_charset(blks, comb, min(na + nb, SCENE_CHARS))
     nums = np.where(np.arange(len(uniq)) < na,
                     (SCENE_A + hdr_end) // 64 + np.arange(len(uniq)),
                     SCENE_B // 64 + np.arange(len(uniq)) - na)
     hdr = bytearray(64)
     hdr[0], hdr[1], hdr[2] = FRAMES, SW, SH
     mp = b""
-    for m in maps:
-        mp += np.asarray(nums[m], "<u2").tobytes()
+    full_maps = []
+    for own, m in zip(owned, maps):
+        cell = back_nums.reshape(-1).copy()
+        cell[own] = nums[m]
+        full_maps.append((own, m))
+        mp += np.asarray(cell, "<u2").tobytes()
     a = pal_bytes(pal) + bytes(hdr) + mp + uniq[:na].tobytes()
     b = uniq[na:].tobytes()
     base = "dg%s" % name
     skip_a, pa = write(os.path.join(out, base + "a.bin"), SCENE_A, a, 0x60000)   # (a few bytes into the screen: it is dark then)
     skip_b, pb = write(os.path.join(out, base + "b.bin"), SCENE_B, b if b else bytes(64), SCENE_B_END)
     # the preview: what the screen will show, after the merging
-    for f, m in enumerate(maps):
-        img = uniq[m].reshape(SH, SW, 8, 8).transpose(0, 2, 1, 3).reshape(H, W)
-        Image.fromarray(pal[img]).resize((W * 2, H * 2), Image.NEAREST).save(
+    for f, (own, m) in enumerate(full_maps):
+        bb = blocks(back_img).copy()
+        bb[own] = uniq[m]
+        img = bb.reshape(SH, SW, 8, 8).transpose(0, 2, 1, 3).reshape(H, W)
+        Image.fromarray(comb[img]).resize((W * 2, H * 2), Image.NEAREST).save(
             os.path.join(pv, "%s_%d.png" % (name, f)))
-    print("%-9s %4d characters (%d unique before merging), %6d bytes, packed %6d"
-          % (name, len(uniq), len(np.unique(np.concatenate(blks), axis=0)), len(a) + len(b), pa + pb))
+    print("%-9s %4d cells its own, %4d characters (%d unique before merging), %6d bytes, packed %6d"
+          % (name, max(o.sum() for o in owned), len(uniq), len(np.unique(np.concatenate(blks), axis=0)),
+             len(a) + len(b), pa + pb))
     return base, skip_a, skip_b
 
 
@@ -162,12 +211,13 @@ def main():
     out = sys.argv[1]
     pv = os.path.join(out, "preview")
     os.makedirs(pv, exist_ok=True)
-    table, ui_nums, tiles_skip = build_tiles(out)
-    files = [("dgtiles.bin", "DGTILES")]
+    table, ui_nums, tiles_skip, back, tile_pal = build_tiles(out)
+    back_stream2, back_img, back_nums = build_backdrop(out, back)
+    files = [("dgtiles.bin", "DGTILES"), ("dgback.bin", "DGBACK")]
     names = list(scenes.SCENES)
     skips = []
     for name in names:
-        base, sa, sb = build_scene(out, name, pv)
+        base, sa, sb = build_scene(out, name, pv, back_img, back_nums, tile_pal)
         skips.append((sa, sb))
         files += [(base + "a.bin", base.upper() + "A"), (base + "b.bin", base.upper() + "B")]
     with open(os.path.join(out, "files.txt"), "w") as f:
@@ -195,6 +245,8 @@ def main():
         f.write("extern const char *const scene_file[%d];\n" % len(names))
         f.write("/* where the packed files load: from where they unpack to */\n")
         f.write("#define TILES_SKIP 0x%04X\n" % tiles_skip)
+        f.write("/* DGBACK (into bank 5): two packed streams, the second this far in */\n")
+        f.write("#define BACK_STREAM2 0x%04X\n" % back_stream2)
         f.write("extern const unsigned int scene_skip[%d][2];\n" % len(names))
     with open(os.path.join(out, "assets.c"), "w") as f:
         f.write("/* assets.c — made by tools/gen_art.py */\n#pragma encoding ascii\n#include \"assets.h\"\n\n")
