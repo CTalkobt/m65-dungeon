@@ -5,15 +5,15 @@
       Reads each sound in SOUNDS straight out of the packs' zip files,
       trims it, resamples it to RATE Hz, normalises it and codes it in
       blocks of 16 samples, 4.5 bits a sample (blocks() below), into the
-      files DGSFX1, 2, ... (below). make sounds puts them on
+      files DGSFX1, 2, ... (below), and wav/: each decoded as the program
+      will, to listen to. make sounds puts the files on
       assets/baseimage.d81; assets/README.md says where each comes from.
 
   gen_sfx.py tables <dir> <build dir>                     (every build)
       The DGSFX files in dir (extracted from assets/baseimage.d81) to
       sfxdata.h/.c (SND_* numbers, each sound's place in attic RAM, length,
-      slot), files.txt (the files for the game's disk) and wav/ (each
-      sound decoded as the program will, to listen to). Without them the
-      game plays its SID effects only.
+      slot) and files.txt (the files for the game's disk). Without them
+      the game plays its SID effects only.
 
 The program decodes them all into attic RAM at the start (src/audio.c)
 and copies one into a play slot in bank 1 when it is wanted.
@@ -264,6 +264,18 @@ def pack(packs, out):
             hdr += bytes([k]) + len(data).to_bytes(2, "little") + plen.to_bytes(2, "little") + bytes([slot])
         with open(os.path.join(out, "dgsfx%d.bin" % (f + 1)), "wb") as fo:
             fo.write(b"\x00\x00" + bytes(hdr) + b"".join(s[1] for s in snds))     # loads at $50000
+    # previews to listen to (only here, from the packs: a build does not
+    # write the sounds out as WAV files)
+    import wave
+    pv = os.path.join(out, "wav")
+    os.makedirs(pv, exist_ok=True)
+    for k, data, plen, slot in sounds:
+        w = wave.open(os.path.join(pv, SOUNDS[k][0].lower() + ".wav"), "wb")
+        w.setnchannels(1)
+        w.setsampwidth(1)
+        w.setframerate(RATE)
+        w.writeframes(unblock(data)[:plen])
+        w.close()
     total = sum(s[2] for s in sounds)
     print("gen_sfx: %d sounds, %.1f s, %d bytes coded in %d files"
           % (len(sounds), total / RATE, sum(len(s[1]) for s in sounds), len(files)))
@@ -330,16 +342,6 @@ def tables(d, out):
         c.write("const unsigned char snd_ambient[] = {%s};\n"
                 % (", ".join("SND_%s" % n for n in AMBIENT) if sounds else "0"))
     if sounds:
-        import wave
-        pv = os.path.join(out, "wav")
-        os.makedirs(pv, exist_ok=True)
-        for k, data, plen, slot in sounds:
-            w = wave.open(os.path.join(pv, names[k].lower() + ".wav"), "wb")
-            w.setnchannels(1)
-            w.setsampwidth(1)
-            w.setframerate(RATE)
-            w.writeframes(unblock(data)[:plen])
-            w.close()
         print("gen_sfx: %d sounds in %d files, %d bytes decoded" % (len(sounds), len(files), at))
 
 
