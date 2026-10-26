@@ -101,6 +101,16 @@ the edge of the light is round. A room with a brazier is lit throughout. Memory 
 (4 turns) it was last seen lit, swept every 64 turns so that old epochs
 never come round again.
 
+**The creatures** (`tools/monsters.py`). Each creature is one entry: the
+function that draws its close-up, and its numbers (life, blow, armour,
+experience), what it does in a fight (actions and their weights), flags
+(burns easily, shrugs off frost, hard to flee, venomous, slow, the last
+foe), the levels it lives on, and its words (name, its lines, its lore, its
+death). The fight's part goes in the header of its close-up's file, which
+the battle reads when it starts; the map's part (its tile, its close-up,
+its flags, which creatures each level draws from) goes in `assets.h`.
+Adding a creature is a new entry and its tile (`tools/tiles.py`).
+
 **The close-ups** (`tools/stage.py`, `monsters.py`, `props.py`,
 `backdrop.py`). Each is 448 x 240 (56 x 30 characters). The creatures are
 drawn in Python from 3D shapes (ellipsoids, tubes of spheres, boxes,

@@ -49,7 +49,7 @@ static unsigned char fight(unsigned char i, unsigned char ambush) {
     unsigned char r = battle(i, ambush);
     if (r == DIED) return DIED;
     if (r == WON) {
-        if (mons[i].kind == M_LICH) return WON;
+        if (mon_flags[mons[i].kind] & MF_BOSS) return WON;
         if (!obj_at(AT(mons[i].x, mons[i].y)) && rng_range(3) == 0) obj_set(AT(mons[i].x, mons[i].y), O_GOLD);
         msg("The way is clear.", C_DIM);
     } else {
@@ -108,7 +108,7 @@ static unsigned char creatures_move(void) {
             }
             continue;
         }
-        if (c->kind == M_SLIME && (turn & 1)) continue;   /* oozes are slow */
+        if ((mon_flags[c->kind] & MF_SLOW) && (turn & 1)) continue;
         if (sees) c->awake = 2;
         else if (c->awake == 2 && rng_range(8) == 0) c->awake = 1;
         if (c->awake == 1) {
@@ -221,7 +221,7 @@ unsigned char explore(void) {
 #ifdef TEST_FIGHT
     /* (tests: a fight with that kind of creature at once) */
     mons[0].kind = TEST_FIGHT;
-    mons[0].hp = montypes[TEST_FIGHT].hp;
+    mons[0].hp = FRESH;
     r = fight(0, 0);
     if (r == DIED || r == WON) return r;
 #endif

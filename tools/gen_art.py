@@ -24,6 +24,7 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import tiles  # noqa: E402
 import backdrop  # noqa: E402
+import monsters  # noqa: E402
 import scenes  # noqa: E402
 from artlib import to8, quantize, remap, blocks, shrink_charset  # noqa: E402
 from pack import pack, unpack_in_place  # noqa: E402
@@ -36,6 +37,9 @@ SCENE_A_END = 0x5E000          # the screen is above
 SCENE_B = 0x12000
 SCENE_B_END = 0x19800          # the sounds' play slots above (src/audio.c)
 FRAMES = 2
+HDR = 256                      # a close-up's header (after its palette): what the creature is
+DEPTHS = 5
+SPAWN = 8                      # level_mons: the creatures a level draws from, 8 a level
 FIRE0 = 120                    # the tiles' fire: 4 palette entries the program turns round
 FIRE_RAMP = [(150, 30, 4), (235, 100, 14), (255, 190, 50), (255, 240, 160)]
 BACK1 = 0x2A000                # the backdrop's characters: in the C64 BASIC's space
@@ -160,6 +164,46 @@ def build_backdrop(out, back):
     return len(s1), img, nums
 
 
+def header(name):
+    """a close-up's header (HDR bytes): 0 frames, 1-2 its size in characters;
+    for a creature 3 life, 4-6 its blow (dice, sides, plus), 7 armour, 8
+    experience, 9 flags (MF_*), 10-13 its actions (A_*), 14-17 their
+    weights; from 32 its words, each ending in a NUL: name, what it does
+    before a blow, as the blow lands, its lore, its death"""
+    h = bytearray(HDR)
+    h[0], h[1], h[2] = FRAMES, SW, SH
+    mon = [m for m in monsters.MONSTERS if m[0] == name]
+    if mon:
+        i = mon[0][2]
+        h[3:10] = bytes([i["hp"], i["dice"], i["sides"], i["plus"], i["defense"], i["xp"], flags_of(i)])
+        for k, (a, w) in enumerate(i["acts"]):
+            h[10 + k] = monsters.ACTIONS.index(a)
+            h[14 + k] = w
+        words = b"".join(i[k].encode() + b"\0" for k in ("name", "tele", "hit", "lore", "death"))
+        assert len(words) <= HDR - 32, name
+        h[32:32 + len(words)] = words
+    return h
+
+
+def flags_of(i):
+    return sum(1 << monsters.FLAGS.index(f) for f in i["flags"])
+
+
+def spawns():
+    """level_mons: for each level SPAWN creatures to draw from, as their
+    weights there say"""
+    out = []
+    for d in range(1, DEPTHS + 1):
+        ws = [(k, m[2]["depths"].get(d, 0)) for k, m in enumerate(monsters.MONSTERS)]
+        tot = sum(w for k, w in ws) or 1
+        row = []
+        for k, w in ws:
+            row += [k] * round(w * SPAWN / tot)
+        row = (row + row[:1] * SPAWN)[:SPAWN] if row else [0] * SPAWN
+        out.append(row)
+    return out
+
+
 def build_scene(out, name, pv, back_img, back_nums, tile_pal):
     """a close-up's two files; its map and characters: its own only where
     the creature (its shadow, its glow) changes the shared backdrop"""
@@ -172,7 +216,7 @@ def build_scene(out, name, pv, back_img, back_nums, tile_pal):
         b = blocks(np.where(idx >= 0, idx, back_img))
         owned.append(own)
         blks.append(b[own])
-    hdr_end = PAL_BYTES + 64 + FRAMES * SW * SH * 2
+    hdr_end = PAL_BYTES + HDR + FRAMES * SW * SH * 2
     assert hdr_end % 64 == 0
     na = (SCENE_A_END - SCENE_A - hdr_end) // 64
     nb = (SCENE_B_END - SCENE_B) // 64 - 1          # (room for the packed file's last bytes)
@@ -180,8 +224,7 @@ def build_scene(out, name, pv, back_img, back_nums, tile_pal):
     nums = np.where(np.arange(len(uniq)) < na,
                     (SCENE_A + hdr_end) // 64 + np.arange(len(uniq)),
                     SCENE_B // 64 + np.arange(len(uniq)) - na)
-    hdr = bytearray(64)
-    hdr[0], hdr[1], hdr[2] = FRAMES, SW, SH
+    hdr = header(name)
     mp = b""
     full_maps = []
     for own, m in zip(owned, maps):
@@ -242,6 +285,22 @@ def main():
             f.write("#define S_%s %d\n" % (name.upper(), i))
         f.write("#define S_COUNT %d\n" % len(names))
         f.write("#define SCENE_W %d\n#define SCENE_H %d\n" % (SW, SH))
+        f.write("#define SCENE_HDR_SIZE %d      /* hw.h SCENE_HDR: the header, then the maps */\n" % HDR)
+        f.write("\n/* the creatures (tools/monsters.py): their fight is in their close-up's header */\n")
+        for k, m in enumerate(monsters.MONSTERS):
+            f.write("#define M_%s %d\n" % (m[0].upper(), k))
+        f.write("#define M_KINDS %d\n" % len(monsters.MONSTERS))
+        f.write("#define M_BOSS %d          /* waits in the last level's last room */\n"
+                % [k for k, m in enumerate(monsters.MONSTERS) if "BOSS" in m[2]["flags"]][0])
+        assert all(m[2]["hp"] < 255 for m in monsters.MONSTERS), "a life of 255 is FRESH"
+
+        for k, a in enumerate(monsters.ACTIONS):
+            f.write("#define A_%s %d\n" % (a, k))
+        for k, fl in enumerate(monsters.FLAGS):
+            f.write("#define MF_%s 0x%02X\n" % (fl, 1 << k))
+        f.write("#define SPAWN %d\n" % SPAWN)
+        f.write("extern const unsigned char mon_tile[M_KINDS], mon_scene[M_KINDS], mon_flags[M_KINDS];\n")
+        f.write("extern const unsigned char level_mons[%d][SPAWN];\n" % DEPTHS)
         f.write("extern const char *const scene_file[%d];\n" % len(names))
         f.write("/* where the packed files load: from where they unpack to */\n")
         f.write("#define TILES_SKIP 0x%04X\n" % tiles_skip)
@@ -256,6 +315,14 @@ def main():
         f.write("};\n\n")
         f.write("const char *const scene_file[%d] = {%s};\n"
                 % (len(names), ", ".join('"DG%s"' % n.upper() for n in names)))
+        f.write("const unsigned char mon_tile[M_KINDS] = {%s};\n"
+                % ", ".join("T_%s" % m[0].upper() for m in monsters.MONSTERS))
+        f.write("const unsigned char mon_scene[M_KINDS] = {%s};\n"
+                % ", ".join("S_%s" % m[0].upper() for m in monsters.MONSTERS))
+        f.write("const unsigned char mon_flags[M_KINDS] = {%s};\n"
+                % ", ".join("0x%02X" % flags_of(m[2]) for m in monsters.MONSTERS))
+        f.write("const unsigned char level_mons[%d][SPAWN] = {%s};\n"
+                % (DEPTHS, ", ".join("{%s}" % ", ".join(str(k) for k in row) for row in spawns())))
         f.write("const unsigned int scene_skip[%d][2] = {%s};\n"
                 % (len(names), ", ".join("{0x%04X, 0x%04X}" % k for k in skips)))
 

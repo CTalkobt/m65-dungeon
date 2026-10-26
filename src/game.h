@@ -56,15 +56,12 @@ void memory_sweep(void);                       /* the long forgotten to 0 */
 #define VIS_SHADOW 5
 unsigned char vis_at(unsigned char x, unsigned char y);
 
-/* the creatures */
-#define M_RAT      0
-#define M_SKELETON 1
-#define M_SPIDER   2
-#define M_SLIME    3
-#define M_ORC      4
-#define M_WRAITH   5
-#define M_LICH     6
-#define M_KINDS    7
+/* the creatures: M_*, A_* (what they do in a fight), MF_* and the tables
+ * mon_tile, mon_scene, mon_flags, level_mons come from tools/monsters.py
+ * through assets.h; the rest of what a creature is is in its close-up's
+ * header, read when a fight starts (battle.c) */
+#include "assets.h"
+#define FRESH      0xFF       /* mon.hp of a creature not yet fought: its full life */
 
 #define MAX_MON    24
 struct mon {
@@ -75,32 +72,6 @@ struct mon {
 extern struct mon mons[MAX_MON];
 extern unsigned char nmons;
 
-/* what a creature does in a fight (battle.c) */
-#define A_NONE    0
-#define A_MELEE   1           /* an ordinary blow: needs to be close */
-#define A_HEAVY   2           /* a great blow, seen coming: parry it */
-#define A_GUARD   3           /* on guard: blows do half */
-#define A_POISON  4           /* a poisoned bite */
-#define A_WEB     5           /* silk: the player is caught, cannot move */
-#define A_SPIT    6           /* from afar */
-#define A_REGEN   7           /* knits itself together */
-#define A_ROAR    8           /* its next blow is harder */
-#define A_DRAIN   9           /* takes life for its own, armour or not */
-#define A_CHILL   10          /* cold from afar, armour or not */
-#define A_PHASE   11          /* out of this world: blows pass through */
-#define A_BOLT    12          /* a bolt of power from afar */
-#define A_CURSE   13          /* withers the player's mana */
-#define A_LUNGE   14          /* leaps in from near and bites */
-#define A_CLOSE   15          /* comes closer (chosen when out of reach) */
-
-struct montype {               /* (its words: battle.c) */
-    unsigned char scene;      /* assets.h S_* */
-    unsigned char tile;       /* assets.h T_* */
-    unsigned char hp, dice, sides, plus, def, xp;
-    unsigned char acts[4];    /* battle.c A_*, by weight */
-    unsigned char weights[4];
-};
-extern const struct montype montypes[M_KINDS];
 
 /* the player */
 struct player {

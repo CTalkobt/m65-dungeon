@@ -155,7 +155,7 @@ static unsigned char cell(unsigned char x, unsigned char y) {
         cell_lit = 1;
         cell_room = (map[i] & F_LIT) != 0;
         m = mon_at(x, y);
-        if (m) return montypes[mons[m - 1].kind].tile;
+        if (m) return mon_tile[mons[m - 1].kind];
         if (map[i] & F_OBJ) return obj_tile[obj_at(i)];
         switch (t) {
         case TR_FLOOR: return T_FLOOR0 + (((x * 7) ^ (y * 13)) & 3);
@@ -171,7 +171,7 @@ static unsigned char cell(unsigned char x, unsigned char y) {
         m = mon_at(x, y);
         if (m) {
             cell_var = TV_EYES;
-            return montypes[mons[m - 1].kind].tile;
+            return mon_tile[mons[m - 1].kind];
         }
     }
     /* remembered: walls, doors and the stairs, fading */

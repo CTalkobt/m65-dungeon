@@ -67,15 +67,6 @@ void memory_sweep(void) {
         if ((e = seen_get(i)) != 0 && epoch_age(e) >= 225) seen_set(i, 0);
 }
 
-const struct montype montypes[M_KINDS] = {
-    {S_RAT, T_RAT, 9, 1, 4, 1, 0, 5, {A_MELEE, A_LUNGE, A_POISON, A_NONE}, {5, 3, 2, 0}},
-    {S_SKELETON, T_SKELETON, 18, 1, 6, 2, 2, 12, {A_MELEE, A_HEAVY, A_GUARD, A_NONE}, {4, 3, 2, 0}},
-    {S_SPIDER, T_SPIDER, 15, 1, 6, 1, 1, 14, {A_POISON, A_WEB, A_LUNGE, A_NONE}, {4, 2, 3, 0}},
-    {S_SLIME, T_SLIME, 26, 1, 6, 1, 0, 16, {A_MELEE, A_SPIT, A_REGEN, A_NONE}, {3, 3, 2, 0}},
-    {S_ORC, T_ORC, 30, 1, 8, 3, 2, 24, {A_MELEE, A_HEAVY, A_ROAR, A_NONE}, {3, 4, 2, 0}},
-    {S_WRAITH, T_WRAITH, 26, 1, 6, 3, 3, 32, {A_DRAIN, A_CHILL, A_PHASE, A_NONE}, {4, 3, 2, 0}},
-    {S_LICH, T_LICH, 80, 2, 6, 3, 3, 120, {A_BOLT, A_CURSE, A_HEAVY, A_GUARD}, {4, 2, 2, 1}},
-};
 
 
 void player_new(void) {

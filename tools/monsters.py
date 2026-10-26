@@ -454,12 +454,66 @@ def lich(sc, pose):
                 backdrop=dict(warm=0.6), haze=0.9)
 
 
+# ------------------------------------------------------------------ what they are
+#
+# Everything about a creature but its tile (tiles.py) is here: its look
+# (the function above), its numbers, what it does in a fight, which levels
+# it lives on, its words. gen_art.py puts the fight's part in the header of
+# its close-up's file (the game reads it when the fight starts) and the
+# rest in the game's tables (assets.h: M_<NAME>, mon_tile, level_mons...).
+
+# what a creature can do in a fight (the game's A_* numbers, in order)
+ACTIONS = ["NONE", "MELEE", "HEAVY", "GUARD", "POISON", "WEB", "SPIT", "REGEN", "ROAR", "DRAIN",
+           "CHILL", "PHASE", "BOLT", "CURSE", "LUNGE", "CLOSE"]
+# flags (the game's MF_*): burns easily, shrugs off frost (2 in 3), hard to
+# flee from, its lunge is venomous, moves every other turn, the last foe
+FLAGS = ["FIREWEAK", "COLDPROOF", "HARDFLEE", "VENOM", "SLOW", "BOSS"]
+
+
+def info(name, tele, hit, lore, death, hp, dice, sides, plus, defense, xp, acts, depths, flags=()):
+    """acts: (action, weight) a fight's choices; depths: {level: weight}"""
+    return dict(name=name, tele=tele, hit=hit, lore=lore, death=death, hp=hp, dice=dice, sides=sides,
+                plus=plus, defense=defense, xp=xp, acts=acts, depths=depths, flags=flags)
+
+
 MONSTERS = [
-    ("rat", rat),
-    ("skeleton", skeleton),
-    ("spider", spider),
-    ("slime", slime),
-    ("orc", orc),
-    ("wraith", wraith),
-    ("lich", lich),
+    ("rat", rat, info(
+        "giant rat", "bares its yellow teeth", "bites you",
+        "A rat the size of a dog, slick with sewer filth.", "falls, and moves no more.",
+        hp=9, dice=1, sides=4, plus=1, defense=0, xp=5,
+        acts=[("MELEE", 5), ("LUNGE", 3), ("POISON", 2)], depths={1: 2, 2: 1})),
+    ("skeleton", skeleton, info(
+        "skeleton", "swings its notched blade", "cuts you",
+        "Old bones bound by older hate. Its eyes are embers.", "falls apart in a clatter of bones.",
+        hp=18, dice=1, sides=6, plus=2, defense=2, xp=12,
+        acts=[("MELEE", 4), ("HEAVY", 3), ("GUARD", 2)], depths={1: 1, 2: 1, 3: 1, 5: 1})),
+    ("spider", spider, info(
+        "cave spider", "rears, fangs dripping", "bites you",
+        "Eight green eyes catch your torchlight.", "curls up its legs and is still.",
+        hp=15, dice=1, sides=6, plus=1, defense=1, xp=14,
+        acts=[("POISON", 4), ("WEB", 2), ("LUNGE", 3)], depths={2: 1, 3: 1, 4: 1},
+        flags=("FIREWEAK", "VENOM"))),
+    ("slime", slime, info(
+        "ooze", "surges up to engulf you", "burns you",
+        "A quivering mass. Something it ate stares out of it.", "dissolves.",
+        hp=26, dice=1, sides=6, plus=1, defense=0, xp=16,
+        acts=[("MELEE", 3), ("SPIT", 3), ("REGEN", 2)], depths={1: 1, 2: 1, 3: 1},
+        flags=("FIREWEAK", "SLOW"))),
+    ("orc", orc, info(
+        "orc brute", "swings its spiked club", "clubs you",
+        "It grins with too many tusks and hefts its club.", "falls, and moves no more.",
+        hp=30, dice=1, sides=8, plus=3, defense=2, xp=24,
+        acts=[("MELEE", 3), ("HEAVY", 4), ("ROAR", 2)], depths={3: 1, 4: 2, 5: 1})),
+    ("wraith", wraith, info(
+        "wraith", "reaches for your heart", "chills you",
+        "Cold pours from the hood. Your torch gutters.", "comes apart in the wind.",
+        hp=26, dice=1, sides=6, plus=3, defense=3, xp=32,
+        acts=[("DRAIN", 4), ("CHILL", 3), ("PHASE", 2)], depths={4: 1, 5: 2},
+        flags=("HARDFLEE",))),
+    ("lich", lich, info(
+        "lich", "raises its staff to strike", "smites you",
+        "The master of the deep. It has waited a long time.", "crumbles, and its crown rolls away.",
+        hp=80, dice=2, sides=6, plus=3, defense=3, xp=120,
+        acts=[("BOLT", 4), ("CURSE", 2), ("HEAVY", 2), ("GUARD", 1)], depths={},
+        flags=("COLDPROOF", "HARDFLEE", "BOSS"))),
 ]

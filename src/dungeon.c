@@ -12,14 +12,6 @@
 static unsigned char rx[MAX_ROOMS], ry[MAX_ROOMS], rw[MAX_ROOMS], rh[MAX_ROOMS];
 static unsigned char nrooms;
 
-/* the creatures each level has, the later ones rarer */
-static const unsigned char level_mons[DEPTHS][4] = {
-    {M_RAT, M_RAT, M_SKELETON, M_SLIME},
-    {M_RAT, M_SKELETON, M_SPIDER, M_SLIME},
-    {M_SKELETON, M_SPIDER, M_SLIME, M_ORC},
-    {M_SPIDER, M_ORC, M_ORC, M_WRAITH},
-    {M_ORC, M_WRAITH, M_WRAITH, M_SKELETON},
-};
 
 static unsigned char overlaps(unsigned char x, unsigned char y, unsigned char w, unsigned char h) {
     unsigned char i;
@@ -82,7 +74,7 @@ static void add_mon(unsigned char kind, unsigned int at) {
     m->x = (unsigned char)(at % MAP_W);
     m->y = (unsigned char)(at / MAP_W);
     m->kind = kind;
-    m->hp = montypes[kind].hp;
+    m->hp = FRESH;
     m->awake = rng_range(3) == 0;
     m->stun = 0;
 }
@@ -156,7 +148,7 @@ void dungeon_make(void) {
     if (pl.depth < DEPTHS) {
         map[AT(rx[last] + rw[last] / 2, ry[last] + rh[last] / 2)] = TR_STAIRS | F_ROOM;
     } else {
-        add_mon(M_LICH, AT(rx[last] + rw[last] / 2, ry[last] + rh[last] / 2));
+        add_mon(M_BOSS, AT(rx[last] + rw[last] / 2, ry[last] + rh[last] / 2));
         mons[nmons - 1].awake = 0;
     }
 
@@ -188,5 +180,5 @@ void dungeon_make(void) {
 
     /* creatures: more, and worse, deeper down; none in the first room */
     for (k = 0; k < 6 + d * 2; k++)
-        add_mon(level_mons[d][rng_range(4)], spot(1 + rng_range(last)));
+        add_mon(level_mons[d][rng_range(SPAWN)], spot(1 + rng_range(last)));
 }

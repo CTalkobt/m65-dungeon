@@ -25,9 +25,7 @@
 
 /* a file's palette: 256 red, 256 green, 256 blue (plain 8-bit values) */
 #define PAL_BYTES  768
-#define SCENE_HDR  (SCENE_LIN + PAL_BYTES)          /* 64 bytes: assets.h SH_* */
-#define SCENE_CHARS (SCENE_LIN + PAL_BYTES + 64)
-#define SCENE_CHAR0 (unsigned int)(SCENE_CHARS / 64)
+#define SCENE_HDR  (SCENE_LIN + PAL_BYTES)          /* assets.h SCENE_HDR_SIZE: what the creature is (gen_art.py header) */
 #define TILE_CHAR0 (unsigned int)((TILES_LIN + PAL_BYTES) / 64)
 
 #define COLS       80

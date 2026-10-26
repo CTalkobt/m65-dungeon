@@ -102,7 +102,7 @@ unsigned char scene_load(unsigned char s) {
 
 void scene_show(unsigned char frame) {
     unsigned char r;
-    unsigned long src = SCENE_HDR + 64 + (unsigned long)frame * (SCENE_W * SCENE_H * 2);
+    unsigned long src = SCENE_HDR + SCENE_HDR_SIZE + (unsigned long)frame * (SCENE_W * SCENE_H * 2);
     for (r = 0; r < SCENE_H; r++, src += SCENE_W * 2)
         dma_copy_far(SCREEN_LIN + ((unsigned int)(SC_ROW + r) * COLS + SC_COL) * 2, src, SCENE_W * 2);
 }

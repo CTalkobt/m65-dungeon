@@ -13,6 +13,7 @@
  */
 #pragma cc45 overlay(battle)
 #pragma cc45 noescape_strings
+#include <dma.h>
 #include "hw.h"
 #include "assets.h"
 #include "video.h"
@@ -28,13 +29,18 @@
 #define STAT_COL  58
 
 static struct mon *m;
-static const struct montype *mt;
+/* what the creature is: its close-up's header (gen_art.py header()) */
+static struct {
+    unsigned char hp, dice, sides, plus, def, xp, flags;
+    unsigned char acts[4], weights[4];
+} mt;
+static char words[SCENE_HDR_SIZE - 32];      /* its name, lines, lore, death: NUL after each */
 static unsigned char dist, intent, last_intent, mhp_max;
 static unsigned char frozen, staggered, roar, parrying;
 static unsigned char poison, snared, ward;
 static unsigned char sel, casting;
 static char buf[64];
-__attribute__((noinline)) static const char *mon_name(void);
+static const char *mon_name(void);
 
 /* ---------------------------------------------------------------- text */
 
@@ -126,29 +132,11 @@ __attribute__((noinline)) static const char *tele(unsigned char a) {
                "gathers violet fire in its staff.\0whispers a word of withering.\0crouches to spring.\0closes in.", a);
 }
 
-/* the creatures' words (by M_*) */
-__attribute__((noinline)) static const char *mon_name(void) {
-    return nth("giant rat\0skeleton\0cave spider\0ooze\0orc brute\0wraith\0lich", m->kind);
-}
-
-__attribute__((noinline)) static const char *mon_tele(void) {
-    return nth("bares its yellow teeth\0swings its notched blade\0rears, fangs dripping\0surges up to engulf you\0"
-               "swings its spiked club\0reaches for your heart\0raises its staff to strike", m->kind);
-}
-
-__attribute__((noinline)) static const char *mon_hit(void) {
-    return nth("bites you\0cuts you\0bites you\0burns you\0clubs you\0chills you\0smites you", m->kind);
-}
-
-__attribute__((noinline)) static const char *mon_lore(void) {
-    return nth("A rat the size of a dog, slick with sewer filth.\0"
-               "Old bones bound by older hate. Its eyes are embers.\0"
-               "Eight green eyes catch your torchlight.\0"
-               "A quivering mass. Something it ate stares out of it.\0"
-               "It grins with too many tusks and hefts its club.\0"
-               "Cold pours from the hood. Your torch gutters.\0"
-               "The master of the deep. It has waited a long time.", m->kind);
-}
+/* the creature's words, from its header */
+static const char *mon_name(void) { return nth(words, 0); }
+static const char *mon_tele(void) { return nth(words, 1); }
+static const char *mon_hit(void) { return nth(words, 2); }
+static const char *mon_lore(void) { return nth(words, 3); }
 
 static void draw_intent(void) {
     unsigned char n = 0, c;
@@ -232,20 +220,20 @@ static unsigned char needs_close(unsigned char a) {
 }
 
 static unsigned char choose(void) {
-    unsigned char k, t = 0, r, a = mt->acts[0];
-    for (k = 0; k < 4; k++) t += mt->weights[k];
+    unsigned char k, t = 0, r, a = mt.acts[0];
+    for (k = 0; k < 4; k++) t += mt.weights[k];
     r = rng_range(t);
     for (k = 0; k < 4; k++) {
-        if (r < mt->weights[k]) {
-            a = mt->acts[k];
+        if (r < mt.weights[k]) {
+            a = mt.acts[k];
             break;
         }
-        r -= mt->weights[k];
+        r -= mt.weights[k];
     }
     /* not the same trick twice running, nor a pointless one */
-    if ((a == A_GUARD || a == A_PHASE || a == A_ROAR || a == A_WEB || a == A_REGEN) && a == last_intent) a = mt->acts[0];
-    if (a == A_REGEN && m->hp > mhp_max - 4) a = mt->acts[0];
-    if (a == A_WEB && snared) a = mt->acts[0];
+    if ((a == A_GUARD || a == A_PHASE || a == A_ROAR || a == A_WEB || a == A_REGEN) && a == last_intent) a = mt.acts[0];
+    if (a == A_REGEN && m->hp > mhp_max - 4) a = mt.acts[0];
+    if (a == A_WEB && snared) a = mt.acts[0];
     /* out of reach: come closer (a lunge reaches from near) */
     if (needs_close(a) && dist > 0) a = A_CLOSE;
     if ((a == A_LUNGE || a == A_DRAIN) && dist == 2) a = A_CLOSE;
@@ -282,7 +270,7 @@ static unsigned char hurt(unsigned char dmg, unsigned char armour) {
 }
 
 static unsigned char roll(void) {
-    unsigned char d = rng_dice(mt->dice, mt->sides) + mt->plus;
+    unsigned char d = rng_dice(mt.dice, mt.sides) + mt.plus;
     if (roar) {
         d += d / 2;
         roar = 0;
@@ -322,7 +310,7 @@ static unsigned char creature_acts(void) {
             dist = 0;
             draw_range();
         }
-        a = m->kind == M_SPIDER ? A_POISON : A_MELEE;
+        a = mt.flags & MF_VENOM ? A_POISON : A_MELEE;
     }
     switch (a) {
     case A_MELEE:
@@ -357,6 +345,7 @@ static unsigned char creature_acts(void) {
             the("lands a crushing blow!");
         } else {
             the(mon_hit());
+            str_cat(buf, ".");
         }
         say(buf, C_ORANGE);
         scene_show(0);
@@ -470,7 +459,7 @@ static unsigned char player_acts(unsigned char a) {
             say("You hurl a bolt of fire!", C_ORANGE);
             flash(255, 140, 30, 16);
             d = rng_dice(2, 6) + pl.level * 2;
-            if (m->kind == M_SLIME || m->kind == M_SPIDER) {
+            if (mt.flags & MF_FIREWEAK) {
                 d += d / 2;
                 say("It burns fiercely!", C_ORANGE);
             }
@@ -484,12 +473,13 @@ static unsigned char player_acts(unsigned char a) {
             casting = 1;
             wound(rng_dice(1, 6) + pl.level);
             casting = 0;
-            if (m->kind != M_LICH || rng_range(3) == 0) {
+            if (!(mt.flags & MF_COLDPROOF) || rng_range(3) == 0) {
                 frozen = 1;
                 the("is frozen fast!");
                 say(buf, C_CYAN);
             } else {
-                say("The lich shrugs off the cold.", C_DIM);
+                the("shrugs off the cold.");
+                say(buf, C_DIM);
             }
             draw_foe();
             break;
@@ -512,7 +502,7 @@ static unsigned char player_acts(unsigned char a) {
         pause(6);
         sfx(SFX_HIT);
         d = rng_dice(pl.wdice, pl.wsides) + pl.wplus + pl.level - 1;
-        d = d > mt->def ? d - mt->def : 1;
+        d = d > mt.def ? d - mt.def : 1;
         if (rng_range(10) == 0) {
             d *= 2;
             say("A telling blow!", C_HILITE);
@@ -535,7 +525,7 @@ static unsigned char player_acts(unsigned char a) {
     case 4:
         sfx(SFX_STEP);
         if (dist == 2) {
-            d = m->kind >= M_WRAITH ? 35 : 65;
+            d = mt.flags & MF_HARDFLEE ? 35 : 65;
             if (rng_range(100) < d) {
                 say("You flee into the dark!", C_HILITE);
                 return FLED;
@@ -593,8 +583,11 @@ static unsigned char pick(void) {
 unsigned char battle(unsigned char mi, unsigned char ambush) {
     unsigned char a, r;
     m = &mons[mi];
-    mt = &montypes[m->kind];
-    mhp_max = mt->hp;
+    scene_load(mon_scene[m->kind]);
+    dma_copy_far((unsigned long)(unsigned int)&mt, SCENE_HDR + 3, sizeof mt);
+    dma_copy_far((unsigned long)(unsigned int)words, SCENE_HDR + 32, sizeof words);
+    mhp_max = mt.hp;
+    if (m->hp == FRESH) m->hp = mt.hp;
     dist = ambush ? 0 : 1;
     frozen = staggered = roar = parrying = poison = snared = ward = 0;
     sel = casting = 0;
@@ -603,7 +596,6 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
     video_fade(0);
     v_flicker = 0;
     v_fire = 0;
-    scene_load(mt->scene);
     log_init(LOG_COL, LOG_ROW, LOG_W, LOG_H);
     draw_all();
     say(mon_lore(), C_BONE);
@@ -649,12 +641,12 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
     }
     /* the creature falls: it fades into the dark */
     sfx(SFX_VICTORY);
-    the(m->kind == M_SLIME ? "dissolves." : m->kind == M_WRAITH ? "comes apart in the wind." : "falls, and moves no more.");
+    the(nth(words, 4));
     say(buf, C_HILITE);
     v_wash_r = v_wash_g = v_wash_b = 0;
     for (v_wash = 0; v_wash < 16; v_wash++) pause(3);
-    said_num("You gain ", mt->xp, " experience.", C_GOLD);
-    if (gain_xp(mt->xp)) {
+    said_num("You gain ", mt.xp, " experience.", C_GOLD);
+    if (gain_xp(mt.xp)) {
         say("You have grown stronger!", C_GOLD);
         sfx(SFX_LEVEL);
         draw_you();
