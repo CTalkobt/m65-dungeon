@@ -7,14 +7,17 @@
  *   $40000      DGTILES: the palette (entries 16-127 the full-colour tiles,
  *               128-255 the map's palette banks); from $40400 the terrain's
  *               16-colour tiles (assets.h TK_*), the full-colour tiles (T_*),
- *               the frame and bar characters
- *   $4A000      the level's map: the terrain as characters, 128 x 96 (game.h vm_*)
+ *               the frame and bar characters: all of bank 4
  *   $50000      the scene: a monster's close-up, a chest or an idol (DGMON*,
  *               DGCHEST, DGIDOL), loaded when it is needed: its palette
  *               (entries 128-255), a header, its characters
  *   $5E000      the screen: 80 x 50 cells of 2 bytes
  * Colour RAM at $FF80000, 2 bytes a cell; the map's memory (game.h seen_*)
  * at $FF82000.
+ * Attic RAM: $8000000 the code overlays, $8070000 the tunes, $8080000 the
+ * sounds, $8100000 the close-ups seen (128 KB each), $8300000 the level's
+ * map: the terrain as characters, 128 x 96 (game.h vm_*), copied a row at a
+ * time to the screen (view.c).
  */
 #pragma once
 
@@ -24,7 +27,7 @@
 
 #define COLOR_LIN  0xFF80000UL
 #define TILES_LIN  0x0040000UL
-#define MAP_LIN    0x004A000UL       /* (src/vmap.s45 knows it) */
+#define MAP_LIN    0x8300000UL       /* attic RAM (src/vmap.s45 knows it) */
 #define SCENE_LIN  0x0050000UL
 #define SCREEN_LIN 0x005E000UL
 #define MUSIC_LIN  0x8070000UL       /* DGMUSIC, the tunes: attic RAM (tune_play_far) */

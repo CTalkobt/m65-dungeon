@@ -1,7 +1,7 @@
 ; vmap.s45 — the level's map (game.h vm_kind / vm_set): the terrain's
 ; 16-colour tiles as the screen shows them, 2 x 2 characters a place, a
-; row of 128 characters (256 bytes) at MAP_LIN ($4A000) on; reached through
-; a 32-bit pointer (lda [ptr],z)
+; row of 128 characters (256 bytes) at MAP_LIN ($8300000, attic RAM) on;
+; reached through a 32-bit pointer (lda [ptr],z)
 ;
 ; A tile kind k (TK_*) is the characters TCHAR0 + k * 4 + quarter, TCHAR0 =
 ; $1010 (gen_art.py): the low byte of a place's top left character is
@@ -29,12 +29,10 @@ proc at
     sta ptr
     lda $12
     asl
-    clc
-    adc #$A0                ; MAP_LIN = $0004A000
-    sta ptr+1
-    lda #$04
+    sta ptr+1               ; MAP_LIN = $08300000
+    lda #$30
     sta ptr+2
-    lda #$00
+    lda #$08
     sta ptr+3
     ldz #0
     rts

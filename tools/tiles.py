@@ -796,8 +796,6 @@ def sprite_kinds(base):
             v = [lit(comp, 0, glow)] * 4 + [None]      # it lights itself
         elif name in ("aim", "missile"):
             v = [v[4]] * 5                              # only what glows, over anything
-        elif name == "brazier_cold":
-            v = [v[0], None, v[2], None, None]          # (view.c: the nearest level there is)
         elif name == "player":
             v = [v[0], None, None, None, None]          # (view.c: always bright with the torch lit)
         elif name == "player_dark":

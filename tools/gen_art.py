@@ -47,7 +47,7 @@ FIRE_RAMP = [(150, 30, 4), (235, 100, 14), (255, 190, 50), (255, 240, 160)]
 PAL_MAP = 128                  # the map's palette banks: 8 + bank (gen_art map_palette)
 MAP_GENERAL, MAP_EDGE = 11, 3  # a terrain tile's colour numbers: 1-11 the stone, 12-14 its edges
 TCHAR0 = 0x1010                # the terrain's first character ($40400): src/vmap.s45 knows it
-MAP_LIN = 0x4A000              # the level's map (hw.h MAP_LIN): the tiles end below
+TILES_END = 0x50000            # the tiles have bank 4 (the level's map is in attic RAM)
 BACK1 = 0x2A000                # the backdrop's characters: in the C64 BASIC's space
 BACK2 = 0x2E000                #   and the C64 KERNAL's (8 KB each)
 BACK_HALF = 128
@@ -187,10 +187,10 @@ def build_tiles(out):
     head = pal_bytes(full)
     head += bytes(TCHAR0 * 64 - TILES_LIN - len(head))
     data = head + b"".join(chars)
-    assert TILES_LIN + len(data) <= MAP_LIN, "the tiles reach the map (%d bytes)" % len(data)
+    assert TILES_LIN + len(data) <= TILES_END, "the tiles overflow bank 4 (%d bytes)" % len(data)
     skip, packed = write(os.path.join(out, "dgtiles.bin"), TILES_LIN, data, 0x50000)
-    print("DGTILES: %d terrain tiles, %d tiles, %d characters, %d bytes before the map; packed %d -> %d"
-          % (len(terrain), len(seen), len(chars), MAP_LIN - TILES_LIN - len(data), len(data), packed))
+    print("DGTILES: %d terrain tiles, %d tiles, %d characters, %d bytes free in bank 4; packed %d -> %d"
+          % (len(terrain), len(seen), len(chars), TILES_END - TILES_LIN - len(data), len(data), packed))
     back = [idx(c).astype(np.uint8) for c in bimgs]
     tk = [name for name, _, _ in terrain]
     return table, tk, ui_nums, skip, back, full

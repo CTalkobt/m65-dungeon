@@ -191,7 +191,7 @@ and spell colours wash the palette, never the pixels.
 
 **The map** (`src/view.c`, `src/vmap.s45`). A place is 2 x 2 characters
 (16 x 16 pixels), and the view is 40 x 22 places of a 64 x 48 level. The
-level is made straight into a map of characters in chip RAM ($4A000,
+level is made straight into a map of characters in attic RAM ($8300000,
 128 x 96 characters, laid out like the screen): rock, floors, corridors,
 walls, doors and stairs, each drawn once and only changed when a door
 opens. There is no other copy of the level: what a place is, is read back
@@ -311,7 +311,7 @@ its creature's words, which are never in use at the same time. cc45
 inlines only the smallest functions (`-fmax-inline-ir-size=4`): the fight
 overlay was 1.6 KB larger with the default. The game needs the MEGA65's attic RAM (every
 production MEGA65 and xemu have it). The level itself is the map of
-characters in bank 4; things lying about are a short list, sight a window
+characters in attic RAM; things lying about are a short list, sight a window
 round the player, memory a byte a place in colour RAM.
 
 | Where | What |
@@ -323,10 +323,10 @@ round the player, memory a byte a place in colour RAM.
 | $19800-$1F7FF | the sounds' play slots (16 KB, 8 KB) |
 | $2A000-$2BFFF | the backdrop's first 128 characters (the C64 BASIC's space) |
 | $2E000-$2FFFF | the backdrop's other 128 (the C64 KERNAL's space) |
-| $40000-$49FFF | DGTILES: the palette (and the map's banks), the terrain's 16-colour tiles, the full-colour tiles, frame and bar characters |
-| $4A000-$4FFFF | the level's map: its terrain as characters |
+| $40000-$4FFFF | DGTILES: the palette (and the map's banks), the terrain's 16-colour tiles, the full-colour tiles, frame and bar characters |
 | $50000-$5DFFF | DG<NAME>A: a close-up's palette, maps, characters |
 | $5E000-$5FF3F | the screen |
 | $8000000-$801FFFF | attic RAM: the overlays (DUNGEON.OV1, DUNGEON.OV2) |
 | $8080000- | attic RAM: the sounds, decoded |
 | $8100000- | attic RAM: the close-ups seen so far, 128 KB each |
+| $8300000-$8305FFF | attic RAM: the level's map, its terrain as characters |
