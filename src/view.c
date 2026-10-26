@@ -199,7 +199,7 @@ static void ov_gather(void) {
         else if (v) ov_add(mons[k].x, mons[k].y, mon_tile[mons[k].kind], OV_TORCH);
     }
     for (k = 0; k < MAX_OBJ; k++) {
-        if (!thing_kind[k]) continue;
+        if (!thing_kind[k] || thing_kind[k] == O_TRAP) continue;     /* (a trap: hidden) */
         x = (unsigned char)(thing_at[k] % MAP_W);
         y = (unsigned char)(thing_at[k] / MAP_W);
         v = vis_at(x, y);

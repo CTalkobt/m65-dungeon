@@ -8,7 +8,8 @@
  *
  * Most levels have a vault: a room whose ways in are all doors, locked,
  * with two chests; its iron key lies where the player can walk to without
- * it, so no level is ever shut.
+ * it, so no level is ever shut. A door or two is secret (trap.c), but never
+ * one the way down or the key needs; and traps lie hidden.
  */
 #pragma cc45 overlay(gen)
 #pragma cc45 noescape_strings
@@ -142,6 +143,33 @@ static void reach(void) {
     } while (more);
 }
 
+/* one of the shut doors made secret (drawn as its wall), but only if the
+ * way down (the stairs, or the lich) and the vault's key can still be
+ * walked to without it */
+static unsigned int key_at, way_down;
+
+static void secret_door(void) {
+    unsigned char x, y, k, n = 0, r;
+    for (y = 1; y < MAP_H - 1; y++)
+        for (x = 1; x < MAP_W - 1; x++) {
+            k = vm_kind(x, y);
+            if (k == TK_DOOR_H || k == TK_DOOR_V) n++;
+        }
+    if (!n) return;
+    r = rng_range(n);
+    for (y = 1; y < MAP_H - 1; y++)
+        for (x = 1; x < MAP_W - 1; x++) {
+            k = vm_kind(x, y);
+            if ((k == TK_DOOR_H || k == TK_DOOR_V) && !r--) {
+                vm_set(x, y, k - TK_DOOR_H + TK_SECRET_H);
+                reach();
+                if (!seen_get(way_down) || (key_at && !seen_get(key_at))) vm_set(x, y, k);
+                dma_fill_far(SEEN_LIN, MAP_N, 0);
+                return;
+            }
+        }
+}
+
 static void add_mon(unsigned char kind, unsigned int at) {
     struct mon *m;
     if (!at || nmons >= MAX_MON) return;
@@ -268,7 +296,10 @@ void dungeon_make(void) {
         put(spot(v), O_CHEST);
         put(spot(v), O_CHEST);
         break;
-    }    /* the vault's key: somewhere the player can walk to without it */
+    }
+
+    /* the vault's key: somewhere the player can walk to without it */
+    key_at = 0;
     if (v) {
         reach();
         for (k = 0; k < 30; k++) {
@@ -279,8 +310,13 @@ void dungeon_make(void) {
         }
         if (k == 30) i = spot(0);
         put(i, O_KEY);
+        key_at = i;
         dma_fill_far(SEEN_LIN, MAP_N, 0);
     }
+
+    /* secret doors: one (two deeper down) */
+    way_down = AT(rx[last] + rw[last] / 2, ry[last] + rh[last] / 2);
+    for (k = 0; k < (pl.depth > 2 ? 2 : 1); k++) secret_door();
 
 
     /* things to find */
@@ -303,4 +339,7 @@ void dungeon_make(void) {
     /* creatures: more, and worse, deeper down; none in the first room */
     for (k = 0; k < 6 + d * 2; k++)
         add_mon(level_mons[d][rng_range(SPAWN)], spot(1 + rng_range(last)));
+
+    /* traps, hidden: more deeper down; none in the first room */
+    for (k = 0; k < 1 + pl.depth; k++) put(spot(1 + rng_range(last)), O_TRAP);
 }

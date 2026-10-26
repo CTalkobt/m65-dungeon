@@ -468,12 +468,15 @@ ACTIONS = ["NONE", "MELEE", "HEAVY", "GUARD", "POISON", "WEB", "SPIT", "REGEN", 
 # flags (the game's MF_*): burns easily, shrugs off frost (2 in 3), hard to
 # flee from, its lunge is venomous, moves every other turn, the last foe
 FLAGS = ["FIREWEAK", "COLDPROOF", "HARDFLEE", "VENOM", "SLOW", "BOSS"]
+# what it does on the map (the game's MH_*): shoots arrows from afar,
+# snatches fuel or arrows and runs, dissolves what lies in its way
+HABITS = ["ARCHER", "THIEF", "EATER"]
 
 
-def info(name, tele, hit, lore, death, hp, dice, sides, plus, defense, xp, acts, depths, flags=()):
+def info(name, tele, hit, lore, death, hp, dice, sides, plus, defense, xp, acts, depths, flags=(), habits=()):
     """acts: (action, weight) a fight's choices; depths: {level: weight}"""
     return dict(name=name, tele=tele, hit=hit, lore=lore, death=death, hp=hp, dice=dice, sides=sides,
-                plus=plus, defense=defense, xp=xp, acts=acts, depths=depths, flags=flags)
+                plus=plus, defense=defense, xp=xp, acts=acts, depths=depths, flags=flags, habits=habits)
 
 
 MONSTERS = [
@@ -481,12 +484,13 @@ MONSTERS = [
         "giant rat", "bares its yellow teeth", "bites you",
         "A rat the size of a dog, slick with sewer filth.", "falls, and moves no more.",
         hp=9, dice=1, sides=4, plus=1, defense=0, xp=5,
-        acts=[("MELEE", 5), ("LUNGE", 3), ("POISON", 2)], depths={1: 2, 2: 1})),
+        acts=[("MELEE", 5), ("LUNGE", 3), ("POISON", 2)], depths={1: 2, 2: 1}, habits=("THIEF",))),
     ("skeleton", skeleton, info(
         "skeleton", "swings its notched blade", "cuts you",
         "Old bones bound by older hate. Its eyes are embers.", "falls apart in a clatter of bones.",
         hp=18, dice=1, sides=6, plus=2, defense=2, xp=12,
-        acts=[("MELEE", 4), ("HEAVY", 3), ("GUARD", 2)], depths={1: 1, 2: 1, 3: 1, 5: 1})),
+        acts=[("MELEE", 4), ("HEAVY", 3), ("GUARD", 2)], depths={1: 1, 2: 1, 3: 1, 5: 1},
+        habits=("ARCHER",))),
     ("spider", spider, info(
         "cave spider", "rears, fangs dripping", "bites you",
         "Eight green eyes catch your torchlight.", "curls up its legs and is still.",
@@ -498,7 +502,7 @@ MONSTERS = [
         "A quivering mass. Something it ate stares out of it.", "dissolves.",
         hp=26, dice=1, sides=6, plus=1, defense=0, xp=16,
         acts=[("MELEE", 3), ("SPIT", 3), ("REGEN", 2)], depths={1: 1, 2: 1, 3: 1},
-        flags=("FIREWEAK", "SLOW"))),
+        flags=("FIREWEAK", "SLOW"), habits=("EATER",))),
     ("orc", orc, info(
         "orc brute", "swings its spiked club", "clubs you",
         "It grins with too many tusks and hefts its club.", "falls, and moves no more.",

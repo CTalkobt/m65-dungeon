@@ -33,7 +33,8 @@ top right, the frames each turn's sight and drawing take; `TEST=-DTEST_ITEMS`
 gives two of everything one can carry; `TEST=-DTEST_VAULT` starts beside a
 locked door and says where it is and whether the key lies outside the vault. `TEST=-DTEST_FUEL=<n>` starts with n turns
 of fuel on the torch; `TEST=-DTEST_SHOOT=<kind>` puts a sleeping creature of
-that kind a few places away.
+that kind a few places away. `TEST=-DTEST_SECRET` starts beside a secret door,
+`TEST=-DTEST_TRAP` with a hidden trap a step east.
 Other letters in `KEYS` are typed as they are (`KEYS='F__i'` opens the
 inventory).
 `python3 tools/probe.py build/dungeon.d81 <seconds> r m<addr>` boots the disk
@@ -54,7 +55,7 @@ game builds with its SID effects only.
 |---|---|---|---|
 | cursor keys, W A S D | directions | move | up / down: choose |
 | Q E Z C (or the number keys) | | move diagonally | |
-| SPACE | | wait a turn | |
+| SPACE, 5, . | | rest a turn, searching round about | |
 | RETURN | FIRE | go down the stairs | do the chosen action |
 | P | | drink a healing potion | parry |
 | I | | what you carry: up / down choose, RETURN (U) use, D put down | |
@@ -90,6 +91,23 @@ from them) and its memory.
 levels, 1-15, or off (RETURN turns the chosen one off and back on). The
 music's level is the SIDs' volume; the sounds' scales each sample. (`S`
 cannot be the key on the map: it is a step south.)
+
+**What hides.** A door or two on a level is secret: it looks exactly like
+the wall it is in (but never one the way down or the vault's key needs).
+Traps lie hidden in the rooms: a pressure plate fires a dart, snuffs the
+torch with a gust, rings a chime that wipes what you remember of the
+level, or clangs a bell that wakes everything; one time in four you step
+off it in time. Resting searches the eight places round you (each hidden
+thing one time in two), and walking past now and then finds one; a
+scroll of far sight (or the idol's gift) finds them all. A trap found
+stays as a plate in the floor, harmless, and is remembered.
+
+**The creatures on the map.** Skeletons shoot arrows from two to six
+places off along a clear line (the arrows can be picked up where they
+fall). Giant rats snatch something carried (fuel first, then an arrow) and
+run off with it; killed, they drop it. Oozes dissolve whatever lies where
+they crawl, but never a key. In a fight a wraith's chill can snuff your
+torch.
 
 **Shooting** (T: the bow, G: the flintlock). A red mark blinks on the
 nearest creature you can see (lit, or eyes in the dark) within reach and
@@ -268,8 +286,9 @@ are the tunes to listen to on the PC.
 **Memory** (bank 0 is tight). The resident part (video, keys, the UI,
 sound, the tables, the message line) ends near $8200; the overlay
 region starts at $8E00. The code overlays `walk` (explore +
-view), `pack` (the inventory, items, the torch), `battle`, `gen` (the
-dungeon generator) and `scenes` (chest, idol, title, endings) are kept in
+view), `pack` (the inventory, items, the torch), `aim` (shooting, the
+creatures' tricks), `battle`, `gen` (the dungeon generator, saving, traps
+and secrets) and `scenes` (chest, idol, title, endings, settings) are kept in
 attic RAM and copied by DMA into one region at $8E00 when called. A call
 from one overlay into another brings the caller back on return, but not
 the caller's text in the meantime; so what takes text from any overlay

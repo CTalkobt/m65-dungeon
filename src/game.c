@@ -66,7 +66,8 @@ unsigned char obj_count(unsigned int at) {
 }
 
 /* the terrain from the tile kind: TK_ROCK, FLOOR0-3, CORR0-1, WALL0-15,
- * DOOR_H/V, DOOR_OPEN_H/V, STAIRS, DOOR_LOCKED_H/V (gen_art.py's order) */
+ * DOOR_H/V, DOOR_OPEN_H/V, STAIRS, DOOR_LOCKED_H/V, SECRET_H/V, TRAP
+ * (gen_art.py's order) */
 unsigned char terrain(unsigned char x, unsigned char y) {
     unsigned char k = vm_kind(x, y);
     if (k < TK_FLOOR0) return TR_ROCK;
@@ -76,7 +77,9 @@ unsigned char terrain(unsigned char x, unsigned char y) {
     if (k < TK_DOOR_OPEN_H) return TR_DOOR;
     if (k < TK_STAIRS) return TR_OPEN;
     if (k == TK_STAIRS) return TR_STAIRS;
-    return TR_LOCKED;
+    if (k <= TK_DOOR_LOCKED_V) return TR_LOCKED;
+    if (k == TK_TRAP) return TR_FLOOR;      /* (one found: harmless now) */
+    return TR_ROCK;                         /* a secret door: a wall, till it is found */
 }
 
 unsigned char lit_x0[MAX_LIT], lit_y0[MAX_LIT], lit_x1[MAX_LIT], lit_y1[MAX_LIT];   /* (keep.c saves them) */
@@ -103,24 +106,6 @@ void vault_set(unsigned char x0, unsigned char y0, unsigned char x1, unsigned ch
 
 unsigned char vault_at(unsigned char x, unsigned char y) {
     return x >= vault_x0 && x <= vault_x1 && y >= vault_y0 && y <= vault_y1;
-}
-
-/* every place remembered, as if just seen (an idol, a scroll) */
-void memory_renew(void) {
-    unsigned int i;
-    unsigned char now = epoch();
-    for (i = 0; i < MAP_N; i++)
-        if (seen_get(i)) seen_set(i, now);
-}
-
-/* the level's walls, doors and stairs remembered, seen or not */
-void level_reveal(void) {
-    unsigned char x, y, k, now = epoch();
-    for (y = 0; y < MAP_H; y++)
-        for (x = 0; x < MAP_W; x++) {
-            k = vm_kind(x, y);
-            if (IS_WALL(k) || k >= TK_DOOR_H) seen_set(AT(x, y), now);   /* the doors, the stairs */
-        }
 }
 
 unsigned char lit_at(unsigned char x, unsigned char y) {

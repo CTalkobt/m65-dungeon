@@ -410,6 +410,10 @@ static unsigned char creature_acts(void) {
             sfx(SFX_FROST);
             flash(160, 200, 255, 12);
             say("Cold reaches into your bones.", C_CYAN);
+            if (pl.lit && rng_range(3) == 0) {
+                pl.lit = 0;              /* (back on the map, it is dark) */
+                say("The cold snuffs out your torch!", C_CYAN);
+            }
         } else {
             say("Acid spatters you!", C_GREEN);
         }

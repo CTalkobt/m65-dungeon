@@ -702,6 +702,17 @@ def door(vertical, open_, locked=False):
     return img, edge
 
 
+def trap():
+    """a pressure plate found in the floor (its rim an edge: remembered)"""
+    img = floor(2)
+    edge = np.zeros((T, T), bool)
+    img[3:13, 3:13] = np.array([0.3, 0.27, 0.24], np.float32)
+    img[4:12, 4:12] = np.array([0.42, 0.36, 0.3], np.float32)
+    img[7:9, 7:9] = np.array([0.15, 0.12, 0.1], np.float32)
+    edge[3, 3:13] = edge[12, 3:13] = edge[3:13, 3] = edge[3:13, 12] = True
+    return img, edge
+
+
 def stairs():
     """steps going down into the dark, left to right; their edges: each
     step's lip and the stairwell's sides"""
@@ -744,6 +755,11 @@ def terrain_kinds():
     out.append(("STAIRS",) + stairs())
     for name, v in (("DOOR_LOCKED_H", 0), ("DOOR_LOCKED_V", 1)):
         out.append((name,) + door(v, 0, True))
+    # secret doors: exactly the wall they hide in (a door across a corridor
+    # running north-south has floor north and south of it: WALL5; else WALL10)
+    out.append(("SECRET_H",) + wall(5))
+    out.append(("SECRET_V",) + wall(10))
+    out.append(("TRAP",) + trap())
     return out
 
 

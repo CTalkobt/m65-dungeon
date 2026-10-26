@@ -66,10 +66,10 @@ static void level_enter(void) {
 }
 
 static void help(void) {
-    msg("Move: arrows, WASD, QEZC diagonally. Space: wait.", C_TEXT);
+    msg("Move: arrows, WASD, QEZC diagonally. Space: search.", C_TEXT);
     msg("Walk into doors, chests, idols, foes. T, G: shoot.", C_TEXT);
     msg("I: inventory. P: potion. F: feed torch. L: light it.", C_TEXT);
-    msg("RETURN: stairs down. O: settings. RUN/STOP: give up.", C_TEXT);
+    msg("RETURN: stairs. O: settings. RUN/STOP: save or quit.", C_TEXT);
 }
 
 static const unsigned char drops[9] = {O_GOLD, O_GOLD, O_GOLD, O_POTION, O_SCROLL, O_DRAUGHT, O_RAGS, O_FUR, O_ARROWS};
@@ -83,6 +83,7 @@ static unsigned char fight(unsigned char i, unsigned char ambush) {
     r = battle(i, ambush);
     if (r == DIED) return DIED;
     if (r == WON) {
+        drop_carry(i);
         /* the arrows shot in the fight: one in two whole, gathered up */
         for (k = n = 0; k < arrows_spent; k++)
             if (rng_range(2)) n++;
@@ -107,6 +108,11 @@ static unsigned char fight(unsigned char i, unsigned char ambush) {
     screen_in();
     return FLED;
 }
+
+/* the things on the floor one carries (pack.c's pick_up) */
+static const unsigned char carried[20] = {
+    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+};
 
 /* ---------------------------------------------------------------- creatures */
 
@@ -135,6 +141,21 @@ static unsigned char free_for(struct mon *c, unsigned char x, unsigned char y) {
 }
 
 /* 0, or the outcome of a fight a creature started */
+/* an eater's place: what lay there dissolved (not a key: a vault would shut) */
+static void devour(struct mon *c) {
+    unsigned char o = obj_at(AT(c->x, c->y));
+    char buf[48];
+    if (!o || o == O_KEY || !(o >= O_PILE || o == O_GOLD || o == O_SCROLL || (o < sizeof carried && carried[o]))) return;
+    obj_set(AT(c->x, c->y), O_NONE);
+    o = vis_at(c->x, c->y);
+    if (!o || o == VIS_SHADOW) return;
+    buf[0] = 0;
+    str_cat(buf, "The ");
+    str_cat(buf, nth(mon_names, c->kind));
+    str_cat(buf, " engulfs what lay there.");
+    msg(buf, C_GREEN);
+}
+
 static unsigned char creatures_move(void) {
     unsigned char k, d, sees, x, y;
     signed char dx, dy;
@@ -163,6 +184,16 @@ static unsigned char creatures_move(void) {
         if ((mon_flags[c->kind] & MF_SLOW) && (turn & 1)) continue;
         if (sees) c->awake = 2;
         else if (c->awake == 2 && rng_range(8) == 0) c->awake = 1;
+        /* an archer shoots, from 2 to 6 places off along a clear line */
+        if ((mon_habits[c->kind] & MH_ARCHER) && c->awake == 2 && sees && d >= 2 && d <= 6 &&
+            rng_range(2) == 0 && view_line(c->x, c->y)) {
+            if (foe_shoots(k)) return DIED;
+            continue;
+        }
+        if (c->carry && c->awake == 2) {   /* a thief with its prize runs */
+            dx = -dx;
+            dy = -dy;
+        }
         if (c->awake == 1) {
             if (rng_range(2)) continue;
             dx = (signed char)rng_range(3) - 1;
@@ -173,21 +204,22 @@ static unsigned char creatures_move(void) {
         y = c->y + dy;
         if (x == pl.x && y == pl.y) {
             if (c->awake != 2) continue;
+            if ((mon_habits[c->kind] & MH_THIEF) && !c->carry && rng_range(2) == 0 && steal(k)) continue;
             return fight(k, 1);
         }
-        if (free_for(c, x, y)) { c->x = x; c->y = y; continue; }
-        if (dx && free_for(c, c->x + dx, c->y) && !(c->x + dx == pl.x && c->y == pl.y)) { c->x += dx; continue; }
-        if (dy && free_for(c, c->x, c->y + dy) && !(c->x == pl.x && c->y + dy == pl.y)) { c->y += dy; continue; }
+        if (free_for(c, x, y)) {
+            c->x = x;
+            c->y = y;
+        } else if (dx && free_for(c, c->x + dx, c->y) && !(c->x + dx == pl.x && c->y == pl.y)) c->x += dx;
+        else if (dy && free_for(c, c->x, c->y + dy) && !(c->x == pl.x && c->y + dy == pl.y)) c->y += dy;
+        else continue;
+        if (mon_habits[c->kind] & MH_EATER) devour(c);
     }
     return 0;
 }
 
 /* ---------------------------------------------------------------- the player */
 
-/* the things on the floor one carries (pack.c's pick_up) */
-static const unsigned char carried[20] = {
-    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-};
 
 /* a turn's burning, and the warnings */
 static void torch_burn(void) {
@@ -239,7 +271,11 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
     pl.x = x;
     pl.y = y;
     sfx(SFX_STEP);
+    search(12);                      /* (now and then, what hides is seen in passing) */
     switch (n) {
+    case O_TRAP:
+        *out = trap_spring();
+        break;
     case O_CHEST:
         view_fov();
         view_draw();
@@ -321,6 +357,29 @@ static void test_shoot(void) {
 }
 #endif
 
+#ifdef TEST_SECRET
+/* (tests: the player beside a secret door, if the level has one) */
+static void test_secret(void) {
+    static const signed char sx[4] = {-1, 1, 0, 0}, sy[4] = {0, 0, -1, 1};
+    unsigned char x, y, k, t;
+    for (y = 1; y < MAP_H - 1; y++)
+        for (x = 1; x < MAP_W - 1; x++) {
+            t = vm_kind(x, y);
+            if (t != TK_SECRET_H && t != TK_SECRET_V) continue;
+            for (k = 0; k < 4; k++) {
+                t = terrain(x + sx[k], y + sy[k]);
+                if (t == TR_CORR || t == TR_FLOOR) {
+                    pl.x = x + sx[k];
+                    pl.y = y + sy[k];
+                    msg("(a secret door beside you)", C_RED);
+                    return;
+                }
+            }
+        }
+    msg("(no secret door)", C_RED);
+}
+#endif
+
 static unsigned char explore_run(unsigned char resume);
 
 unsigned char explore(unsigned char resume) {
@@ -346,6 +405,12 @@ static unsigned char explore_run(unsigned char resume) {
 #endif
 #ifdef TEST_SHOOT
     test_shoot();
+#endif
+#ifdef TEST_SECRET
+    test_secret();
+#endif
+#ifdef TEST_TRAP
+    obj_set(AT(pl.x + 1, pl.y), O_TRAP);   /* (tests: a hidden trap one step east) */
 #endif
 #ifdef TEST_FUEL
     pl.fuel = TEST_FUEL;             /* (tests: the torch near its end) */
@@ -389,7 +454,10 @@ static unsigned char explore_run(unsigned char resume) {
         case 'e': case '9': dx = 1; dy = -1; break;
         case 'z': case '1': dx = -1; dy = 1; break;
         case 'c': case '3': dx = 1; dy = 1; break;
-        case ' ': case '5': case '.': took = 1; break;
+        case ' ': case '5': case '.':
+            took = 1;                /* a rest: a search of the places round about */
+            search(2);
+            break;
         case 'h': case '?': help(); break;
         case 'p':
             took = drink();

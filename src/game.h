@@ -68,6 +68,7 @@ unsigned char vault_at(unsigned char x, unsigned char y);
 #define O_FIRESTICK   17
 #define O_ARROWS      18      /* a few arrows */
 #define O_SHOT        19      /* a few cartridges */
+#define O_TRAP        20      /* a pressure plate, hidden (found: the tile TK_TRAP) */
 #define O_PILE        32      /* O_PILE + I_*: so many (thing_n) of a thing carried, put down */
 #define MAX_OBJ       56
 extern unsigned int thing_at[MAX_OBJ];       /* where (AT) */
@@ -88,8 +89,11 @@ void seen_set(unsigned int i, unsigned char v);
 unsigned char epoch(void);                     /* now */
 unsigned char epoch_age(unsigned char e);      /* epochs since e */
 void memory_sweep(void);                       /* the long forgotten to 0 */
+/* trap.c: what is hidden, found and sprung */
 void memory_renew(void);                       /* all remembered as if just seen */
-void level_reveal(void);                       /* the walls, doors, stairs remembered */
+void level_reveal(void);                       /* the walls, doors, stairs remembered; the hidden found */
+unsigned char search(unsigned char odds);      /* the places round the player: each hidden thing 1 in odds */
+unsigned char trap_spring(void);               /* the hidden trap underfoot: DIED if it killed */
 /* this turn, in a window round the player: 0 out of sight, 1-4 lit
  * (bright to dim), 5 in shadow */
 #define VIS_SHADOW 5
@@ -140,6 +144,11 @@ unsigned char light_any(void);
 unsigned char light(unsigned char k);   /* I_FLINT, I_FIRESTICK, I_COUNT: a brazier's coals */
 unsigned char shoot(unsigned char gun); /* the bow (0) or the flintlock (1) at a creature in sight */
 void pick_up(unsigned int i, unsigned char n);   /* what lies at i (O_*), as the player walks over it */
+unsigned char foe_shoots(unsigned char k);       /* creature k's arrow at the player: 1 if it killed */
+unsigned char steal(unsigned char k);            /* creature k snatches something: 1 if it did */
+void drop_carry(unsigned char k);                /* what creature k ran off with, where it lies */
+/* pack.c: n of item put down at (x, y) or beside it; 0 if there is no room */
+unsigned char put_down(unsigned char x, unsigned char y, unsigned char item, unsigned char n);
 
 /* the weapons and the armour, worst to best: their names, what they do */
 #define WEAPONS    5
