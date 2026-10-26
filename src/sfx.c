@@ -99,6 +99,16 @@ void sfx(unsigned char n) {
     put(v, 4, f->wave | 1);
 }
 
+/* an effect from further off: quieter, toward the side it came from
+ * (dx < 0 the left); the SIDs play it as they would close by */
+void sfx_far(unsigned char n, signed char dx) {
+    if (audio_ok && sampled[n] != SND_NONE) {
+        audio_play(sampled[n], dx > 0 ? 25 : 80, dx < 0 ? 25 : 80);
+        return;
+    }
+    sfx(n);
+}
+
 /* once a frame: the slides, the gates let go */
 void sfx_update(void) {
     unsigned char v;

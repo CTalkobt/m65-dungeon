@@ -78,7 +78,10 @@ static unsigned char free_for(struct mon *c, unsigned char x, unsigned char y) {
     if (t == TR_ROCK || obj_at(i) == O_BRAZIER || mon_at(x, y)) return 0;
     if (t == TR_DOOR) {
         map[i] = (map[i] & ~TR_MASK) | TR_OPEN;     /* it opens the door: that is its move */
-        if (vis_at(x, y)) msg("A latch clicks somewhere in the dark.", C_DIM);
+        if (vis_at(x, y)) {
+            msg("A latch clicks somewhere in the dark.", C_DIM);
+            sfx_far(SFX_DOOR, (signed char)((signed int)x - pl.x));
+        }
         return 0;
     }
     (void)c;

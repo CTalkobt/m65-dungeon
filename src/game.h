@@ -204,6 +204,7 @@ void sfx_update(void);
 #define SFX_CHEST  26
 #define SFX_COUNT  27
 void sfx(unsigned char n);
+void sfx_far(unsigned char n, signed char dx);   /* quieter, from that side (dx < 0 left) */
 
 /* audio.c: the sampled sounds (sfx plays them where there is one) */
 extern unsigned char audio_ok;
