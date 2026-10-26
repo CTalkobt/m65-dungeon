@@ -2,8 +2,8 @@
 
 ## baseimage.d81
 
-A D81 disk image holding the game's sampled sounds, the files `DGSFX1`,
-`DGSFX2` and `DGSFX3`. `make` takes them off this image and puts them on
+A D81 disk image holding the game's sampled sounds, the files `DGSFX1` to
+`DGSFX8`. `make` takes them off this image and puts them on
 the game's disk (`build/dungeon.d81`), so the game can be built without
 the sound packs they were made from.
 

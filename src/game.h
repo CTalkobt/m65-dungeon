@@ -213,6 +213,8 @@ void audio_play(unsigned char id, unsigned char left, unsigned char right);
 void audio_update(void);              /* once a frame */
 
 /* front.c */
+void title_show(void);                /* the title, before the sounds load */
+void loading_tick(void);              /* now and then while they do */
 unsigned char title(void);            /* 0: the player wants to leave */
 void ending(unsigned char how);
 

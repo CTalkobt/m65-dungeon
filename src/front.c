@@ -7,9 +7,10 @@
 #include "rng.h"
 #include "game.h"
 
-unsigned char title(void) {
-    unsigned char k;
-    unsigned int t = 0;
+static unsigned char shown;                   /* the title is on the screen */
+
+/* the title screen, without the prompt (title() adds it) */
+void title_show(void) {
     video_fade(0);
     v_flicker = 0;
     v_fire = 0;
@@ -23,9 +24,52 @@ unsigned char title(void) {
     video_centre(38, "At the bottom the lich who emptied the valley keeps its vigil.", C_TEXT);
     video_centre(40, "Take your torch. Mind the dark. And remember -", C_DIM);
     video_centre(41, "the deep makes you forget.", C_DIM);
-    video_centre(44, "RETURN or FIRE to begin        RUN/STOP to leave", C_HILITE);
     video_centre(47, "A game for the MEGA65, written in C with cc45", C_DARK);
     video_fade(16);
+    shown = 1;
+}
+
+/* while the sounds load (audio.c calls it often): a line of nonsense on
+ * the title, another every second and a half or so. (One literal in the
+ * code, so it stays in the overlay: bank 0 is full.) */
+static unsigned char quip, quip_at = 0xFF;
+
+void loading_tick(void) {
+    const char *s = "Reticulating splines...\0"
+                    "Sharpening the skeleton's sword...\0"
+                    "Teaching the rats to squeak...\0"
+                    "Filling the braziers...\0"
+                    "Untangling the cobwebs...\0"
+                    "Tuning the dripping water...\0"
+                    "Hiding the treasure, badly...\0"
+                    "Polishing the lich's crown...\0"
+                    "Waking the spiders. Sorry...\0"
+                    "Misplacing the stairs...\0"
+                    "Feeding the ooze...\0"
+                    "Rattling distant chains...\0"
+                    "Remembering what you will soon forget...\0";
+    const char *q = s;
+    unsigned char f = FRAMECOUNT, k;
+    if (quip_at != 0xFF && (unsigned char)(f - quip_at) < 80) return;
+    quip_at = f;
+    for (k = 0; k < quip; k++)
+        while (*q++) {}
+    if (!*q) {                                /* past the last (the two NULs): round again */
+        quip = 0;
+        q = s;
+    }
+    quip++;
+    video_blank(1, 44, 78, 1);
+    video_centre(44, q, C_DIM);
+}
+
+unsigned char title(void) {
+    unsigned char k;
+    unsigned int t = 0;
+    if (!shown) title_show();
+    shown = 0;
+    video_blank(1, 44, 78, 1);
+    video_centre(44, "RETURN or FIRE to begin        RUN/STOP to leave", C_HILITE);
     for (;;) {
         video_frame();
         sfx_update();

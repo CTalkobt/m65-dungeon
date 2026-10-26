@@ -5,7 +5,9 @@
  * bytes a sound: its number, its coded length, ...): blocks of 16
  * samples, a byte (predictor << 4 | shift) and 8 bytes of 4-bit residues,
  * each sample its prediction from the two before plus (residue << shift).
- * They are decoded once into attic RAM (SND_ATTIC, sfxdata.c snd_at).
+ * They are decoded once into attic RAM (SND_ATTIC, sfxdata.c snd_at), at
+ * the start, under the title: each file loads into the play slots (24 KB,
+ * not yet in use; bank 5 holds the title's picture).
  *
  * The audio DMA reads chip RAM only, so a sound is copied into a play slot
  * when it is wanted: the long slot (16 KB, channel 0) or the short one
@@ -35,9 +37,9 @@ unsigned char audio_ok;
 static unsigned char busy[2];                 /* frames each slot still plays */
 
 static unsigned char buf[16 * 16];            /* decoded samples on their way to attic RAM */
-static unsigned char blk[9 * 16];             /* coded blocks on their way from bank 5 */
+static unsigned char blk[9 * 16];             /* coded blocks on their way from the file */
 
-/* one sound: n bytes of blocks at src (bank 5) to dst (attic RAM) */
+/* one sound: n bytes of blocks at src (the play slots) to dst (attic RAM) */
 static void decode(unsigned long src, unsigned int n, unsigned long dst) {
     signed int s1 = 0, s2 = 0, p, x, r;
     unsigned char k, b, f, sh, i, *o;
@@ -79,24 +81,27 @@ static void decode(unsigned long src, unsigned int n, unsigned long dst) {
         }
         dma_copy_far(dst, (unsigned long)(unsigned int)buf, (unsigned int)(o - buf));
         dst += o - buf;
+        loading_tick();
     }
 }
 
 void audio_init(void) {
 #if SND_COUNT
     char name[8] = "DGSFX1";
-    unsigned char f, n, k, hdr[1 + 6 * 32];
+    unsigned char f, n, k, e[6];
     unsigned long src;
     unsigned int len;
     for (f = 0; f < SND_FILES; f++) {
         name[5] = (char)('1' + f);
-        if (!load_file(name, 5)) return;
-        dma_copy_far((unsigned long)(unsigned int)hdr, SCENE_LIN, sizeof hdr);
-        n = hdr[0];
-        src = SCENE_LIN + 1 + (unsigned int)n * 6;
+        loading_tick();
+        if (!load_file(name, 1)) return;          /* into the play slots: free till now */
+        dma_copy_far((unsigned long)(unsigned int)&n, SLOT_LONG, 1);
+        src = SLOT_LONG + 1 + (unsigned int)n * 6;
         for (k = 0; k < n; k++) {
-            len = hdr[2 + k * 6] | (unsigned int)hdr[3 + k * 6] << 8;
-            decode(src, len, SND_ATTIC + snd_at[hdr[1 + k * 6]]);
+            /* its header: number, coded length, decoded length, slot */
+            dma_copy_far((unsigned long)(unsigned int)e, SLOT_LONG + 1 + (unsigned int)k * 6, 6);
+            len = e[1] | (unsigned int)e[2] << 8;
+            decode(src, len, SND_ATTIC + snd_at[e[0]]);
             src += len;
         }
     }

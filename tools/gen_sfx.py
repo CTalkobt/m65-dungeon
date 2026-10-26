@@ -26,7 +26,7 @@ import numpy as np
 
 RATE = 12000
 SLOT_LEN = {"L": 0x4000, "S": 0x2000}       # the play slots (src/audio.c)
-FILE_MAX = 0xD800                            # a file's data: it loads into bank 5
+FILE_MAX = 0x6000                            # a file's data: it loads into the play slots ($19800-$1F7FF)
 PEAK = 0.92
 
 NIMBE = ("NimbeKit_Fantasy_RPG_Collection.zip", "NimbeKit_Fantasy_RPG_SFX_160.zip")
@@ -231,7 +231,8 @@ def unblock(data):
 
 # ---------------------------------------------------------------- the files
 #
-# DGSFX1, 2, ...: each loads at $50000 (bank 5): a count, then for each
+# DGSFX1, 2, ...: each loads at $19800 (bank 1: the play slots, not yet
+# in use; bank 5 holds the title's picture): a count, then for each
 # sound in it its number, its coded length (2 bytes), its length decoded
 # (2 bytes) and its slot (0 long, 1 short); then the coded sounds one
 # after another. Whole sounds to a file, as many as fit.
@@ -263,7 +264,7 @@ def pack(packs, out):
         for k, data, plen, slot in snds:
             hdr += bytes([k]) + len(data).to_bytes(2, "little") + plen.to_bytes(2, "little") + bytes([slot])
         with open(os.path.join(out, "dgsfx%d.bin" % (f + 1)), "wb") as fo:
-            fo.write(b"\x00\x00" + bytes(hdr) + b"".join(s[1] for s in snds))     # loads at $50000
+            fo.write(b"\x00\x98" + bytes(hdr) + b"".join(s[1] for s in snds))     # loads at $19800
     # previews to listen to (only here, from the packs: a build does not
     # write the sounds out as WAV files)
     import wave

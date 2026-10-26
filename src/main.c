@@ -42,16 +42,19 @@ static void seed(void) {
 
 int main(void) {
     seed();
-    rom_print("\x93loading...\r");
+    REG(0xD020) = 0;                          /* black while it loads */
+    REG(0xD021) = 0;
+    rom_print("\x93\x05loading...\r");
     if (!load_file("DGTILES", 4)) {
         rom_print("dgtiles missing: run dungeon from its disk\r");
         return 1;
     }
     unpack(TILES_LIN + TILES_SKIP);
-    audio_init();
     video_on();
     video_pal_load(TILES_LIN, PAL_TILES, PAL_SCENE - PAL_TILES);
     sfx_on();
+    title_show();                             /* the title first, then the sounds under it */
+    audio_init();
     while (title()) {
         player_new();
         msg_clear();
