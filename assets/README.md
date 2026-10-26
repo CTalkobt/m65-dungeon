@@ -24,8 +24,10 @@ passed on by themselves; get the packs from their authors:
 - moneywithjj, *Free Roguelike Sounds*: itch.io, <https://moneywithjjcom.itch.io/free-roguelike-sounds>
 - moneywithjj, *Free Lost Temple Sounds*: itch.io, <https://moneywithjjcom.itch.io/free-lost-temple-sounds>
 - NimbeKit, *Fantasy RPG: Dungeon & Magic SFX 160* (from the *Fantasy RPG Complete Collection*), NimbeKit Studio (licence: NimbeKit Game Asset License v1.0)
-- Packsmithy, *free sampler* (from *Dark Dungeon Sounds*): <https://packsmithy.com/packs/dark-dungeon-sounds/> (licence:
-  <https://packsmithy.com/license/>)
+- Packsmithy, *free sampler* (from *Dark Dungeon Sounds*): the sampler is
+  also published by Packsmithy on OpenGameArt under CC BY 4.0,
+  <https://opengameart.org/content/packsmithy-sfx-sampler-30-synthesised-sound-effects-ui-retro-horror-sci-fi-glitch>.
+  Credit: Packsmithy (packsmithy.com). The pack: <https://packsmithy.com/packs/dark-dungeon-sounds/>
 
 The moneywithjj sounds were made with ElevenLabs Sound Effects under the
 author's commercial subscription (their README says so).
@@ -60,6 +62,18 @@ author's commercial subscription (their README says so).
 | CHAIN | NimbeKit | `fr_ambience_distant_chain.wav` |
 | FOOT | NimbeKit | `fr_ambience_far_footfall.wav` |
 | EMBER | NimbeKit | `fr_ambience_ember_pop.wav` |
+
+### Licensing
+
+These sounds are not covered by this project's own licence: each remains
+under the terms of the pack it came from (above). They are here, made
+into the game's own format, so that the game can be built; they are not
+offered as a sound library. Please get the packs from their authors to
+use the sounds in anything else.
+
+For any licensing concern about these sounds, contact the author of this
+game, Craig Taylor (CTalkobt): <https://github.com/CTalkobt>. If a
+licensor objects, the sounds will be replaced or removed.
 
 ### Remaking the image
 
