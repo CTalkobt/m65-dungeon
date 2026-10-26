@@ -2,8 +2,9 @@
  *
  * Each round the creature shows what it means to do (its intent: a blow,
  * a great blow, venom, silk, a spell...); the player answers: strike,
- * parry, cast, step in or back, or use something carried (a potion, a
- * draught, a scroll of fire). Then the creature acts, if it
+ * parry, cast, step in or back, shoot (from near or far: the bow or the
+ * flintlock), or use something carried (a potion, a draught, a scroll of
+ * fire). Then the creature acts, if it
  * still can. Reading the intent is the game: parry a great blow and strike
  * back; step back from a lunge; ward against what armour cannot stop.
  *
@@ -43,6 +44,7 @@ static unsigned char sel, menu, casting;     /* menu: MENU_*; casting: a spell l
 #define MENU_ACTS   0
 #define MENU_SPELLS 1
 #define MENU_ITEMS  2
+#define MENU_SHOOT  3
 static char buf[64];
 static const char *mon_name(void);
 
@@ -159,10 +161,12 @@ static void draw_intent(void) {
 
 /* the actions: what each is called and whether it can be done now; Cast
  * and Item open lists of their own (menu) */
-#define NACT 6
+#define NACT 7
 #define ACT_CAST 2
 #define ACT_ITEM 5
-static const char act_key[NACT] = {'s', 'p', 'c', 'a', 'r', 'i'};
+#define ACT_SHOOT 6
+static const char act_key[NACT] = {'s', 'p', 'c', 'a', 'r', 'i', 't'};
+static const char shoot_key[2] = {'b', 'g'};
 static const char spell_key[4] = {'f', 'i', 'h', 'w'};
 static const unsigned char spell_cost[4] = {3, 4, 5, 4};
 static const unsigned char spell_sfx[4] = {SFX_FIRE, SFX_FROST, SFX_HEAL, SFX_WARD};
@@ -171,30 +175,38 @@ static const char item_key[NITEM] = {'h', 'm', 'f'};
 static const unsigned char item_of[NITEM] = {I_POTION, I_DRAUGHT, I_FIRE};
 
 static unsigned char menu_n(void) {
-    return menu == MENU_SPELLS ? 4 : menu == MENU_ITEMS ? NITEM : NACT;
+    return menu == MENU_SPELLS ? 4 : menu == MENU_ITEMS ? NITEM : menu == MENU_SHOOT ? 2 : NACT;
 }
 
 static char menu_key(unsigned char k) {
-    return menu == MENU_SPELLS ? spell_key[k] : menu == MENU_ITEMS ? item_key[k] : act_key[k];
+    return menu == MENU_SPELLS ? spell_key[k] : menu == MENU_ITEMS ? item_key[k] :
+           menu == MENU_SHOOT ? shoot_key[k] : act_key[k];
+}
+
+/* the bow (0) or the flintlock (1): there, and something to shoot */
+static unsigned char armed(unsigned char gun) {
+    return gun ? pl.gun && pl.items[I_SHOT] : pl.bow && pl.items[I_ARROWS];
 }
 
 static unsigned char can(unsigned char a) {
     if (menu == MENU_SPELLS) return pl.mp >= spell_cost[a];
     if (menu == MENU_ITEMS) return pl.items[item_of[a]] > 0;
+    if (menu == MENU_SHOOT) return armed(a);
     switch (a) {
     case 0: return dist == 0;
     case 2: return pl.mp >= 3;
     case 3: return dist > 0 && !snared;
     case 4: return !snared;
     case 5: return pl.items[I_POTION] || pl.items[I_DRAUGHT] || pl.items[I_FIRE];
+    case 6: return dist > 0 && (armed(0) || armed(1));     /* (close, it is on you) */
     }
     return 1;
 }
 
 static void draw_menu(void) {
-    unsigned char k, n = menu_n(), c;
+    unsigned char k, n = menu_n(), c, step = n > 6 ? 1 : 2;
     video_blank(MENU_COL, MENU_ROW - 1, 18, 13);
-    video_text(MENU_COL, MENU_ROW - 1, nth("Actions\0Spells\0Items", menu), C_GOLD);
+    video_text(MENU_COL, MENU_ROW - 1, nth("Actions\0Spells\0Items\0Shoot", menu), C_GOLD);
     for (k = 0; k < n; k++) {
         c = !can(k) ? C_DARK : k == sel ? C_HILITE : C_TEXT;
         buf[0] = k == sel ? '>' : ' ';
@@ -206,8 +218,11 @@ static void draw_menu(void) {
             str_cat(buf, nth("Potion     \0Draught    \0Fire scroll", k));
             str_cat(buf, " ");
             str_num(buf, pl.items[item_of[k]]);
-        } else str_cat(buf, k == 4 && dist == 2 ? "Flee" : nth("Strike\0Parry\0Cast\0Advance\0Retreat\0Item", k));
-        video_text(MENU_COL, MENU_ROW + 1 + k * 2, buf, c);
+        } else if (menu == MENU_SHOOT) {
+            str_cat(buf, k ? "Flintlock   " : "Bow         ");
+            if ((k ? pl.gun : pl.bow) != 0) str_num(buf, pl.items[k ? I_SHOT : I_ARROWS]);
+        } else str_cat(buf, k == 4 && dist == 2 ? "Flee" : nth("Strike\0Parry\0Cast\0Advance\0Retreat\0Item\0Shoot", k));
+        video_text(MENU_COL, MENU_ROW + 1 + k * step, buf, c);
     }
     if (menu) video_text(MENU_COL, MENU_ROW + 10, "  Esc: back", C_DARK);
 }
@@ -473,6 +488,31 @@ static void wound(unsigned char d) {
 static unsigned char player_acts(unsigned char a) {
     unsigned char d;
     parrying = 0;
+    if (menu == MENU_SHOOT) {
+        menu = MENU_ACTS;
+        pl.items[a ? I_SHOT : I_ARROWS]--;
+        if (a && rng_range(6) == 0) {
+            say("The powder flashes in the pan, and no more.", C_DIM);
+            sfx(SFX_CLANG);
+            draw_you();
+            return 0;
+        }
+        sfx(a ? SFX_HEAVY : SFX_SWING);
+        if (a) video_shake(4);
+        if (rng_range(100) >= (dist == 1 ? 85 : 70)) {
+            say(a ? "The shot goes wide." : "The arrow goes wide.", C_DIM);
+        } else {
+            d = a ? pl.gun + 1 : pl.bow - 1;          /* (game.h: r = gun * 2 + w - 1) */
+            d = rng_dice(r_dice[d], r_sides[d]) + r_plus[d] + (pl.level - 1) / 2;
+            d = d > mt.def ? d - mt.def : 1;
+            sfx(SFX_HIT);
+            say(a ? "The ball strikes home!" : "Your arrow strikes!", C_TEXT);
+            flash(255, 255, 255, 8);
+            wound(d);
+        }
+        draw_you();
+        return 0;
+    }
     if (menu == MENU_ITEMS) {
         menu = MENU_ACTS;
         pl.items[item_of[a]]--;
@@ -609,13 +649,13 @@ static unsigned char pick(void) {
         if (k == K_DOWN) { sel = sel + 1 < n ? sel + 1 : 0; continue; }
         if (k == K_STOP || (menu && k == K_LEFT)) {
             if (menu) {
-                sel = menu == MENU_SPELLS ? ACT_CAST : ACT_ITEM;
+                sel = menu == MENU_SPELLS ? ACT_CAST : menu == MENU_ITEMS ? ACT_ITEM : ACT_SHOOT;
                 menu = MENU_ACTS;
             }
             continue;
         }
         i = 0xFF;
-        if (k == K_FIRE || (k == K_RIGHT && !menu && (sel == ACT_CAST || sel == ACT_ITEM))) i = sel;
+        if (k == K_FIRE || (k == K_RIGHT && !menu && (sel == ACT_CAST || sel >= ACT_ITEM))) i = sel;
         for (n = 0; n < menu_n(); n++)
             if (k == menu_key(n)) i = n;
         if (i == 0xFF) continue;
@@ -623,8 +663,8 @@ static unsigned char pick(void) {
             sfx(SFX_DOOR);
             continue;
         }
-        if (!menu && (i == ACT_CAST || i == ACT_ITEM)) {
-            menu = i == ACT_CAST ? MENU_SPELLS : MENU_ITEMS;
+        if (!menu && (i == ACT_CAST || i >= ACT_ITEM)) {
+            menu = i == ACT_CAST ? MENU_SPELLS : i == ACT_ITEM ? MENU_ITEMS : MENU_SHOOT;
             sel = 0;
             continue;
         }

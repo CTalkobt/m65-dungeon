@@ -61,9 +61,10 @@ game builds with its SID effects only.
 | F / L | | feed the torch / light it | |
 | O (S on the title) | | settings: music and sound levels | |
 | T / G | | shoot the bow / fire the flintlock (again: the next target, RETURN: shoot) | |
-| S P C A R I | | | strike, parry, cast, advance, retreat, item |
+| S P C A R I T | | | strike, parry, cast, advance, retreat, item, shoot |
 | F I H W | | | (casting) firebolt, frost, heal, ward |
 | H M F | | | (items) potion, draught, scroll of fire |
+| B G | | | (shooting) the bow, the flintlock |
 | H | | help | |
 | RUN/STOP | | give up | back out of the spells or items |
 
@@ -129,6 +130,9 @@ answer:
   A lunge reaches from near. Retreating when already far is an attempt to
   flee. Silk keeps you from moving.
 - *Item*: a healing potion, a mana draught, or a scroll of fire.
+- *Shoot* (from near or far, not close): the bow or the flintlock, as on
+  the map; a hit is likelier near (85 in 100) than far (70). A guard
+  halves it, and it passes through a wraith that has faded.
 
 ## How it works
 
@@ -249,10 +253,11 @@ the levels' tune leaves free. `build/music/*.wav` (`tune45 play --wav`)
 are the tunes to listen to on the PC.
 
 **Memory** (bank 0 is tight). The resident part (video, keys, the UI,
-sound, the tables) ends near $8700. The code overlays `walk` (explore +
+sound, the tables) ends near $8700, and the overlay region starts at $8800:
+there is little room left. The code overlays `walk` (explore +
 view), `pack` (the inventory, items, the torch), `battle`, `gen` (the
 dungeon generator) and `scenes` (chest, idol, title, endings) are kept in
-attic RAM and copied by DMA into one region at $8900 when called. A call
+attic RAM and copied by DMA into one region at $8800 when called. A call
 from one overlay into another brings the caller back on return, but not
 the caller's text in the meantime: `pack` copies a message into a buffer
 before handing it to `msg` (in `walk`). The game needs the MEGA65's attic RAM (every
@@ -263,7 +268,7 @@ round the player, memory a byte a place in colour RAM.
 | Where | What |
 |---|---|
 | $2001-$86FF | the program, its data and variables |
-| $8900-$BBFF | the code overlay region |
+| $8800-$BBFF | the code overlay region |
 | $BC00-$BFFF | the stack |
 | $12000-$197FF | DG<NAME>B: a close-up's last characters |
 | $19800-$1F7FF | the sounds' play slots (16 KB, 8 KB) |
