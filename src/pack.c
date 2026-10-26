@@ -86,6 +86,27 @@ static void take(unsigned int i, unsigned char item, const char *s, unsigned cha
 void pick_up(unsigned int i, unsigned char n) {
     unsigned char k;
     char buf[64];
+    if (n >= O_PILE) {
+        /* a pile put down (or arrows shot): all of it */
+        k = n - O_PILE;
+        n = obj_count(i);
+        pl.items[k] += n;
+        obj_set(i, O_NONE);
+        buf[0] = 0;
+        if (n == 1) {
+            str_cat(buf, "You pick up a ");
+            str_cat(buf, item_name(k, 1));
+        } else {
+            str_cat(buf, "You gather ");
+            str_num(buf, n);
+            str_cat(buf, " ");
+            str_cat(buf, item_name(k, n));
+        }
+        str_cat(buf, ".");
+        msg(buf, item_col[k]);
+        sfx(SFX_CHIME);
+        return;
+    }
     switch (n) {
     case O_GOLD:
         n = (2 + rng_range(10)) * pl.depth;
@@ -192,7 +213,27 @@ static unsigned char use(unsigned char k) {
     return feed(k);
 }
 
-/* what the player carries, over the map; a letter uses it. 1 if that took
+/* n of item put down at (x, y), or on a free place next to it (a floor,
+ * nothing else lying there; a pile of the same grows); 0 if there is none */
+static const signed char near_x[9] = {0, 1, -1, 0, 0, 1, 1, -1, -1};
+static const signed char near_y[9] = {0, 0, 0, 1, -1, 1, -1, 1, -1};
+
+static unsigned char put_down(unsigned char x, unsigned char y, unsigned char item, unsigned char n) {
+    unsigned char k, t, o, px, py;
+    for (k = 0; k < 9; k++) {
+        px = x + near_x[k];
+        py = y + near_y[k];
+        t = terrain(px, py);
+        if (t != TR_FLOOR && t != TR_CORR && t != TR_OPEN) continue;
+        o = obj_at(AT(px, py));
+        if (o && o != O_PILE + item) continue;
+        return obj_add(AT(px, py), O_PILE + item, n);
+    }
+    return 0;
+}
+
+/* what the player carries, over the map. Up and down choose; RETURN (or
+ * U) uses it, D puts all of it down; RUN/STOP or I: back. 1 if that took
  * the turn */
 #define INV_COL 18
 #define INV_ROW 5
@@ -200,7 +241,7 @@ static unsigned char use(unsigned char k) {
 #define INV_H   28
 
 unsigned char inventory(void) {
-    unsigned char k, n = 0, row = INV_ROW + 9, has[I_COUNT];
+    unsigned char k, n, sel = 0, has[I_COUNT];
     char buf[48];
     video_blank(INV_COL, INV_ROW, INV_W, INV_H);
     ui_frame(INV_COL, INV_ROW, INV_W, INV_H);
@@ -245,28 +286,61 @@ unsigned char inventory(void) {
         } else str_cat(buf, "none");
         video_text(INV_COL + 3, INV_ROW + 5 + k, buf, C_TEXT);
     }
-    n = 0;
-    for (k = 0; k < I_COUNT; k++) {
-        if (!pl.items[k]) continue;
-        buf[0] = (char)('a' + n);
-        buf[1] = buf[2] = ' ';
-        buf[3] = 0;
-        str_num(buf, pl.items[k]);
-        str_cat(buf, " ");
-        str_cat(buf, item_name(k, pl.items[k]));
-        video_text(INV_COL + 3, row++, buf, item_col[k]);
-        has[n++] = k;
-    }
-    if (!n) video_text(INV_COL + 3, row, "Nothing else.", C_DIM);
     buf[0] = 0;
     str_cat(buf, "Gold    ");
     str_num(buf, pl.gold);
     video_text(INV_COL + 3, INV_ROW + 24, buf, C_GOLD);
-    video_text(INV_COL + 3, INV_ROW + 26, n ? "A letter: use it.  Another key: back." : "Any key: back.", C_DIM);
-    k = key_wait();
-    view_draw();
-    if (k >= 'a' && k < 'a' + n) return use(has[k - 'a']);
-    return 0;
+    for (k = 0, n = 0; k < I_COUNT; k++)
+        if (pl.items[k]) has[n++] = k;
+    if (!n) {
+        video_text(INV_COL + 3, INV_ROW + 9, "Nothing else.", C_DIM);
+        video_text(INV_COL + 3, INV_ROW + 26, "Any key: back.", C_DIM);
+        key_wait();
+        view_draw();
+        return 0;
+    }
+    video_text(INV_COL + 3, INV_ROW + 26, "RETURN: use.  D: put down.  I: back.", C_DIM);
+    for (;;) {
+        for (k = 0; k < n; k++) {
+            buf[0] = k == sel ? '>' : ' ';
+            buf[1] = ' ';
+            buf[2] = 0;
+            str_num(buf, pl.items[has[k]]);
+            str_cat(buf, " ");
+            str_cat(buf, item_name(has[k], pl.items[has[k]]));
+            video_blank(INV_COL + 2, INV_ROW + 9 + k, INV_W - 4, 1);
+            video_text(INV_COL + 2, INV_ROW + 9 + k, buf, k == sel ? C_HILITE : item_col[has[k]]);
+        }
+        k = key_wait();
+        if (k == K_UP) sel = sel ? sel - 1 : n - 1;
+        else if (k == K_DOWN) sel = sel + 1 < n ? sel + 1 : 0;
+        else if (k == K_FIRE || k == 'u') {
+            view_draw();
+            return use(has[sel]);
+        } else if (k == 'd') {
+            k = has[sel];
+            view_draw();
+            if (!put_down(pl.x, pl.y, k, pl.items[k])) {
+                msg("There is no room here to put it down.", C_DIM);
+                return 0;
+            }
+            buf[0] = 0;
+            str_cat(buf, "You put down ");
+            if (pl.items[k] == 1) str_cat(buf, "a ");
+            else {
+                str_num(buf, pl.items[k]);
+                str_cat(buf, " ");
+            }
+            str_cat(buf, item_name(k, pl.items[k]));
+            str_cat(buf, ".");
+            msg(buf, C_DIM);
+            pl.items[k] = 0;
+            return 0;
+        } else if (k == K_STOP || k == 'i') {
+            view_draw();
+            return 0;
+        }
+    }
 }
 
 /* ---------------------------------------------------------------- shooting */
@@ -445,7 +519,11 @@ unsigned char shoot(unsigned char gun) {
     buf[0] = 0;
     chance = 80 + pl.level * 2 - tdist[t] * 4;
     if (vis_at(m->x, m->y) == VIS_SHADOW) chance -= 20;
-    if (rng_range(100) >= chance) {
+    k = rng_range(100) < chance;
+    /* the arrow lies where it ended, unless it broke (a hit breaks one in
+     * two, a miss one in four) */
+    if (!gun && rng_range(k ? 2 : 4)) put_down(m->x, m->y, I_ARROWS, 1);
+    if (!k) {
         str_cat(buf, gun ? "The shot misses " : "The arrow misses ");
         the_mon(buf, m);
         str_cat(buf, ".");

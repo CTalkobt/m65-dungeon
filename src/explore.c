@@ -75,11 +75,25 @@ static const unsigned char drops[9] = {O_GOLD, O_GOLD, O_GOLD, O_POTION, O_SCROL
 
 /* the fight with creature i; WON / FLED / DIED, the screen back */
 static unsigned char fight(unsigned char i, unsigned char ambush) {
-    unsigned char r;
+    unsigned char r, k, n;
+    char buf[48];
     music_off();
+    arrows_spent = 0;
     r = battle(i, ambush);
     if (r == DIED) return DIED;
     if (r == WON) {
+        /* the arrows shot in the fight: one in two whole, gathered up */
+        for (k = n = 0; k < arrows_spent; k++)
+            if (rng_range(2)) n++;
+        if (n) {
+            pl.items[I_ARROWS] += n;
+            buf[0] = 0;
+            str_cat(buf, "You gather ");
+            str_num(buf, n);
+            str_cat(buf, n == 1 ? " arrow" : " arrows");
+            str_cat(buf, " still whole.");
+            msg(buf, C_TEXT);
+        }
         if (mon_flags[mons[i].kind] & MF_BOSS) return WON;
         /* what it leaves: gold, now and then a potion, a draught, a scroll */
         r = rng_range(10);
@@ -252,7 +266,7 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
         pick_up(i, n);
         break;
     default:
-        if (n < sizeof carried && carried[n]) pick_up(i, n);
+        if (n >= O_PILE || (n < sizeof carried && carried[n])) pick_up(i, n);
         break;
     case O_BONES:
         msg(nth("Old bones crunch underfoot.\0A skull grins up at you from the dust.\0"

@@ -68,11 +68,15 @@ unsigned char vault_at(unsigned char x, unsigned char y);
 #define O_FIRESTICK   17
 #define O_ARROWS      18      /* a few arrows */
 #define O_SHOT        19      /* a few cartridges */
+#define O_PILE        32      /* O_PILE + I_*: so many (thing_n) of a thing carried, put down */
 #define MAX_OBJ       56
 extern unsigned int thing_at[MAX_OBJ];       /* where (AT) */
 extern unsigned char thing_kind[MAX_OBJ];    /* O_NONE: a free entry */
+extern unsigned char thing_n[MAX_OBJ];       /* a pile's count */
 unsigned char obj_at(unsigned int at);
 void obj_set(unsigned int at, unsigned char kind);
+unsigned char obj_add(unsigned int at, unsigned char kind, unsigned char n);   /* a pile; 0: no room */
+unsigned char obj_count(unsigned int at);
 void obj_clear(void);
 
 /* the memory: when a place was last in sight and lit, in epochs of 4
@@ -125,6 +129,8 @@ extern unsigned char nmons;
 #define I_COUNT    14
 const char *item_name(unsigned char i, unsigned char n);   /* game.c: as for n of them */
 extern const unsigned char item_col[I_COUNT];               /* game.c: its colour in text */
+extern const unsigned char item_tile[I_COUNT];              /* game.c: its tile, put down (T_*) */
+extern unsigned char arrows_spent;    /* arrows shot in this fight (battle.c; explore.c gathers them) */
 /* pack.c: the things carried, used on the map; 1 if that took the turn */
 unsigned char inventory(void);
 unsigned char drink(void);

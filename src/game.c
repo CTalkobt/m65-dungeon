@@ -9,9 +9,10 @@ unsigned int turn;
 struct mon mons[MAX_MON];
 unsigned char nmons;
 
-/* the things lying about: a short list, the map flagging their places */
+/* the things lying about: a short list */
 unsigned int thing_at[MAX_OBJ];
 unsigned char thing_kind[MAX_OBJ];
+unsigned char thing_n[MAX_OBJ];               /* a pile's count (O_PILE) */
 
 void obj_clear(void) {
     unsigned char k;
@@ -37,6 +38,31 @@ void obj_set(unsigned int at, unsigned char kind) {
     }
     thing_at[k] = at;
     thing_kind[k] = kind;
+    thing_n[k] = 1;
+}
+
+/* n more of what is at; 0 if there is no room in the list */
+unsigned char obj_add(unsigned int at, unsigned char kind, unsigned char n) {
+    unsigned char k;
+    for (k = 0; k < MAX_OBJ; k++)
+        if (thing_kind[k] == kind && thing_at[k] == at) {
+            thing_n[k] = thing_n[k] + n < thing_n[k] ? 255 : thing_n[k] + n;
+            return 1;
+        }
+    obj_set(at, kind);
+    for (k = 0; k < MAX_OBJ; k++)
+        if (thing_kind[k] == kind && thing_at[k] == at) {
+            thing_n[k] = n;
+            return 1;
+        }
+    return 0;
+}
+
+unsigned char obj_count(unsigned int at) {
+    unsigned char k;
+    for (k = 0; k < MAX_OBJ; k++)
+        if (thing_kind[k] && thing_at[k] == at) return thing_n[k];
+    return 0;
 }
 
 /* the terrain from the tile kind: TK_ROCK, FLOOR0-3, CORR0-1, WALL0-15,
@@ -137,6 +163,14 @@ const unsigned char item_col[I_COUNT] = {
     C_RED, C_BLUE, C_BONE, C_BONE, C_BONE, C_GOLD, C_ORANGE, C_ORANGE, C_ORANGE, C_ORANGE, C_GREY, C_ORANGE,
     C_TEXT, C_GREY,
 };
+
+/* each thing's tile, lying on the floor */
+const unsigned char item_tile[I_COUNT] = {
+    T_POTION, T_DRAUGHT, T_SCROLL, T_SCROLL, T_SCROLL, T_KEY, T_RAGS, T_STICKS, T_FUR, T_CANDLE,
+    T_FLINT, T_FIRESTICK, T_ARROWS, T_SHOT,
+};
+
+unsigned char arrows_spent;
 
 /* the things one carries, one and many */
 const char *item_name(unsigned char i, unsigned char n) {

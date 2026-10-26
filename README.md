@@ -57,7 +57,7 @@ game builds with its SID effects only.
 | SPACE | | wait a turn | |
 | RETURN | FIRE | go down the stairs | do the chosen action |
 | P | | drink a healing potion | parry |
-| I | | what you carry (a letter uses it) | |
+| I | | what you carry: up / down choose, RETURN (U) use, D put down | |
 | F / L | | feed the torch / light it | |
 | O (S on the title) | | settings: music and sound levels | |
 | T / G | | shoot the bow / fire the flintlock (again: the next target, RETURN: shoot) | |
@@ -91,7 +91,10 @@ near than far, less often at eyes in the dark; the creature wakes and
 comes. What dies of it gives its experience where it fell. A short bow
 (1d6, reach 6) and a longbow (1d8+2, 9) shoot arrows; a flintlock pistol
 (2d6+2, 5) and a musket (3d6+4, 8) shoot paper cartridges, hit harder,
-misfire one time in six, and wake everything near. The lich is warded:
+misfire one time in six, and wake everything near. An arrow lies where
+it ended, to be picked up again, unless it broke (one in two that hit,
+one in four that missed); after a fight you win, half the arrows you shot
+in it are gathered up whole. The lich is warded:
 it must be faced. You start with a short bow and 8 arrows; chests give
 the better bows, then the flintlocks, and arrows and cartridges lie about.
 
@@ -105,7 +108,9 @@ again (L) with a flint (kept, but it catches one strike in three), a
 firestick (used up, sure), or by walking into a brazier. You start with
 400 turns, a bundle of sticks and two firesticks.
 
-**What you carry** (I). Healing potions and mana draughts; a *scroll of
+**What you carry** (I). Choose with up and down; RETURN (or U) uses it,
+D puts all of it down where you stand (or on a free place beside you),
+where it lies as one pile until you walk over it again. Healing potions and mana draughts; a *scroll of
 fire* (for a fight: fire that no guard stops); a *scroll of recall* (all
 you have seen comes back fresh); a *scroll of far sight* (the level's
 walls, doors and stairs, seen or not); *iron keys*; the torch's fuel and

@@ -493,6 +493,7 @@ static unsigned char player_acts(unsigned char a) {
     if (menu == MENU_SHOOT) {
         menu = MENU_ACTS;
         pl.items[a ? I_SHOT : I_ARROWS]--;
+        if (!a) arrows_spent++;
         if (a && rng_range(6) == 0) {
             say("The powder flashes in the pan, and no more.", C_DIM);
             sfx(SFX_CLANG);

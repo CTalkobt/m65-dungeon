@@ -203,7 +203,8 @@ static void ov_gather(void) {
         x = (unsigned char)(thing_at[k] % MAP_W);
         y = (unsigned char)(thing_at[k] / MAP_W);
         v = vis_at(x, y);
-        if (v && v != VIS_SHADOW) ov_add(x, y, obj_tile[thing_kind[k]], OV_TORCH);
+        if (v && v != VIS_SHADOW)
+            ov_add(x, y, thing_kind[k] >= O_PILE ? item_tile[thing_kind[k] - O_PILE] : obj_tile[thing_kind[k]], OV_TORCH);
     }
 }
 
