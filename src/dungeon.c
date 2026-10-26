@@ -342,6 +342,24 @@ void dungeon_make(void) {
     for (k = 0; k < 6 + d * 2; k++)
         add_mon(level_mons[d][rng_range(SPAWN)], spot(1 + rng_range(last)));
 
+    /* a merchant on some levels (not the last), stocked with six of his
+     * ten kinds of wares, one to three of each */
+    for (k = 0; k < WARES; k++) ware_left[k] = 0;
+    if (pl.depth < DEPTHS && rng_range(3)) {
+        i = spot(1 + rng_range(last));
+        if (i) {
+            obj_set(i, O_MERCHANT);
+            for (k = 0; k < WARES; k++) {
+                do {
+                    t = rng_range(WARE_KINDS);
+                    for (r = 0; r < k && ware[r] != t; r++) {}
+                } while (r < k);
+                ware[k] = t;
+                ware_left[k] = 1 + rng_range(3);
+            }
+        }
+    }
+
     /* traps, hidden: more deeper down; none in the first room */
     for (k = 0; k < 1 + pl.depth; k++) put(spot(1 + rng_range(last)), O_TRAP);
 }

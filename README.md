@@ -36,7 +36,8 @@ of fuel on the torch; `TEST=-DTEST_SHOOT=<kind>` puts a sleeping creature of
 that kind a few places away. `TEST=-DTEST_SECRET` starts beside a secret door,
 `TEST=-DTEST_TRAP` with a hidden trap a step east, `TEST=-DTEST_UPS=<n>` with n
 levels' gifts to choose, `TEST=-DTEST_BRAZIER` just west of a cold brazier;
-`TEST=-DTEST_WIN` goes straight to the end, won.
+`TEST=-DTEST_WIN` goes straight to the end, won; `TEST=-DTEST_MERCHANT` puts a
+merchant a step east, and 100 gold.
 Other letters in `KEYS` are typed as they are (`KEYS='F__i'` opens the
 inventory).
 `python3 tools/probe.py build/dungeon.d81 <seconds> r m<addr>` boots the disk
@@ -153,6 +154,13 @@ slowly), *Steady torch* (it burns one turn in 4, then 3, then 2 less),
 *Sure aim* (shots hit more often and harder), *Wary feet* (traps found
 sooner and stepped off more often). The last four can be chosen three
 times each.
+
+**The merchant.** On some levels (not the last) a hooded merchant waits
+with his lantern (seen in the dark). Walk into him to buy, with gold, from
+six of his ten wares: healing potions (25), mana draughts (30), rags (6),
+sticks (10), tallow candles (18), firesticks (12), a flint (40), five
+arrows (15), three cartridges (24), a scroll of far sight (45); one to
+three of each.
 
 **What you carry** (I). Choose with up and down; RETURN (or U) uses it,
 D puts all of it down where you stand (or on a free place beside you),

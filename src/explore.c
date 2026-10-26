@@ -129,7 +129,7 @@ static unsigned char free_for(struct mon *c, unsigned char x, unsigned char y) {
     unsigned char t = terrain(x, y);
     if (t == TR_ROCK || t == TR_LOCKED || mon_at(x, y)) return 0;
     t = obj_at(AT(x, y));
-    if (t == O_BRAZIER || t == O_BRAZIER_COLD) return 0;
+    if (t == O_BRAZIER || t == O_BRAZIER_COLD || t == O_MERCHANT) return 0;
     t = terrain(x, y);
     if (t == TR_DOOR) {
         door_open(x, y);                            /* it opens the door: that is its move */
@@ -272,6 +272,7 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
         msg("The brazier's coals glow too hot to pass.", C_ORANGE);
         return 0;
     }
+    if (n == O_MERCHANT) return shop();
     if (n == O_BRAZIER_COLD) {
         /* the torch lights it, spending some of itself: the room lit for good */
         if (!pl.lit) msg("A cold brazier, and your torch is out.", C_DIM);
@@ -426,6 +427,15 @@ static unsigned char explore_run(unsigned char resume) {
 #endif
 #ifdef TEST_SECRET
     test_secret();
+#endif
+#ifdef TEST_MERCHANT
+    /* (tests: a merchant a step east, stocked, and gold to spend) */
+    obj_set(AT(pl.x + 1, pl.y), O_MERCHANT);
+    for (k = 0; k < WARES; k++) {
+        ware[k] = k + 4;
+        ware_left[k] = 2;
+    }
+    pl.gold = 100;
 #endif
 #ifdef TEST_WIN
     pl.kills = 9;                    /* (tests: the end, won) */

@@ -479,6 +479,24 @@ ART = {
         "................",
         "................",
     ],
+    "merchant": [
+        "................",
+        "......kkkk......",
+        ".....kNNNNk.....",
+        "....kNnnnnNk....",
+        "....kNkmmkNk..k.",
+        "...kkNmmmmNk.kZk",
+        "..knnkNmmNkk.kZk",
+        ".knnnnkNNNk.k.k.",
+        ".knnnnkNnnNkk...",
+        ".knnnnkNnnnNk...",
+        ".knnnnkNnnnNk...",
+        "..kkkkkNnnnNk...",
+        ".....kNnnnnNk...",
+        ".....kNNkNNNk...",
+        ".....kkk.kkk....",
+        "................",
+    ],
     "gold": [
         "................",
         "................",
@@ -769,7 +787,7 @@ def terrain_kinds():
 
 SPRITES = ("chest", "chest_open", "idol", "idol_spent", "potion", "gold", "bones", "brazier",
            "brazier_cold", "scroll", "key", "draught", "rags", "sticks", "fur", "candle", "flint", "firestick",
-           "arrows", "shot", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich")
+           "arrows", "shot", "merchant", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich")
 
 
 def sprite_kinds(base):
@@ -785,7 +803,8 @@ def sprite_kinds(base):
         sh[1:, 1:] = mask[:-1, :-1]
         comp = np.where((sh & ~mask)[..., None], comp * 0.55, comp)
         v = [lit(comp, l, glow) for l in range(4)]
-        creature = name in ("rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "aim", "missile")
+        creature = name in ("rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "aim", "missile",
+                            "merchant")     # (his lantern seen in the dark)
         if creature and glow.any():
             eyes = np.zeros((T, T, 3), np.float32)
             eyes[glow] = img[glow] * 0.8

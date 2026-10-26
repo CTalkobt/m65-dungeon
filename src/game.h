@@ -72,6 +72,7 @@ unsigned char vault_at(unsigned char x, unsigned char y);
 #define O_SHOT        19      /* a few cartridges */
 #define O_TRAP        20      /* a pressure plate, hidden (found: the tile TK_TRAP) */
 #define O_BRAZIER_COLD 21     /* a brazier not burning: the torch lights it */
+#define O_MERCHANT    22      /* a merchant, his lantern lit: walk into him to trade (pack.c shop) */
 #define O_PILE        32      /* O_PILE + I_*: so many (thing_n) of a thing carried, put down */
 #define MAX_OBJ       56
 extern unsigned int thing_at[MAX_OBJ];       /* where (AT) */
@@ -141,6 +142,13 @@ extern const unsigned char item_tile[I_COUNT];              /* game.c: its tile,
 extern unsigned char arrows_spent;    /* arrows shot in this fight (battle.c; explore.c gathers them) */
 /* pack.c: the things carried, used on the map; 1 if that took the turn */
 unsigned char inventory(void);
+unsigned char shop(void);
+
+/* the merchant's wares on this level (WARES of the shop's list, WARE_KINDS
+ * kinds), and how many of each are left (game.c; dungeon.c stocks him) */
+#define WARES      6
+#define WARE_KINDS 10
+extern unsigned char ware[WARES], ware_left[WARES];
 unsigned char drink(void);
 unsigned char feed_any(void);
 unsigned char light_any(void);

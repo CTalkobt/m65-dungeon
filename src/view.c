@@ -172,10 +172,10 @@ static unsigned char ov_n;
 #define row_ov (ov_v + MAX_OV)
 typedef char scratch_fits[COLS * 8 + MAX_OV * 5 <= SCRATCH_SIZE ? 1 : -1];
 
-static const unsigned char obj_tile[22] = {
+static const unsigned char obj_tile[23] = {
     0, T_CHEST, T_CHEST_OPEN, T_IDOL, T_IDOL_SPENT, T_POTION, T_GOLD, T_BONES, T_BRAZIER,
     T_SCROLL, T_KEY, T_DRAUGHT, T_RAGS, T_STICKS, T_FUR, T_CANDLE, T_FLINT, T_FIRESTICK,
-    T_ARROWS, T_SHOT, 0, T_BRAZIER_COLD,
+    T_ARROWS, T_SHOT, 0, T_BRAZIER_COLD, T_MERCHANT,
 };
 
 static void ov_add(unsigned char x, unsigned char y, unsigned char k, unsigned char v) {
@@ -205,6 +205,7 @@ static void ov_gather(void) {
         v = vis_at(x, y);
         if (v && v != VIS_SHADOW)
             ov_add(x, y, thing_kind[k] >= O_PILE ? item_tile[thing_kind[k] - O_PILE] : obj_tile[thing_kind[k]], OV_TORCH);
+        else if (v && thing_kind[k] == O_MERCHANT) ov_add(x, y, T_MERCHANT, TV_EYES);   /* (his lantern) */
     }
 }
 

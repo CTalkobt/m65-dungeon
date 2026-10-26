@@ -164,6 +164,7 @@ const unsigned char item_tile[I_COUNT] = {
 };
 
 unsigned char arrows_spent;
+unsigned char ware[WARES], ware_left[WARES];
 
 /* the things one carries, one and many */
 const char *item_name(unsigned char i, unsigned char n) {
