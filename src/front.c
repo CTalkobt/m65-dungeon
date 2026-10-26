@@ -6,6 +6,8 @@
 #include "video.h"
 #include "rng.h"
 #include "game.h"
+#include <audio_tune.h>
+#include "music.h"
 
 static unsigned char shown;                   /* the title is on the screen */
 
@@ -70,6 +72,8 @@ unsigned char title(void) {
     shown = 0;
     video_blank(1, 44, 78, 1);
     video_centre(44, "RETURN or FIRE to begin        RUN/STOP to leave", C_HILITE);
+    tune_play(tune_title);                    /* the theme, now that the loading is done */
+    v_music = 1;
     for (;;) {
         video_frame();
         sfx_update();
@@ -85,8 +89,14 @@ unsigned char title(void) {
         }
         k = key_get();
         if (k == K_FIRE || k == ' ') break;
-        if (k == K_STOP) return 0;
+        if (k == K_STOP) {
+            v_music = 0;
+            tune_stop();
+            return 0;
+        }
     }
+    v_music = 0;
+    tune_stop();
 #ifndef SEED
     rng_state ^= t * 31 + REG(0xD012);
     if (!rng_state) rng_state = 0xACE1;

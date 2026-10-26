@@ -152,6 +152,14 @@ when it is wanted: a 16 KB one for the long sounds (channel 0) and an 8 KB
 one for the short (channel 1). On the map, now and then, a drip, a chain,
 a far footfall, off to one side. The SIDs play where there is no sample.
 
+**Music** (`src/music.txt`). The title theme, written in tune45's text
+format: D minor, 16 bars round and round, a flute-like lead, a pulse bass
+and a harp picking the chords. `tune45 convert` makes it C; the library's
+tune player plays it on SID 1, mirrored on SID 3, and the SID sound
+effects keep to SIDs 2 and 4. The player is assembled into the `scenes`
+overlay with the title (`src/tune_ovl.s45`), as bank 0 has no room for it.
+`tune45 play src/music.txt` plays it on the PC.
+
 **Memory** (bank 0 is tight). The resident part (video, keys, the UI,
 sound, the tables) ends near $8300. The code overlays `walk` (explore +
 view), `battle`, `gen` (the dungeon generator) and `scenes` (chest, idol,

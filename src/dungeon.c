@@ -59,6 +59,16 @@ static unsigned int spot(unsigned char r) {
     return 0;
 }
 
+/* a door or a corridor among the eight round a cell */
+static unsigned char by_way_in(unsigned int i) {
+    unsigned char k, t;
+    for (k = 0; k < 9; k++) {
+        t = TERRAIN(i + (k / 3 - 1) * MAP_W + (k % 3) - 1);
+        if (t == TR_DOOR || t == TR_OPEN || t == TR_CORR) return 1;
+    }
+    return 0;
+}
+
 /* spot gives 0 when it finds no room */
 static void put(unsigned int at, unsigned char kind) {
     if (at) obj_set(at, kind);
@@ -154,8 +164,18 @@ void dungeon_make(void) {
     /* braziers: some rooms are lit (always the first and the last) */
     for (r = 0; r < nrooms; r++) {
         if (r != 0 && r != last && rng_range(5) >= 2) continue;
-        i = AT(rx[r] + (rng_range(2) ? 0 : rw[r] - 1), ry[r] + (rng_range(2) ? 0 : rh[r] - 1));
-        if (TERRAIN(i) == TR_FLOOR) obj_set(i, O_BRAZIER);
+        /* in a corner, but never one next to a way in (a brazier there
+         * would leave only a diagonal step into the room) */
+        t = rng_range(4);
+        for (k = 0; k < 4; k++, t = (t + 1) & 3) {
+            x = rx[r] + (t & 1 ? rw[r] - 1 : 0);
+            y = ry[r] + (t & 2 ? rh[r] - 1 : 0);
+            i = AT(x, y);
+            if (TERRAIN(i) == TR_FLOOR && !(map[i] & F_OBJ) && !by_way_in(i)) {
+                obj_set(i, O_BRAZIER);
+                break;
+            }
+        }
         for (y = ry[r] - 1; y <= ry[r] + rh[r]; y++)
             for (x = rx[r] - 1; x <= rx[r] + rw[r]; x++) map[AT(x, y)] |= F_LIT;
     }

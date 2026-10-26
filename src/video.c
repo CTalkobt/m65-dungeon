@@ -18,13 +18,14 @@
  * spells) and its glow (247-254) pulsing.
  */
 #include <dma.h>
+#include <audio_tune.h>
 #include "hw.h"
 #include "rng.h"
 #include "video.h"
 #include "assets.h"
 
 unsigned char pal_r[256], pal_g[256], pal_b[256];
-unsigned char v_bright = 16, v_flicker, v_fire;
+unsigned char v_bright = 16, v_flicker, v_fire, v_music;
 unsigned char v_wash, v_wash_r, v_wash_g, v_wash_b;
 
 static unsigned char pal_bank, saved[18];
@@ -119,6 +120,7 @@ static void flicker_step(void) {
 void video_frame(void) {
     unsigned char f = FRAMECOUNT;
     while (FRAMECOUNT == f) {}
+    if (v_music) tune_update();
     glow_phase++;
     if (v_flicker && (glow_phase & 3) == 0) flicker_step();
     if (v_fire && (glow_phase & 3) == 2) fire_step();

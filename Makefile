@@ -27,6 +27,8 @@ PYTHON  ?= python3
 BUILD   ?= build
 ART     := build/art
 SFX     := build/sfx
+MUSIC   := build/music
+TUNE45  := $(M65)/bin/tune45
 # the sampled sounds: on assets/baseimage.d81 (DGSFX1, 2, ...), which
 # make sounds rebuilds from the sound packs' zip files in SFX_DIR; without
 # the image the game has its SID effects only
@@ -37,7 +39,7 @@ ifdef SEED
 DEFS    += -DSEED=$(SEED)
 endif
 
-CFLAGS  := -O2 -I$(M65)/lib/include -Isrc -I$(ART) -I$(SFX) $(DEFS)
+CFLAGS  := -O2 -I$(M65)/lib/include -Isrc -I$(ART) -I$(SFX) -I$(MUSIC) $(DEFS)
 
 TARGET  := $(BUILD)/dungeon.prg
 # the code overlays (walk, battle, gen, scenes), written by ln45 with the
@@ -45,8 +47,8 @@ TARGET  := $(BUILD)/dungeon.prg
 OVL     := $(BUILD)/dungeon.ov1
 OVL_STORE := 0x8000000-0x800FFFF
 C_MODS  := main video load rng game dungeon view ui explore battle detail front scene sfx audio audio_boot
-OBJS    := $(C_MODS:%=$(BUILD)/%.o45) $(BUILD)/ld.o45 $(BUILD)/assets.o45 $(BUILD)/sfxdata.o45
-HEADERS := $(wildcard src/*.h) $(ART)/assets.h $(SFX)/sfxdata.h
+OBJS    := $(C_MODS:%=$(BUILD)/%.o45) $(BUILD)/ld.o45 $(BUILD)/assets.o45 $(BUILD)/sfxdata.o45 $(BUILD)/music.o45 $(BUILD)/tune_ovl.o45
+HEADERS := $(wildcard src/*.h) $(ART)/assets.h $(SFX)/sfxdata.h $(MUSIC)/music.h
 
 # the art: one file a monster, the tiles, the chest and the idol
 ART_STAMP := $(ART)/art.stamp
@@ -82,11 +84,22 @@ sounds:
 	$(DISK45) create $(BASEIMAGE) -n "DUNGEON SOUNDS" -i "DS"
 	for f in build/sounds/dgsfx*.bin; do n=$$(basename $$f .bin | tr a-z A-Z); $(DISK45) add $(BASEIMAGE) $$f $$n || exit 1; done
 
+# the music (src/music.txt, tune45's text) to C
+$(MUSIC)/music.c $(MUSIC)/music.h &: src/music.txt
+	mkdir -p $(MUSIC)
+	$(TUNE45) convert src/music.txt -o $(MUSIC)/music.c --header $(MUSIC)/music.h
+
+$(BUILD)/music.o45: $(MUSIC)/music.c $(MUSIC)/music.h | $(BUILD)
+	$(CC45) $(CFLAGS) -c $(MUSIC)/music.c -o $@
+
 $(BUILD)/sfxdata.o45: $(SFX_STAMP) | $(BUILD)
 	$(CC45) $(CFLAGS) -c $(SFX)/sfxdata.c -o $@
 
 $(BUILD)/%.o45: src/%.c $(HEADERS) | $(BUILD)
 	$(CC45) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/tune_ovl.o45: src/tune_ovl.s45 $(M65)/lib/stdlib_asm/tune.s45 | $(BUILD)
+	$(CA45) -c -I$(M65)/lib/stdlib_asm $< -o $@
 
 $(BUILD)/ld.o45: src/load.s45 | $(BUILD)
 	$(CA45) -c $< -o $@

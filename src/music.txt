@@ -1,0 +1,31 @@
+; music.txt — The Fading Deep's music, for tune45 (the Makefile: build/music.c)
+;
+; The title theme: D minor, slow (a quarter note about 75 a minute: a
+; tick is an eighth, 20 frames), 16 bars, round and round. A flute-like
+; lead with a vibrato that comes in late, a low pulse bass on the roots,
+; a harp picking the chords in eighths.
+;
+;   Dm Dm Bb C | Dm Gm A A | Dm F C Dm | Bb Gm A Dm
+
+;          name   wave  ad sr pulse vib gap
+instrument flute  tri   48 a9 0     3   0 vdelay=18
+instrument bass   pulse 2a 86 0380  0   1 pwm=6
+instrument harp   pulse 09 00 0700  0   0
+
+tune title 20 loop 8
+v1: @flute d5:3 e5:1 f5:2 a5:2 | g5:2 f5:2 e5:2 d5:2 | f5:4 d5:2 bb4:2 | c5:4 e5:2 g5:2 | \
+    a5:3 g5:1 f5:2 e5:2 | d5:2 bb4:2 d5:2 g5:2 | e5:4 c#5:2 e5:2 | a4:8 | \
+    d5:3 e5:1 f5:2 a5:2 | c6:4 a5:2 f5:2 | g5:3 f5:1 e5:2 c5:2 | d5:2 f5:2 a5:4 | \
+    bb5:3 a5:1 g5:2 f5:2 | g5:2 f5:2 e5:2 d5:2 | c#5:4 e5:2 a4:2 | d5:8
+v2: @bass d3:4 a2:4 | d3:4 a2:4 | bb2:4 f2:4 | c3:4 g2:4 | \
+    d3:4 a2:4 | g2:4 d3:4 | a2:4 e2:4 | a2:8 | \
+    d3:4 a2:4 | f2:4 c3:4 | c3:4 g2:4 | d3:4 a2:4 | \
+    bb2:4 f2:4 | g2:4 d3:4 | a2:4 e2:4 | d3:8
+v3: @harp d4:1 f4:1 a4:1 f4:1 d4:1 f4:1 a4:1 f4:1 | d4:1 f4:1 a4:1 d5:1 a4:1 f4:1 d4:1 f4:1 | \
+    bb3:1 d4:1 f4:1 d4:1 bb3:1 d4:1 f4:1 d4:1 | c4:1 e4:1 g4:1 e4:1 c4:1 e4:1 g4:1 e4:1 | \
+    d4:1 f4:1 a4:1 f4:1 d4:1 f4:1 a4:1 f4:1 | g3:1 bb3:1 d4:1 bb3:1 g3:1 bb3:1 d4:1 bb3:1 | \
+    a3:1 c#4:1 e4:1 c#4:1 a3:1 c#4:1 e4:1 c#4:1 | a3:1 c#4:1 e4:1 a4:1 e4:1 c#4:1 a3:1 c#4:1 | \
+    d4:1 f4:1 a4:1 f4:1 d4:1 f4:1 a4:1 f4:1 | f3:1 a3:1 c4:1 a3:1 f3:1 a3:1 c4:1 a3:1 | \
+    c4:1 e4:1 g4:1 e4:1 c4:1 e4:1 g4:1 e4:1 | d4:1 f4:1 a4:1 d5:1 a4:1 f4:1 d4:1 f4:1 | \
+    bb3:1 d4:1 f4:1 d4:1 bb3:1 d4:1 f4:1 d4:1 | g3:1 bb3:1 d4:1 bb3:1 g3:1 bb3:1 d4:1 bb3:1 | \
+    a3:1 c#4:1 e4:1 c#4:1 a3:1 c#4:1 e4:1 c#4:1 | d4:1 a3:1 f3:1 a3:1 d4:2 r:2

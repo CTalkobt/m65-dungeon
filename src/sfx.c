@@ -1,14 +1,14 @@
 /* sfx.c — sound effects: a sampled sound where there is one (audio.c,
- * the sound packs), else the SIDs: SID 1 (left) and SID 3 (right) play the
- * same; three voices, the oldest effect gives way. A SID effect is a
+ * the sound packs), else the SIDs: SID 2 (left) and SID 4 (right) play the
+ * same (SIDs 1 and 3 are the music's); three voices, the oldest effect gives way. A SID effect is a
  * waveform, a pitch sliding each frame, an envelope and a length.
  */
 #include "hw.h"
 #include "game.h"
 #include "sfxdata.h"
 
-#define SID_L 0xD400
-#define SID_R 0xD440
+#define SID_L 0xD420                  /* SID 2 and SID 4: SID 1 (and 3) are the music's */
+#define SID_R 0xD460
 
 #define TRI   0x10
 #define SAW   0x20
@@ -60,14 +60,18 @@ static void put(unsigned char v, unsigned char reg, unsigned char val) {
     REG(SID_R + v * 7 + reg) = val;
 }
 
+/* the tune player's stereo mirror (lib sid_core.s45): what it writes to
+ * SID 1 goes to SID 3 too. (Set here rather than through <audio_sid.h>'s
+ * sid_set_mirror, which would bring all of audio_sid.c into bank 0.) */
+extern unsigned char __sid_mirror;
+
 void sfx_on(void) {
-    unsigned char r;
-    for (r = 0; r < 0x19; r++) {
-        REG(SID_L + r) = 0;
-        REG(SID_R + r) = 0;
+    unsigned char c, r;
+    for (c = 0; c < 4; c++) {                    /* all four SIDs quiet, volume up */
+        for (r = 0; r < 0x18; r++) REG(0xD400 + c * 0x20 + r) = 0;
+        REG(0xD418 + c * 0x20) = 0x0F;
     }
-    REG(SID_L + 0x18) = 0x0F;
-    REG(SID_R + 0x18) = 0x0F;
+    __sid_mirror = 0x80;
 }
 
 void sfx_off(void) {
