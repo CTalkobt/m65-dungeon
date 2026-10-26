@@ -1,7 +1,8 @@
 /* audio.c — the sampled sounds: decoded into attic RAM at the start,
  * played through the audio DMA from a slot in bank 1
  *
- * The sounds come in files DGSFX1, 2, ... (tools/gen_sfx.py): blocks of 16
+ * The sounds come in files DGSFX1, 2, ... (tools/gen_sfx.py; a header of 6
+ * bytes a sound: its number, its coded length, ...): blocks of 16
  * samples, a byte (predictor << 4 | shift) and 8 bytes of 4-bit residues,
  * each sample its prediction from the two before plus (residue << shift).
  * They are decoded once into attic RAM (SND_ATTIC, sfxdata.c snd_at).
@@ -84,7 +85,7 @@ static void decode(unsigned long src, unsigned int n, unsigned long dst) {
 void audio_init(void) {
 #if SND_COUNT
     char name[8] = "DGSFX1";
-    unsigned char f, n, k, hdr[1 + 3 * 32];
+    unsigned char f, n, k, hdr[1 + 6 * 32];
     unsigned long src;
     unsigned int len;
     for (f = 0; f < SND_FILES; f++) {
@@ -92,10 +93,10 @@ void audio_init(void) {
         if (!load_file(name, 5)) return;
         dma_copy_far((unsigned long)(unsigned int)hdr, SCENE_LIN, sizeof hdr);
         n = hdr[0];
-        src = SCENE_LIN + 1 + (unsigned int)n * 3;
+        src = SCENE_LIN + 1 + (unsigned int)n * 6;
         for (k = 0; k < n; k++) {
-            len = hdr[2 + k * 3] | (unsigned int)hdr[3 + k * 3] << 8;
-            decode(src, len, SND_ATTIC + snd_at[hdr[1 + k * 3]]);
+            len = hdr[2 + k * 6] | (unsigned int)hdr[3 + k * 6] << 8;
+            decode(src, len, SND_ATTIC + snd_at[hdr[1 + k * 6]]);
             src += len;
         }
     }

@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-"""gen_sfx.py <sound packs dir> <build dir> — the sampled sounds
+"""gen_sfx.py — the sampled sounds
 
-Reads each sound straight out of the packs' zip files (nothing is copied
-into the project: the packs' licences allow the sounds in a game, not the
-files passed on), trims it, resamples it to RATE Hz, normalises it and
-codes it in blocks of 16 samples, 4.5 bits a sample (blocks() below). The
-program decodes them all into attic RAM at the start (src/audio.c) and
-copies one into a play slot in bank 1 when it is wanted.
+  gen_sfx.py pack <sound packs dir> <dir>                (make sounds)
+      Reads each sound in SOUNDS straight out of the packs' zip files,
+      trims it, resamples it to RATE Hz, normalises it and codes it in
+      blocks of 16 samples, 4.5 bits a sample (blocks() below), into the
+      files DGSFX1, 2, ... (below). make sounds puts them on
+      assets/baseimage.d81; assets/README.md says where each comes from.
 
-Writes:
-  dgsfx<n>.bin  DGSFX1, 2, ...: bank 5 ($50000) when loaded: a count, a
-                header a sound (its number, its bytes), the coded sounds
-  sfxdata.h/.c  SND_* numbers, each sound's place in attic RAM, length,
-                slot; the files
-  files.txt     the files and their names on the disk
+  gen_sfx.py tables <dir> <build dir>                     (every build)
+      The DGSFX files in dir (extracted from assets/baseimage.d81) to
+      sfxdata.h/.c (SND_* numbers, each sound's place in attic RAM, length,
+      slot), files.txt (the files for the game's disk) and wav/ (each
+      sound decoded as the program will, to listen to). Without them the
+      game plays its SID effects only.
 
-Without the packs (the directory missing) it writes no sounds: the game
-plays its SID effects instead.
+The program decodes them all into attic RAM at the start (src/audio.c)
+and copies one into a play slot in bank 1 when it is wanted.
 """
 import io
 import os
@@ -212,86 +212,141 @@ def blocks(a):
     return bytes(data), bytes(out)
 
 
-# ---------------------------------------------------------------- the files
+def unblock(data):
+    """the coded blocks back to 8-bit unsigned samples, as src/audio.c does"""
+    s1 = s2 = 0
+    out = bytearray()
+    for b in range(0, len(data), 9):
+        f, sh = data[b] >> 4, data[b] & 15
+        for k in range(BLOCK):
+            r = data[b + 1 + (k >> 1)]
+            r = r >> 4 if k & 1 else r & 15
+            if r >= 8:
+                r -= 16
+            y = max(-LIM - 1, min(LIM, predict(f, s1, s2) + (r << sh)))
+            s2, s1 = s1, y
+            out.append((y + LIM + 1) >> 6)
+    return bytes(out)
 
-def main():
-    packs, out = sys.argv[1], sys.argv[2]
+
+# ---------------------------------------------------------------- the files
+#
+# DGSFX1, 2, ...: each loads at $50000 (bank 5): a count, then for each
+# sound in it its number, its coded length (2 bytes), its length decoded
+# (2 bytes) and its slot (0 long, 1 short); then the coded sounds one
+# after another. Whole sounds to a file, as many as fit.
+
+HDR = 6
+
+
+def pack(packs, out):
+    """the sounds from the packs to the files (make sounds)"""
     os.makedirs(out, exist_ok=True)
-    have = os.path.isdir(packs) and all(os.path.exists(os.path.join(packs, s[1][0])) for s in SOUNDS)
     sounds = []
-    if have:
-        for name, pack, fn, start, length, gain, slot in SOUNDS:
-            a, rate = wav_mono(member(packs, pack, fn))
-            a = prepare(a, rate, start, length, gain)
-            data, pcm = blocks(a)
-            assert len(pcm) <= SLOT_LEN[slot], name
-            sounds.append((name, slot, data, pcm))
-    else:
-        print("gen_sfx: no sound packs in %s: the SID effects only" % packs)
-    # the files: whole sounds each, as many as fit
+    for k, (name, pk, fn, start, length, gain, slot) in enumerate(SOUNDS):
+        a, rate = wav_mono(member(packs, pk, fn))
+        data, pcm = blocks(prepare(a, rate, start, length, gain))
+        assert len(pcm) <= SLOT_LEN[slot], name
+        assert unblock(data) == pcm, name
+        sounds.append((k, data, len(pcm), 0 if slot == "L" else 1))
     files, cur, size = [], [], 0
-    for k, s in enumerate(sounds):
-        if cur and size + 3 + len(s[2]) > FILE_MAX - 1:
+    for snd in sounds:
+        if cur and size + HDR + len(snd[1]) > FILE_MAX - 1:
             files.append(cur)
             cur, size = [], 0
-        cur.append(k)
-        size += 3 + len(s[2])
+        cur.append(snd)
+        size += HDR + len(snd[1])
     if cur:
         files.append(cur)
+    for f, snds in enumerate(files):
+        hdr = bytearray([len(snds)])
+        for k, data, plen, slot in snds:
+            hdr += bytes([k]) + len(data).to_bytes(2, "little") + plen.to_bytes(2, "little") + bytes([slot])
+        with open(os.path.join(out, "dgsfx%d.bin" % (f + 1)), "wb") as fo:
+            fo.write(b"\x00\x00" + bytes(hdr) + b"".join(s[1] for s in snds))     # loads at $50000
+    total = sum(s[2] for s in sounds)
+    print("gen_sfx: %d sounds, %.1f s, %d bytes coded in %d files"
+          % (len(sounds), total / RATE, sum(len(s[1]) for s in sounds), len(files)))
+
+
+def read_files(d):
+    """the DGSFX files in a directory (as packed, or extracted from a disk
+    image: dgsfx1.bin or DGSFX1.prg): [(host name, [(number, coded,
+    decoded length, slot)])] in order"""
+    found = {}
+    if os.path.isdir(d):
+        for fn in os.listdir(d):
+            base = fn.split(".")[0].upper()
+            if base.startswith("DGSFX") and base[5:].isdigit():
+                found[int(base[5:])] = fn
+    out = []
+    for n in sorted(found):
+        b = open(os.path.join(d, found[n]), "rb").read()[2:]
+        cnt, p, snds = b[0], 1 + b[0] * HDR, []
+        for k in range(cnt):
+            e = b[1 + k * HDR:1 + (k + 1) * HDR]
+            clen, plen = int.from_bytes(e[1:3], "little"), int.from_bytes(e[3:5], "little")
+            snds.append((e[0], b[p:p + clen], plen, e[5]))
+            p += clen
+        out.append((found[n], snds))
+    return out
+
+
+def tables(d, out):
+    """the files in d to the C tables, the disk's list, previews"""
+    os.makedirs(out, exist_ok=True)
+    files = read_files(d)
+    sounds = sorted((s for f, snds in files for s in snds), key=lambda s: s[0])
+    names = [s[0] for s in SOUNDS]
+    if not sounds:
+        print("gen_sfx: no sound files in %s: the SID effects only" % d)
+    assert not sounds or [s[0] for s in sounds] == list(range(len(names))), \
+        "the sound files do not match SOUNDS: make sounds"
     with open(os.path.join(out, "files.txt"), "w") as fl:
-        for f, ks in enumerate(files):
-            hdr = bytearray([len(ks)])
-            body = b""
-            for k in ks:
-                name, slot, data, pcm = sounds[k]
-                hdr += bytes([k]) + len(data).to_bytes(2, "little")
-                body += data
-            with open(os.path.join(out, "dgsfx%d.bin" % (f + 1)), "wb") as fo:
-                fo.write(b"\x00\x00" + bytes(hdr) + body)      # loads at $50000
-            fl.write("dgsfx%d.bin DGSFX%d\n" % (f + 1, f + 1))
-    # where each lands in attic RAM (from SND_ATTIC), as decoded
+        for k, (fn, snds) in enumerate(files):
+            fl.write("%s DGSFX%d\n" % (os.path.abspath(os.path.join(d, fn)), k + 1))
     at, ats = 0, []
     for s in sounds:
         ats.append(at)
-        at += len(s[3])
+        at += s[2]
     with open(os.path.join(out, "sfxdata.h"), "w") as h:
         h.write("/* sfxdata.h — made by tools/gen_sfx.py: the sampled sounds */\n#pragma once\n\n")
         h.write("#define SND_RATE %d\n#define SND_COUNT %d\n#define SND_FILES %d\n" % (RATE, len(sounds), len(files)))
         h.write("#define SND_RATE_REG 0x%06XUL       /* the audio DMA's rate: Hz * 2^24 / 40.5 MHz */\n"
                 % round(RATE * (1 << 24) / 40500000))
         h.write("#define SND_NONE 0xFF\n")
-        for k, snd in enumerate(SOUNDS):
-            h.write("#define SND_%s %s\n" % (snd[0], k if sounds else "SND_NONE"))
+        for k, name in enumerate(names):
+            h.write("#define SND_%s %s\n" % (name, k if sounds else "SND_NONE"))
         h.write("#define SND_AMBIENT %d\n" % (len(AMBIENT) if sounds else 0))
         h.write("extern const unsigned long snd_at[];       /* from SND_ATTIC */\n")
         h.write("extern const unsigned int snd_len[];\n")
         h.write("extern const unsigned char snd_slot[];     /* 0 the long slot, 1 the short */\n")
         h.write("extern const unsigned char snd_ambient[];\n")
-
     with open(os.path.join(out, "sfxdata.c"), "w") as c:
         c.write("/* sfxdata.c — made by tools/gen_sfx.py */\n#include \"sfxdata.h\"\n\n")
         c.write("const unsigned long snd_at[] = {%s};\n" % ", ".join(str(a) for a in ats or [0]))
-        c.write("const unsigned int snd_len[] = {%s};\n" % ", ".join(str(len(s[3])) for s in sounds or [None]) if sounds else "const unsigned int snd_len[] = {0};\n")
-        c.write("const unsigned char snd_slot[] = {%s};\n" % ", ".join("0" if s[1] == "L" else "1" for s in sounds or [])
-                if sounds else "const unsigned char snd_slot[] = {0};\n")
-        c.write("const unsigned char snd_ambient[] = {%s};\n" % ", ".join("SND_%s" % n for n in AMBIENT)
-                if sounds else "const unsigned char snd_ambient[] = {0};\n")
-    # previews to listen to
+        c.write("const unsigned int snd_len[] = {%s};\n" % ", ".join(str(s[2]) for s in sounds or [(0, 0, 0)]))
+        c.write("const unsigned char snd_slot[] = {%s};\n" % ", ".join(str(s[3]) for s in sounds or [(0, 0, 0, 0)]))
+        c.write("const unsigned char snd_ambient[] = {%s};\n"
+                % (", ".join("SND_%s" % n for n in AMBIENT) if sounds else "0"))
     if sounds:
         import wave
         pv = os.path.join(out, "wav")
         os.makedirs(pv, exist_ok=True)
-        for s in sounds:
-            w = wave.open(os.path.join(pv, s[0].lower() + ".wav"), "wb")
+        for k, data, plen, slot in sounds:
+            w = wave.open(os.path.join(pv, names[k].lower() + ".wav"), "wb")
             w.setnchannels(1)
             w.setsampwidth(1)
             w.setframerate(RATE)
-            w.writeframes(s[3])
+            w.writeframes(unblock(data)[:plen])
             w.close()
-        tot = sum(len(s[2]) for s in sounds)
-        print("gen_sfx: %d sounds, %.1f s, %d bytes coded in %d files, %d bytes decoded"
-              % (len(sounds), at / RATE, tot, len(files), at))
+        print("gen_sfx: %d sounds in %d files, %d bytes decoded" % (len(sounds), len(files), at))
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) == 4 and sys.argv[1] == "pack":
+        pack(sys.argv[2], sys.argv[3])
+    elif len(sys.argv) == 4 and sys.argv[1] == "tables":
+        tables(sys.argv[2], sys.argv[3])
+    else:
+        sys.exit(__doc__)

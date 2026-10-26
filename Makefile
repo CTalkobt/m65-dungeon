@@ -5,12 +5,14 @@
 #   make run          build the disk image and boot it in xemu-xmega65
 #   make screenshot   run it headless, save build/screenshot.png
 #   make art          only the art (build/art/*.bin, previews in build/art/preview/)
+#   make sounds       assets/baseimage.d81 from the sound packs (SFX_DIR)
 #   make shot KEYS=.. a build that plays those keys, then build/shot.png
 #   make clean        remove build/
 #
 # Variables: M65 (the M65Compiler tree, default ../m65compiler), XEMU,
 # SEED (a fixed dungeon seed, e.g. make SEED=1234), SHOT_DELAY (seconds),
-# SFX_DIR (the sound packs' zip files, default ~/Downloads/sfx),
+# SFX_DIR (the sound packs' zip files for make sounds, default
+# ~/resources/audio/dungeon),
 # DEFS (extra -D options).
 
 M65     ?= ../m65compiler
@@ -25,9 +27,11 @@ PYTHON  ?= python3
 BUILD   ?= build
 ART     := build/art
 SFX     := build/sfx
-# the sound packs (zip files) the sampled sounds come from; without them
-# the game has its SID effects only
-SFX_DIR ?= $(HOME)/Downloads/sfx
+# the sampled sounds: on assets/baseimage.d81 (DGSFX1, 2, ...), which
+# make sounds rebuilds from the sound packs' zip files in SFX_DIR; without
+# the image the game has its SID effects only
+BASEIMAGE := assets/baseimage.d81
+SFX_DIR ?= $(HOME)/resources/audio/dungeon
 DEFS    ?=
 ifdef SEED
 DEFS    += -DSEED=$(SEED)
@@ -49,7 +53,7 @@ ART_STAMP := $(ART)/art.stamp
 SFX_STAMP := $(SFX)/sfx.stamp
 DISK    := $(BUILD)/dungeon.d81
 
-.PHONY: all run disk art screenshot shot clean
+.PHONY: all run disk art sounds screenshot shot clean
 
 all: $(DISK)
 
@@ -63,10 +67,20 @@ $(ART_STAMP) $(ART)/assets.h &: $(wildcard tools/*.py)
 
 art: $(ART_STAMP)
 
-$(SFX_STAMP) $(SFX)/sfxdata.h &: tools/gen_sfx.py $(wildcard $(SFX_DIR)/*.zip)
-	mkdir -p $(SFX)
-	$(PYTHON) tools/gen_sfx.py $(SFX_DIR) $(SFX)
+$(SFX_STAMP) $(SFX)/sfxdata.h &: tools/gen_sfx.py $(wildcard $(BASEIMAGE))
+	rm -rf $(SFX)
+	mkdir -p $(SFX)/disk
+	if [ -f $(BASEIMAGE) ]; then $(DISK45) extract-all $(BASEIMAGE) $(SFX)/disk "DGSFX*"; fi
+	$(PYTHON) tools/gen_sfx.py tables $(SFX)/disk $(SFX)
 	touch $(SFX_STAMP)
+
+# the sound packs to the base image (only with the packs: see assets/README.md)
+sounds:
+	rm -rf build/sounds
+	$(PYTHON) tools/gen_sfx.py pack $(SFX_DIR) build/sounds
+	rm -f $(BASEIMAGE)
+	$(DISK45) create $(BASEIMAGE) -n "DUNGEON SOUNDS" -i "DS"
+	for f in build/sounds/dgsfx*.bin; do n=$$(basename $$f .bin | tr a-z A-Z); $(DISK45) add $(BASEIMAGE) $$f $$n || exit 1; done
 
 $(BUILD)/sfxdata.o45: $(SFX_STAMP) | $(BUILD)
 	$(CC45) $(CFLAGS) -c $(SFX)/sfxdata.c -o $@
@@ -93,7 +107,7 @@ $(DISK): $(TARGET) $(OVL) $(ART_STAMP) $(SFX_STAMP)
 	$(DISK45) add $@ $(TARGET) DUNGEON
 	$(DISK45) add $@ $(OVL) DUNGEON.OV1
 	while read f n; do $(DISK45) add $@ $(ART)/$$f $$n || exit 1; done < $(ART)/files.txt
-	while read f n; do $(DISK45) add $@ $(SFX)/$$f $$n || exit 1; done < $(SFX)/files.txt
+	while read f n; do $(DISK45) add $@ $$f $$n || exit 1; done < $(SFX)/files.txt
 
 run: $(DISK)
 	$(XEMU) -8 $(abspath $(DISK)) -autoload

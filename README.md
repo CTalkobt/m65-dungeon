@@ -15,12 +15,12 @@ make            # build/dungeon.d81: DUNGEON, DUNGEON.OV1, DGTILES, DG<NAME>A/B
 make run        # boot the disk in xemu-xmega65
 make screenshot # headless, build/screenshot.png
 make art        # only the art (build/art/, previews in build/art/preview/)
+make sounds     # assets/baseimage.d81 from the sound packs (see Sound)
 make SEED=1234  # the same dungeons every time
 make clean
 ```
 
-Needs Python 3 with numpy and PIL for the art and the sound packs (below)
-for the sampled sounds, the M65Compiler tree next to
+Needs Python 3 with numpy and PIL for the art, the M65Compiler tree next to
 this one (`../m65compiler`, or `make M65=<path>`), and xemu to run it. On a
 MEGA65, copy `build/dungeon.d81` to the SD card, mount it and run DUNGEON.
 
@@ -34,13 +34,12 @@ and asks xemu's monitor for the registers and memory.
 
 ## Sound
 
-The sampled sounds come from free sound packs (zip files) that are not in
-this repository: their licences allow the sounds in a game but not the
-files passed on. `make` reads them from `SFX_DIR` (default
-`~/Downloads/sfx`): NimbeKit's Fantasy RPG collection, the free Fantasy,
-Roguelike and Lost Temple packs from moneywithjj, and the Packsmithy
-sampler. `tools/gen_sfx.py` lists which file each sound comes from. Without
-the packs the game builds with its SID effects only.
+The sampled sounds are on `assets/baseimage.d81`, which `make` takes them
+from: the build needs nothing else. They were made from free sound packs
+that are not in this repository; `assets/README.md` says which sound comes
+from where. With the packs' zip files in `~/resources/audio/dungeon` (or
+`SFX_DIR=<dir>`), `make sounds` makes the image anew. Without the image the
+game builds with its SID effects only.
 
 ## Playing
 
@@ -132,7 +131,8 @@ would not fit (the tiles to 31%, the close-ups to 58-82%).
 **Sound** (`tools/gen_sfx.py`, `src/audio.c`). 28 sounds, 22 s at 12 kHz:
 cut, resampled, normalised, and coded in blocks of 16 samples (a predictor
 and a shift a block, 4-bit residues: 4.5 bits a sample, 150 KB on the
-disk). They are decoded at the start into attic RAM. The audio DMA reads
+disk, from `assets/baseimage.d81`). They are decoded at the start into
+attic RAM. The audio DMA reads
 chip RAM only, so a sound is copied into one of two play slots in bank 1
 when it is wanted: a 16 KB one for the long sounds (channel 0) and an 8 KB
 one for the short (channel 1). On the map, now and then, a drip, a chain,
