@@ -72,7 +72,7 @@ unsigned char title(void) {
     shown = 0;
     video_blank(1, 44, 78, 1);
     video_centre(44, "RETURN or FIRE to begin        RUN/STOP to leave", C_HILITE);
-    tune_play(tune_title);                    /* the theme, now that the loading is done */
+    tune_play_far(MUSIC_LIN + TUNE_TITLE_AT);  /* the theme, now that the loading is done */
     v_music = 1;
     for (;;) {
         video_frame();

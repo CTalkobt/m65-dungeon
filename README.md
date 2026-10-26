@@ -162,13 +162,19 @@ when it is wanted: a 16 KB one for the long sounds (channel 0) and an 8 KB
 one for the short (channel 1). On the map, now and then, a drip, a chain,
 a far footfall, off to one side. The SIDs play where there is no sample.
 
-**Music** (`src/music.txt`). The title theme, written in tune45's text
-format: D minor, 16 bars round and round, a flute-like lead, a pulse bass
-and a harp picking the chords. `tune45 convert` makes it C; the library's
-tune player plays it on SID 1, mirrored on SID 3, and the SID sound
-effects keep to SIDs 2 and 4. The player is assembled into the `scenes`
-overlay with the title (`src/tune_ovl.s45`), as bank 0 has no room for it.
-`tune45 play src/music.txt` plays it on the PC.
+**Music** (`tools/gen_music.py`). Two tunes for all four SIDs, written
+out as tune45's text by a small composer (phrases, chords, delayed and
+octave-shifted copies of voices) and made into DGMUSIC by `tune45 convert
+--bin`; the program keeps it in attic RAM and plays it with the library's
+tune player (`tune_play_far`). The title theme (D minor, 16 bars) plays on
+the left and, a few hundredths of a second behind and an octave apart, on
+the right: a fuller sound, spread across the two sides. The levels' tune
+(2.5 minutes) is a low drone with far-off bells; the bass begins to walk,
+a melody looks about; once round, a march (drums, horns, the melody high)
+before it sinks back. It pauses for a fight or a close-up and goes on
+from where it was. The SID sound effects keep to the twelfth voice, which
+the levels' tune leaves free. `build/music/*.wav` (`tune45 play --wav`)
+are the tunes to listen to on the PC.
 
 **Memory** (bank 0 is tight). The resident part (video, keys, the UI,
 sound, the tables) ends near $8300. The code overlays `walk` (explore +

@@ -80,6 +80,7 @@ void view_fov(void) {
     win_y = (signed int)pl.y - SEE;
     dma_fill_far((unsigned long)(unsigned int)win, WIN * WIN, 0);
     for (dy = -SEE; dy <= SEE; dy++) {
+        video_poll();
         y = (signed int)pl.y + dy;
         for (dx = -SEE; dx <= SEE; dx++, w++) {
             x = (signed int)pl.x + dx;
@@ -226,6 +227,7 @@ void view_draw(void) {
     cam_x = (unsigned char)cx;
     cam_y = (unsigned char)cy;
     for (ty = 0; ty < VIEW_H; ty++) {
+        video_poll();
         dy = (signed int)(cam_y + ty) - pl.y;
         for (tx = 0, c = 0; tx < VIEW_W; tx++, c += 2) {
             k = cell(cam_x + tx, cam_y + ty);

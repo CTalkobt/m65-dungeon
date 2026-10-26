@@ -11,6 +11,7 @@ void video_unlock(void);                     /* again after a load: the DOS lock
 void video_clear(void);                      /* every cell blank */
 void video_frame(void);                      /* wait for the next frame; animate the palette */
 void video_frames(unsigned char n);
+void video_poll(void);                       /* the music's frame, if one has passed: from long work */
 
 /* text: ASCII (lower and upper case) at a cell in a text colour (hw.h C_*) */
 void video_text(unsigned char col, unsigned char row, const char *s, unsigned char colour);

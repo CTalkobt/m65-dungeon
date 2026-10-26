@@ -22,6 +22,7 @@
 #define TILES_LIN  0x0040000UL
 #define SCENE_LIN  0x0050000UL
 #define SCREEN_LIN 0x005E000UL
+#define MUSIC_LIN  0x8070000UL       /* DGMUSIC, the tunes: attic RAM (tune_play_far) */
 
 /* a file's palette: 256 red, 256 green, 256 blue (plain 8-bit values) */
 #define PAL_BYTES  768

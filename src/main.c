@@ -10,12 +10,14 @@
  *
  * Build with -DSEED=n for the same dungeons every time.
  */
+#include <dma.h>
 #include "hw.h"
 #include "assets.h"
 #include "video.h"
 #include "load.h"
 #include "rng.h"
 #include "game.h"
+#include "music.h"
 
 /* nothing recurses and SAC keeps the variables static: a small stack */
 #pragma cc45 stack_size(1024)
@@ -72,6 +74,8 @@ int main(void) {
     unpack(SCENE_LIN);
     unpack(SCENE_LIN + BACK_STREAM2);
     rom_protected();
+    /* the music into attic RAM */
+    if (load_file("DGMUSIC", 5)) dma_copy_far(MUSIC_LIN, SCENE_LIN, TUNES_SIZE);
     video_on();
     video_pal_load(TILES_LIN, PAL_TILES, PAL_SCENE - PAL_TILES);
     sfx_on();

@@ -117,10 +117,22 @@ static void flicker_step(void) {
     flick = (unsigned char)((flick * 3 + want) >> 2);
 }
 
+/* the music on a frame, once a frame: from video_frame, and from long work
+ * (drawing the map, making a level) so the tune keeps its time */
+static unsigned char music_at;
+
+void video_poll(void) {
+    unsigned char f = FRAMECOUNT;
+    if (v_music && f != music_at) {
+        music_at = f;
+        tune_update();
+    }
+}
+
 void video_frame(void) {
     unsigned char f = FRAMECOUNT;
     while (FRAMECOUNT == f) {}
-    if (v_music) tune_update();
+    video_poll();
     glow_phase++;
     if (v_flicker && (glow_phase & 3) == 0) flicker_step();
     if (v_fire && (glow_phase & 3) == 2) fire_step();

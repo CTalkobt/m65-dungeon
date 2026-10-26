@@ -1,14 +1,13 @@
 /* sfx.c — sound effects: a sampled sound where there is one (audio.c,
- * the sound packs), else the SIDs: SID 2 (left) and SID 4 (right) play the
- * same (SIDs 1 and 3 are the music's); three voices, the oldest effect gives way. A SID effect is a
+ * the sound packs), else SID 4's third voice (the twelfth: the music has
+ * the other eleven); one voice, a new effect cuts the last. A SID effect is a
  * waveform, a pitch sliding each frame, an envelope and a length.
  */
 #include "hw.h"
 #include "game.h"
 #include "sfxdata.h"
 
-#define SID_L 0xD420                  /* SID 2 and SID 4: SID 1 (and 3) are the music's */
-#define SID_R 0xD460
+#define SID_V 0xD46E                  /* SID 4's third voice: the music leaves voice 12 free */
 
 #define TRI   0x10
 #define SAW   0x20
@@ -50,20 +49,15 @@ static const unsigned char sid_like[SFX_COUNT - SFX_SWING] = {
     SFX_CHIME, SFX_CHIME, SFX_DEATH, SFX_GROWL, SFX_CHIME, SFX_HIT, SFX_CREAK,
 };
 
-static unsigned char left[3], next;
-static unsigned int freq[3];
-static signed int slide[3];
-static unsigned char wave[3];
+static unsigned char left[1];
+static unsigned int freq[1];
+static signed int slide[1];
+static unsigned char wave[1];
 
 static void put(unsigned char v, unsigned char reg, unsigned char val) {
-    REG(SID_L + v * 7 + reg) = val;
-    REG(SID_R + v * 7 + reg) = val;
+    (void)v;
+    REG(SID_V + reg) = val;
 }
-
-/* the tune player's stereo mirror (lib sid_core.s45): what it writes to
- * SID 1 goes to SID 3 too. (Set here rather than through <audio_sid.h>'s
- * sid_set_mirror, which would bring all of audio_sid.c into bank 0.) */
-extern unsigned char __sid_mirror;
 
 void sfx_on(void) {
     unsigned char c, r;
@@ -71,24 +65,22 @@ void sfx_on(void) {
         for (r = 0; r < 0x18; r++) REG(0xD400 + c * 0x20 + r) = 0;
         REG(0xD418 + c * 0x20) = 0x0F;
     }
-    __sid_mirror = 0x80;
 }
 
 void sfx_off(void) {
-    REG(SID_L + 0x18) = 0;
-    REG(SID_R + 0x18) = 0;
+    unsigned char c;
+    for (c = 0; c < 4; c++) REG(0xD418 + c * 0x20) = 0;
 }
 
 void sfx(unsigned char n) {
     const struct fx *f;
-    unsigned char v = next;
+    unsigned char v = 0;
     if (audio_ok && sampled[n] != SND_NONE) {
         audio_play(sampled[n], 200, 200);
         return;
     }
     if (n >= SFX_SWING) n = sid_like[n - SFX_SWING];
     f = &fxs[n];
-    next = next == 2 ? 0 : next + 1;
     put(v, 4, 0);                                /* gate off: the envelope starts again */
     put(v, 5, f->ad);
     put(v, 6, f->sr);
@@ -117,7 +109,7 @@ void sfx_far(unsigned char n, signed char dx) {
 void sfx_update(void) {
     unsigned char v;
     audio_update();
-    for (v = 0; v < 3; v++) {
+    for (v = 0; v < 1; v++) {
         if (!left[v]) continue;
         if (--left[v] == 0) {
             put(v, 4, wave[v]);

@@ -1,6 +1,0 @@
-; tune_ovl.s45 — the library's tune player (lib/stdlib_asm/tune.s45),
-; assembled into the code overlay "scenes": the title, which plays the
-; theme, runs there, and bank 0 has no room for the player. Linked before
-; c45.lib, so the library's own copy is not.
-.overlay scenes
-#include "tune.s45"

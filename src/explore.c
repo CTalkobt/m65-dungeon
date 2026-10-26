@@ -9,16 +9,37 @@
  */
 #pragma cc45 overlay(walk)
 #pragma cc45 noescape_strings
+#include <audio_tune.h>
 #include "hw.h"
 #include "assets.h"
+#include "music.h"
 #include "video.h"
 #include "rng.h"
 #include "game.h"
 
 
+/* the levels' tune: on while the map is shown; a fight or a close-up
+ * pauses it, and it goes on from where it was */
+static unsigned int music_ticks;
+
+static void music_on(void) {
+    if (v_music) return;
+    tune_play_far(MUSIC_LIN + TUNE_EXPLORE_AT);
+    if (music_ticks) tune_seek(music_ticks);
+    v_music = 1;
+}
+
+static void music_off(void) {
+    if (!v_music) return;
+    music_ticks = tune_ticks() % TUNE_EXPLORE_TICKS;
+    v_music = 0;
+    tune_stop();
+}
+
 static void screen_in(void) {
     v_flicker = 1;
     v_fire = 1;
+    music_on();
     view_fov();
     view_screen();
     video_fade(16);
@@ -46,7 +67,9 @@ static void help(void) {
 
 /* the fight with creature i; WON / FLED / DIED, the screen back */
 static unsigned char fight(unsigned char i, unsigned char ambush) {
-    unsigned char r = battle(i, ambush);
+    unsigned char r;
+    music_off();
+    r = battle(i, ambush);
     if (r == DIED) return DIED;
     if (r == WON) {
         if (mon_flags[mons[i].kind] & MF_BOSS) return WON;
@@ -180,6 +203,7 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
     case O_CHEST:
         view_fov();
         view_draw();
+        music_off();
         chest_view(i);
         screen_in();
         break;
@@ -189,6 +213,7 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
     case O_IDOL:
         view_fov();
         view_draw();
+        music_off();
         idol_view(i);
         screen_in();
         break;
@@ -205,7 +230,17 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
     return 1;
 }
 
+static unsigned char explore_run(void);
+
 unsigned char explore(void) {
+    unsigned char r;
+    music_ticks = 0;
+    r = explore_run();
+    music_off();
+    return r;
+}
+
+static unsigned char explore_run(void) {
     unsigned char k, took, r;
     signed char dx, dy;
     level_enter();

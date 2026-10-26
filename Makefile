@@ -47,7 +47,7 @@ TARGET  := $(BUILD)/dungeon.prg
 OVL     := $(BUILD)/dungeon.ov1
 OVL_STORE := 0x8000000-0x800FFFF
 C_MODS  := main video load rng game dungeon view ui explore battle detail front scene sfx audio audio_boot
-OBJS    := $(C_MODS:%=$(BUILD)/%.o45) $(BUILD)/ld.o45 $(BUILD)/assets.o45 $(BUILD)/sfxdata.o45 $(BUILD)/music.o45 $(BUILD)/tune_ovl.o45 $(BUILD)/seen.o45
+OBJS    := $(C_MODS:%=$(BUILD)/%.o45) $(BUILD)/ld.o45 $(BUILD)/assets.o45 $(BUILD)/sfxdata.o45 $(BUILD)/seen.o45
 HEADERS := $(wildcard src/*.h) $(ART)/assets.h $(SFX)/sfxdata.h $(MUSIC)/music.h
 
 # the art: one file a monster, the tiles, the chest and the idol
@@ -84,22 +84,20 @@ sounds:
 	$(DISK45) create $(BASEIMAGE) -n "DUNGEON SOUNDS" -i "DS"
 	for f in build/sounds/dgsfx*.bin; do n=$$(basename $$f .bin | tr a-z A-Z); $(DISK45) add $(BASEIMAGE) $$f $$n || exit 1; done
 
-# the music (src/music.txt, tune45's text) to C
-$(MUSIC)/music.c $(MUSIC)/music.h &: src/music.txt
+# the music: tools/gen_music.py writes it as tune45's text, tune45 makes
+# it the file DGMUSIC (the program keeps it in attic RAM)
+$(MUSIC)/music.txt: tools/gen_music.py
 	mkdir -p $(MUSIC)
-	$(TUNE45) convert src/music.txt -o $(MUSIC)/music.c --header $(MUSIC)/music.h
+	$(PYTHON) tools/gen_music.py $@
 
-$(BUILD)/music.o45: $(MUSIC)/music.c $(MUSIC)/music.h | $(BUILD)
-	$(CC45) $(CFLAGS) -c $(MUSIC)/music.c -o $@
+$(MUSIC)/dgmusic.bin $(MUSIC)/music.h &: $(MUSIC)/music.txt
+	$(TUNE45) convert $< --bin --load-at 0 -o $(MUSIC)/dgmusic.bin --header $(MUSIC)/music.h
 
 $(BUILD)/sfxdata.o45: $(SFX_STAMP) | $(BUILD)
 	$(CC45) $(CFLAGS) -c $(SFX)/sfxdata.c -o $@
 
 $(BUILD)/%.o45: src/%.c $(HEADERS) | $(BUILD)
 	$(CC45) $(CFLAGS) -c $< -o $@
-
-$(BUILD)/tune_ovl.o45: src/tune_ovl.s45 $(M65)/lib/stdlib_asm/tune.s45 | $(BUILD)
-	$(CA45) -c -I$(M65)/lib/stdlib_asm $< -o $@
 
 $(BUILD)/seen.o45: src/seen.s45 | $(BUILD)
 	$(CA45) -c $< -o $@
@@ -117,11 +115,12 @@ disk: $(DISK)
 
 # the program first (-autoload runs the first program), then the art under
 # the names the program loads it by (build/files.txt, from gen_art.py)
-$(DISK): $(TARGET) $(OVL) $(ART_STAMP) $(SFX_STAMP)
+$(DISK): $(TARGET) $(OVL) $(ART_STAMP) $(SFX_STAMP) $(MUSIC)/dgmusic.bin
 	rm -f $@
 	$(DISK45) create $@ -n "DUNGEON" -i "DG"
 	$(DISK45) add $@ $(TARGET) DUNGEON
 	$(DISK45) add $@ $(OVL) DUNGEON.OV1
+	$(DISK45) add $@ $(MUSIC)/dgmusic.bin DGMUSIC
 	while read f n; do $(DISK45) add $@ $(ART)/$$f $$n || exit 1; done < $(ART)/files.txt
 	while read f n; do $(DISK45) add $@ $$f $$n || exit 1; done < $(SFX)/files.txt
 
