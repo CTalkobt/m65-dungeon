@@ -44,7 +44,7 @@ TARGET  := $(BUILD)/dungeon.prg
 # program and kept in attic RAM (loaded through bank 5 at the start)
 OVL     := $(BUILD)/dungeon.ov1
 OVL_STORE := 0x8000000-0x800FFFF
-C_MODS  := main video load rng game dungeon view ui explore battle detail front scene sfx audio
+C_MODS  := main video load rng game dungeon view ui explore battle detail front scene sfx audio audio_boot
 OBJS    := $(C_MODS:%=$(BUILD)/%.o45) $(BUILD)/ld.o45 $(BUILD)/assets.o45 $(BUILD)/sfxdata.o45
 HEADERS := $(wildcard src/*.h) $(ART)/assets.h $(SFX)/sfxdata.h
 
