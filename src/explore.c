@@ -127,9 +127,9 @@ static void door_open(unsigned char x, unsigned char y) {
 
 static unsigned char free_for(struct mon *c, unsigned char x, unsigned char y) {
     unsigned char t = terrain(x, y);
-    if (t == TR_ROCK || t == TR_LOCKED || mon_at(x, y)) return 0;
+    if (t == TR_ROCK || t == TR_LOCKED || t == TR_RUBBLE || mon_at(x, y)) return 0;
     t = obj_at(AT(x, y));
-    if (t == O_BRAZIER || t == O_BRAZIER_COLD || t == O_MERCHANT) return 0;
+    if (BLOCKS(t)) return 0;
     t = terrain(x, y);
     if (t == TR_DOOR) {
         door_open(x, y);                            /* it opens the door: that is its move */
@@ -249,6 +249,18 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
     }
     t = terrain(x, y);
     if (t == TR_ROCK) return 0;
+    if (t == TR_RUBBLE) {
+        /* heaved at, a turn at a time: one time in three it gives */
+        if (rng_range(3)) {
+            msg(vm_kind(x, y) == TK_RUBBLE ? "You heave at the fallen stones." : "You batter at the cracked wall.", C_DIM);
+            sfx(SFX_HEAVY);
+            return 1;
+        }
+        vm_set(x, y, TK_CORR0 + ((x ^ y) & 1));
+        msg("It gives way. The way is open.", C_TEXT);
+        sfx(SFX_CLANG);
+        return 1;
+    }
     if (t == TR_LOCKED) {
         if (!pl.items[I_KEY]) {
             msg("The door is locked. An iron key would turn it.", C_DIM);
@@ -273,6 +285,7 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
         return 0;
     }
     if (n == O_MERCHANT) return shop();
+    if (n >= O_FOUNTAIN && n <= O_SHELF_BARE) return fixture(i, n);
     if (n == O_BRAZIER_COLD) {
         /* the torch lights it, spending some of itself: the room lit for good */
         if (!pl.lit) msg("A cold brazier, and your torch is out.", C_DIM);
@@ -376,26 +389,26 @@ static void test_shoot(void) {
 }
 #endif
 
-#ifdef TEST_SECRET
-/* (tests: the player beside a secret door, if the level has one) */
-static void test_secret(void) {
+#if defined(TEST_SECRET) || defined(TEST_RUBBLE)
+/* (tests: the player beside a place of kind a or b, if the level has one) */
+static void test_beside(unsigned char a, unsigned char b) {
     static const signed char sx[4] = {-1, 1, 0, 0}, sy[4] = {0, 0, -1, 1};
     unsigned char x, y, k, t;
     for (y = 1; y < MAP_H - 1; y++)
         for (x = 1; x < MAP_W - 1; x++) {
             t = vm_kind(x, y);
-            if (t != TK_SECRET_H && t != TK_SECRET_V) continue;
+            if (t != a && t != b) continue;
             for (k = 0; k < 4; k++) {
                 t = terrain(x + sx[k], y + sy[k]);
                 if (t == TR_CORR || t == TR_FLOOR) {
                     pl.x = x + sx[k];
                     pl.y = y + sy[k];
-                    msg("(a secret door beside you)", C_RED);
+                    msg(nth("(it is to the east)\0(it is to the west)\0(it is to the south)\0(it is to the north)", k), C_RED);
                     return;
                 }
             }
         }
-    msg("(no secret door)", C_RED);
+    msg("(there is none)", C_RED);
 }
 #endif
 
@@ -426,7 +439,14 @@ static unsigned char explore_run(unsigned char resume) {
     test_shoot();
 #endif
 #ifdef TEST_SECRET
-    test_secret();
+    test_beside(TK_SECRET_H, TK_SECRET_V);
+#endif
+#ifdef TEST_RUBBLE
+    test_beside(TK_RUBBLE, TK_CRACK_NS);
+#endif
+#ifdef TEST_FIXTURE
+    obj_set(AT(pl.x + 1, pl.y), O_FOUNTAIN);   /* (tests: a fountain east, a shelf west) */
+    obj_set(AT(pl.x - 1, pl.y), O_SHELF);
 #endif
 #ifdef TEST_MERCHANT
     /* (tests: a merchant a step east, stocked, and gold to spend) */

@@ -37,7 +37,8 @@ that kind a few places away. `TEST=-DTEST_SECRET` starts beside a secret door,
 `TEST=-DTEST_TRAP` with a hidden trap a step east, `TEST=-DTEST_UPS=<n>` with n
 levels' gifts to choose, `TEST=-DTEST_BRAZIER` just west of a cold brazier;
 `TEST=-DTEST_WIN` goes straight to the end, won; `TEST=-DTEST_MERCHANT` puts a
-merchant a step east, and 100 gold.
+merchant a step east, and 100 gold; `TEST=-DTEST_FIXTURE` a fountain east and
+a shelf west; `TEST=-DTEST_RUBBLE` starts beside fallen stones or a crack.
 Other letters in `KEYS` are typed as they are (`KEYS='F__i'` opens the
 inventory).
 `python3 tools/probe.py build/dungeon.d81 <seconds> r m<addr>` boots the disk
@@ -154,6 +155,16 @@ slowly), *Steady torch* (it burns one turn in 4, then 3, then 2 less),
 *Sure aim* (shots hit more often and harder), *Wary feet* (traps found
 sooner and stepped off more often). The last four can be chosen three
 times each.
+
+**In the rooms and corridors.** A fountain now and then: drink (walk
+into it), once: it may heal you, restore your mana, sicken you, or show
+you the way you came; then it is dry. Bookshelves against the walls:
+search them, once, for a scroll, old pages to burn (rags), a journal's
+last word of advice, or dust. Fallen stones choke a narrow corridor or
+two, and a cracked wall or two stands between two ways: walk into them to
+heave at them, a turn at a time, until they give (one time in three). Both
+block sight and creatures; the generator never lets them shut a level
+(they can always be cleared).
 
 **The merchant.** On some levels (not the last) a hooded merchant waits
 with his lantern (seen in the dark). Walk into him to buy, with gold, from

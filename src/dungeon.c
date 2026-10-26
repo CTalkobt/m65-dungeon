@@ -170,6 +170,49 @@ static void secret_door(void) {
         }
 }
 
+/* a free place along room r's walls, not by a way in (0 if none) */
+static unsigned int by_wall(unsigned char r) {
+    unsigned char k, x, y;
+    unsigned int i;
+    for (k = 0; k < 20; k++) {
+        x = rx[r] + rng_range(rw[r]);
+        y = ry[r] + rng_range(rh[r]);
+        if (k & 1) x = k & 2 ? rx[r] : rx[r] + rw[r] - 1;
+        else y = k & 2 ? ry[r] : ry[r] + rh[r] - 1;
+        i = AT(x, y);
+        if (in_room(x, y) && !obj_at(i) && !mon_at(x, y) && !by_way_in(x, y) && !(x == pl.x && y == pl.y)) return i;
+    }
+    return 0;
+}
+
+/* where a choke could be: what (0) a narrow corridor's place, walls on
+ * both sides; (1) a wall with a way on either side of it */
+static unsigned char chokable(unsigned char x, unsigned char y, unsigned char what) {
+    unsigned char k = vm_kind(x, y);
+    if (!what)
+        return (k == TK_CORR0 || k == TK_CORR1) && !by_way_in(x, y) &&
+               ((solid(x - 1, y) && solid(x + 1, y)) || (solid(x, y - 1) && solid(x, y + 1)));
+    if (k == TK_WALL5) return !solid(x, y - 1) && !solid(x, y + 1) && !vault_at(x, y);
+    if (k == TK_WALL10) return !solid(x - 1, y) && !solid(x + 1, y) && !vault_at(x, y);
+    return 0;
+}
+
+/* one of the places that could be choked, choked */
+static void choke(unsigned char what) {
+    unsigned char x, y, n = 0, r;
+    for (y = 1; y < MAP_H - 1; y++)
+        for (x = 1; x < MAP_W - 1; x++)
+            if (chokable(x, y, what) && n < 255) n++;
+    if (!n) return;
+    r = rng_range(n);
+    for (y = 1; y < MAP_H - 1; y++)
+        for (x = 1; x < MAP_W - 1; x++)
+            if (chokable(x, y, what) && !r--) {
+                vm_set(x, y, what ? (vm_kind(x, y) == TK_WALL5 ? TK_CRACK_NS : TK_CRACK_EW) : TK_RUBBLE);
+                return;
+            }
+}
+
 static void add_mon(unsigned char kind, unsigned int at) {
     struct mon *m;
     if (!at || nmons >= MAX_MON) return;
@@ -359,6 +402,15 @@ void dungeon_make(void) {
             }
         }
     }
+
+    /* a fountain now and then; bookshelves against the walls */
+    if (rng_range(2)) put(spot(rng_range(nrooms)), O_FOUNTAIN);
+    for (k = 0; k < 1 + rng_range(3); k++) put(by_wall(rng_range(nrooms)), O_SHELF);
+
+    /* fallen stones in a narrow corridor or two, and a cracked wall or two
+     * between two ways (both cleared by heaving at them) */
+    for (k = 0; k < 1 + rng_range(2); k++) choke(0);
+    for (k = 0; k < 1 + rng_range(2); k++) choke(1);
 
     /* traps, hidden: more deeper down; none in the first room */
     for (k = 0; k < 1 + pl.depth; k++) put(spot(1 + rng_range(last)), O_TRAP);

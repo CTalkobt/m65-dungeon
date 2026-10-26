@@ -497,6 +497,42 @@ ART = {
         ".....kkk.kkk....",
         "................",
     ],
+    "fountain": [
+        "................",
+        "................",
+        ".......kk.......",
+        "......kssk......",
+        "......kSSk......",
+        ".......kk.......",
+        "..kkkkkkkkkkkk..",
+        ".ksssssssssssSk.",
+        ".kSuuuwuuuuuUSk.",
+        ".kSuUuuuuwuuUSk.",
+        "..kSUUUUUUUUSk..",
+        "...kSSSSSSSSk...",
+        "....kSssssSk....",
+        "....kSSSSSSk....",
+        "...kkkkkkkkkk...",
+        "................",
+    ],
+    "shelf": [
+        "..kkkkkkkkkkkk..",
+        "..kNNNNNNNNNNk..",
+        "..kNrpgYbunrNk..",
+        "..kNrpgYbunrNk..",
+        "..kNNNNNNNNNNk..",
+        "..kNubYrgpbuNk..",
+        "..kNubYrgpbuNk..",
+        "..kNNNNNNNNNNk..",
+        "..kNgrbnYpurNk..",
+        "..kNgrbnYpurNk..",
+        "..kNNNNNNNNNNk..",
+        "..kNNkkkkkkNNk..",
+        "..kkk......kkk..",
+        "................",
+        "................",
+        "................",
+    ],
     "gold": [
         "................",
         "................",
@@ -554,6 +590,7 @@ ART = {
 }
 ART["idol_spent"] = [r.replace('z', 'T') for r in ART["idol"]]
 ART["draught"] = [r.replace('r', 'u').replace('R', 'U') for r in ART["potion"]]
+ART["fountain_dry"] = [r.replace('u', 'h').replace('U', 'h').replace('w', 'F') for r in ART["fountain"]]
 
 
 def _fire(name, rows, cols, letters):
@@ -735,6 +772,32 @@ def trap():
     return img, edge
 
 
+def rubble():
+    """a corridor choked with fallen stones (their outlines edges)"""
+    img = corridor(1)
+    edge = np.zeros((T, T), bool)
+    for cx, cy, r in ((4, 5, 3.6), (11, 4, 3.0), (8, 11, 4.2), (13, 12, 2.4), (3, 12, 2.6)):
+        d = np.sqrt((_xs - cx) ** 2 + (_ys - cy) ** 2)
+        img[d < r] = np.array([0.46, 0.42, 0.38], np.float32) * (1.1 - d[d < r] / r * 0.5)[..., None]
+        ring = (d >= r - 1) & (d < r)
+        img[ring] *= 0.45
+        edge |= ring
+    return img, edge
+
+
+def crack(mask):
+    """a wall between two ways, cracked through: it can be broken"""
+    img, edge = wall(mask)
+    x = 8
+    for y in range(T):
+        x = min(12, max(4, x + ((y * 5) % 3) - 1))
+        a, b = (y, x) if mask & 1 else (x, y)     # (across the wall, from one way to the other)
+        img[a, b] = 0.04
+        img[(a, a + 1)[mask & 1 == 0], (b + 1, b)[mask & 1 == 0]] *= 0.4
+        edge[a, b] = True
+    return img, edge
+
+
 def stairs():
     """steps going down into the dark, left to right; their edges: each
     step's lip and the stairwell's sides"""
@@ -782,12 +845,15 @@ def terrain_kinds():
     out.append(("SECRET_H",) + wall(5))
     out.append(("SECRET_V",) + wall(10))
     out.append(("TRAP",) + trap())
+    out.append(("RUBBLE",) + rubble())
+    out.append(("CRACK_NS",) + crack(5))
+    out.append(("CRACK_EW",) + crack(10))
     return out
 
 
 SPRITES = ("chest", "chest_open", "idol", "idol_spent", "potion", "gold", "bones", "brazier",
            "brazier_cold", "scroll", "key", "draught", "rags", "sticks", "fur", "candle", "flint", "firestick",
-           "arrows", "shot", "merchant", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich")
+           "arrows", "shot", "merchant", "fountain", "fountain_dry", "shelf", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich")
 
 
 def sprite_kinds(base):

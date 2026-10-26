@@ -66,8 +66,8 @@ unsigned char obj_count(unsigned int at) {
 }
 
 /* the terrain from the tile kind: TK_ROCK, FLOOR0-3, CORR0-1, WALL0-15,
- * DOOR_H/V, DOOR_OPEN_H/V, STAIRS, DOOR_LOCKED_H/V, SECRET_H/V, TRAP
- * (gen_art.py's order) */
+ * DOOR_H/V, DOOR_OPEN_H/V, STAIRS, DOOR_LOCKED_H/V, SECRET_H/V, TRAP,
+ * RUBBLE, CRACK_NS/EW (gen_art.py's order) */
 unsigned char terrain(unsigned char x, unsigned char y) {
     unsigned char k = vm_kind(x, y);
     if (k < TK_FLOOR0) return TR_ROCK;
@@ -79,6 +79,7 @@ unsigned char terrain(unsigned char x, unsigned char y) {
     if (k == TK_STAIRS) return TR_STAIRS;
     if (k <= TK_DOOR_LOCKED_V) return TR_LOCKED;
     if (k == TK_TRAP) return TR_FLOOR;      /* (one found: harmless now) */
+    if (k >= TK_RUBBLE) return TR_RUBBLE;
     return TR_ROCK;                         /* a secret door: a wall, till it is found */
 }
 

@@ -34,7 +34,8 @@ void vm_set(unsigned char x, unsigned char y, unsigned char kind);
 #define TR_OPEN    4          /* an open door */
 #define TR_STAIRS  5
 #define TR_LOCKED  6          /* shut, and an iron key's to open */
-#define SOLID(t)   ((t) == TR_ROCK || (t) == TR_DOOR || (t) == TR_LOCKED)   /* nothing seen through */
+#define TR_RUBBLE  7          /* fallen stones, a cracked wall: cleared by heaving at them */
+#define SOLID(t)   ((t) == TR_ROCK || (t) == TR_DOOR || (t) == TR_LOCKED || (t) == TR_RUBBLE)   /* nothing seen through */
 unsigned char terrain(unsigned char x, unsigned char y);
 
 /* the rooms with a brazier (with their walls): while it burns, the room
@@ -73,6 +74,11 @@ unsigned char vault_at(unsigned char x, unsigned char y);
 #define O_TRAP        20      /* a pressure plate, hidden (found: the tile TK_TRAP) */
 #define O_BRAZIER_COLD 21     /* a brazier not burning: the torch lights it */
 #define O_MERCHANT    22      /* a merchant, his lantern lit: walk into him to trade (pack.c shop) */
+#define O_FOUNTAIN    23      /* drink from it, once (pack.c fixture) */
+#define O_FOUNTAIN_DRY 24
+#define O_SHELF       25      /* search it, once */
+#define O_SHELF_BARE  26
+#define BLOCKS(o)     ((o) == O_BRAZIER || ((o) >= O_BRAZIER_COLD && (o) < O_PILE))   /* none walk through */
 #define O_PILE        32      /* O_PILE + I_*: so many (thing_n) of a thing carried, put down */
 #define MAX_OBJ       56
 extern unsigned int thing_at[MAX_OBJ];       /* where (AT) */
@@ -143,6 +149,7 @@ extern unsigned char arrows_spent;    /* arrows shot in this fight (battle.c; ex
 /* pack.c: the things carried, used on the map; 1 if that took the turn */
 unsigned char inventory(void);
 unsigned char shop(void);
+unsigned char fixture(unsigned int i, unsigned char n);   /* fixture.c: a fountain or a shelf, used: 1 a turn */
 
 /* the merchant's wares on this level (WARES of the shop's list, WARE_KINDS
  * kinds), and how many of each are left (game.c; dungeon.c stocks him) */
