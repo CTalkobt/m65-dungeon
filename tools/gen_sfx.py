@@ -33,12 +33,11 @@ NIMBE = ("NimbeKit_Fantasy_RPG_Collection.zip", "NimbeKit_Fantasy_RPG_SFX_160.zi
 FANTASY = ("free-fantasy-sounds-audio.zip",)
 ROGUE = ("free-roguelike-sounds-audio.zip",)
 TEMPLE = ("free-lost-temple-sounds-audio.zip",)
-SMITHY = ("packsmithy-sampler-30-game-sfx.zip",)
 
 # name, pack (a zip, and a zip in it), file, start (s), length at most (s), gain, slot
 SOUNDS = [
-    ("STEP", NIMBE, "fr_movement_bare_stone_step.wav", 0.0, 0.30, 0.6, "S"),
-    ("DOOR", SMITHY, "door_creak_01.wav", 0.0, 1.10, 0.9, "L"),
+    ("STEP", NIMBE, "fr_movement_bare_stone_step.wav", 0.0, 0.30, 0.3, "S"),
+    ("DOOR", TEMPLE, "hidden-latch-click.wav", 0.0, 0.60, 0.9, "S"),
     ("COIN", NIMBE, "fr_loot_single_coin.wav", 0.0, 0.40, 0.8, "S"),
     ("SWING", NIMBE, "fr_combat_sword_swing.wav", 0.02, 0.50, 0.9, "S"),
     ("HIT", FANTASY, "axe-hit-flesh.wav", 0.0, 0.36, 1.0, "S"),

@@ -24,10 +24,6 @@ passed on by themselves; get the packs from their authors:
 - moneywithjj, *Free Roguelike Sounds*: itch.io, <https://moneywithjjcom.itch.io/free-roguelike-sounds>
 - moneywithjj, *Free Lost Temple Sounds*: itch.io, <https://moneywithjjcom.itch.io/free-lost-temple-sounds>
 - NimbeKit, *Fantasy RPG: Dungeon & Magic SFX 160* (from the *Fantasy RPG Complete Collection*), NimbeKit Studio (licence: NimbeKit Game Asset License v1.0)
-- Packsmithy, *free sampler* (from *Dark Dungeon Sounds*): the sampler is
-  also published by Packsmithy on OpenGameArt under CC BY 4.0,
-  <https://opengameart.org/content/packsmithy-sfx-sampler-30-synthesised-sound-effects-ui-retro-horror-sci-fi-glitch>.
-  Credit: Packsmithy (packsmithy.com). The pack: <https://packsmithy.com/packs/dark-dungeon-sounds/>
 
 The moneywithjj sounds were made with ElevenLabs Sound Effects under the
 author's commercial subscription (their README says so).
@@ -35,7 +31,7 @@ author's commercial subscription (their README says so).
 | Sound | Pack | File in the pack |
 |---|---|---|
 | STEP | NimbeKit | `fr_movement_bare_stone_step.wav` |
-| DOOR | Packsmithy | `door_creak_01.wav` |
+| DOOR | moneywithjj | `hidden-latch-click.wav` |
 | COIN | NimbeKit | `fr_loot_single_coin.wav` |
 | SWING | NimbeKit | `fr_combat_sword_swing.wav` |
 | HIT | moneywithjj | `axe-hit-flesh.wav` |
