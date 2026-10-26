@@ -65,10 +65,10 @@ static void level_enter(void) {
 }
 
 static void help(void) {
-    msg("Move: arrows, WASD (QEZC diagonal), joystick. Space: wait.", C_TEXT);
+    msg("Move: arrows, WASD, QEZC diagonally. Space: wait.", C_TEXT);
     msg("Walk into doors, chests, idols and foes.", C_TEXT);
     msg("I: inventory. P: potion. F: feed torch. L: light it.", C_TEXT);
-    msg("RETURN on the stairs: go down. RUN/STOP: give up.", C_TEXT);
+    msg("RETURN: stairs down. O: settings. RUN/STOP: give up.", C_TEXT);
 }
 
 static const unsigned char drops[8] = {O_GOLD, O_GOLD, O_GOLD, O_POTION, O_SCROLL, O_DRAUGHT, O_RAGS, O_FUR};
@@ -392,6 +392,10 @@ static unsigned char explore_run(void) {
             break;
         case 'f':
             took = feed_any();
+            break;
+        case 'o':
+            settings(18, 14);
+            view_draw();
             break;
         case 'l':
             took = light_any();

@@ -58,6 +58,7 @@ game builds with its SID effects only.
 | P | | drink a healing potion | parry |
 | I | | what you carry (a letter uses it) | |
 | F / L | | feed the torch / light it | |
+| O (S on the title) | | settings: music and sound levels | |
 | S P C A R I | | | strike, parry, cast, advance, retreat, item |
 | F I H W | | | (casting) firebolt, frost, heal, ward |
 | H M F | | | (items) potion, draught, scroll of fire |
@@ -73,6 +74,11 @@ in the shadows, you see only what shines: eyes. What you have seen stays
 behind as faint blue outlines of the walls, doors and stairs, dimming over
 some hundreds of turns until it is gone. Some idols sharpen your memory,
 others make it slip.
+
+**Settings** (O on the map, S on the title). The music's and the sounds'
+levels, 1-15, or off (RETURN turns the chosen one off and back on). The
+music's level is the SIDs' volume; the sounds' scales each sample. (`S`
+cannot be the key on the map: it is a step south.)
 
 **The torch** burns a turn at a time (the bar at the top). Below 150
 turns its light reaches less far, below 60 it gutters, and at 0 it goes

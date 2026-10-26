@@ -237,6 +237,9 @@ void sfx_update(void);
 #define SFX_CHEST  26
 #define SFX_COUNT  27
 void sfx(unsigned char n);
+extern unsigned char vol_music, vol_sfx;         /* 0 (off) - 15 */
+void sound_levels(void);                         /* vol_music to the SIDs */
+void settings(unsigned char col, unsigned char row);   /* settings.c: the panel there (44 x 10) */
 void sfx_far(unsigned char n, signed char dx);   /* quieter, from that side (dx < 0 left) */
 
 /* audio.c: the sampled sounds (sfx plays them where there is one) */

@@ -59,12 +59,20 @@ static void put(unsigned char v, unsigned char reg, unsigned char val) {
     REG(SID_V + reg) = val;
 }
 
+/* the levels (settings.c): the music, the SIDs' volume (0-15); the
+ * effects, the samples' (0-15: audio.c scales them); 0 is off */
+unsigned char vol_music = 15, vol_sfx = 15;
+
+void sound_levels(void) {
+    unsigned char c;
+    for (c = 0; c < 4; c++) REG(0xD418 + c * 0x20) = vol_music;
+}
+
 void sfx_on(void) {
     unsigned char c, r;
-    for (c = 0; c < 4; c++) {                    /* all four SIDs quiet, volume up */
+    for (c = 0; c < 4; c++)                      /* all four SIDs quiet */
         for (r = 0; r < 0x18; r++) REG(0xD400 + c * 0x20 + r) = 0;
-        REG(0xD418 + c * 0x20) = 0x0F;
-    }
+    sound_levels();
 }
 
 void sfx_off(void) {
@@ -75,6 +83,7 @@ void sfx_off(void) {
 void sfx(unsigned char n) {
     const struct fx *f;
     unsigned char v = 0;
+    if (!vol_sfx) return;
     if (audio_ok && sampled[n] != SND_NONE) {
         audio_play(sampled[n], 200, 200);
         return;
@@ -98,6 +107,7 @@ void sfx(unsigned char n) {
 /* an effect from further off: quieter, toward the side it came from
  * (dx < 0 the left); the SIDs play it as they would close by */
 void sfx_far(unsigned char n, signed char dx) {
+    if (!vol_sfx) return;
     if (audio_ok && sampled[n] != SND_NONE) {
         audio_play(sampled[n], dx > 0 ? 25 : 80, dx < 0 ? 25 : 80);
         return;

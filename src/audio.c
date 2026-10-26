@@ -69,7 +69,9 @@ void audio_play(unsigned char id, unsigned char left, unsigned char right) {
 #if SND_COUNT
     unsigned char ch;
     unsigned long at;
-    if (!audio_ok || id >= SND_COUNT) return;
+    if (!audio_ok || id >= SND_COUNT || !vol_sfx) return;
+    left = (unsigned char)(((unsigned int)left * (vol_sfx + 1)) >> 4);
+    right = (unsigned char)(((unsigned int)right * (vol_sfx + 1)) >> 4);
     ch = snd_slot[id];
     at = ch ? SLOT_SHORT : SLOT_LONG;
     CH(ch, 0) = 0;

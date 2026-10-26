@@ -12,12 +12,9 @@
 static unsigned char shown;                   /* the title is on the screen */
 
 /* the title screen, without the prompt (title() adds it) */
-void title_show(void) {
-    video_fade(0);
-    v_flicker = 0;
-    v_fire = 0;
-    video_clear();
-    ui_frame(11, 0, 58, 32);
+/* the box of words under the picture */
+static void title_text(void) {
+    video_blank(0, 33, 80, 17);
     ui_frame(0, 33, 80, 17);
     video_centre(35, "T H E    F A D I N G    D E E P", C_GOLD);
     video_centre(37, "Beneath the ruined abbey the old halls go down, and down.", C_TEXT);
@@ -25,6 +22,15 @@ void title_show(void) {
     video_centre(40, "Take your torch. Mind the dark. And remember -", C_DIM);
     video_centre(41, "the deep makes you forget.", C_DIM);
     video_centre(47, "A game for the MEGA65, written in C with cc45", C_DARK);
+}
+
+void title_show(void) {
+    video_fade(0);
+    v_flicker = 0;
+    v_fire = 0;
+    video_clear();
+    ui_frame(11, 0, 58, 32);
+    title_text();
     scene_load(S_LICH);
     v_wash_r = v_wash_g = v_wash_b = 0;
     v_wash = 16;
@@ -74,7 +80,7 @@ unsigned char title(void) {
     if (!shown) title_show();
     shown = 0;
     video_blank(1, 44, 78, 1);
-    video_centre(44, "RETURN or FIRE to begin        RUN/STOP to leave", C_HILITE);
+    video_centre(44, "RETURN or FIRE to begin     S: settings     RUN/STOP to leave", C_HILITE);
     tune_play_far(MUSIC_LIN + TUNE_TITLE_AT);  /* the theme, now that the loading is done */
     v_music = 1;
     for (;;) {
@@ -92,6 +98,11 @@ unsigned char title(void) {
         }
         k = key_get();
         if (k == K_FIRE || k == ' ') break;
+        if (k == 's') {
+            settings(18, 36);
+            title_text();
+            video_centre(44, "RETURN or FIRE to begin     S: settings     RUN/STOP to leave", C_HILITE);
+        }
         if (k == K_STOP) {
             v_music = 0;
             tune_stop();
