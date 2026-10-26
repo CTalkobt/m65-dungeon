@@ -39,14 +39,14 @@ ifdef SEED
 DEFS    += -DSEED=$(SEED)
 endif
 
-CFLAGS  := -O2 -I$(M65)/lib/include -Isrc -I$(ART) -I$(SFX) -I$(MUSIC) $(DEFS)
+CFLAGS  := -O2 -fmax-inline-ir-size=4 -I$(M65)/lib/include -Isrc -I$(ART) -I$(SFX) -I$(MUSIC) $(DEFS)
 
 TARGET  := $(BUILD)/dungeon.prg
 # the code overlays (walk, battle, gen, scenes), written by ln45 with the
 # program and kept in attic RAM (loaded through bank 5 at the start)
 OVL     := $(BUILD)/dungeon.ov1
 OVL_STORE := 0x8000000-0x800FFFF
-C_MODS  := main video load rng game dungeon view ui explore pack battle detail front settings scene sfx audio audio_boot
+C_MODS  := main video video_boot load rng game dungeon view ui explore pack battle detail front settings scene sfx audio audio_boot
 OBJS    := $(C_MODS:%=$(BUILD)/%.o45) $(BUILD)/ld.o45 $(BUILD)/assets.o45 $(BUILD)/sfxdata.o45 $(BUILD)/seen.o45 $(BUILD)/vmap.o45
 HEADERS := $(wildcard src/*.h) $(ART)/assets.h $(SFX)/sfxdata.h $(MUSIC)/music.h
 

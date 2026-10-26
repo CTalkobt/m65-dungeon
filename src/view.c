@@ -38,7 +38,6 @@
 #define VIEW_ROW 1
 #define SEE      11
 #define MSG_ROW  46
-#define MSG_W    53
 #define STAT_COL 57
 
 /* memory ages (turns x pl.fade) where it dims, and where it is gone */
@@ -57,7 +56,7 @@
 
 #define WIN (SEE * 2 + 1)
 
-static unsigned char cam_x, cam_y;
+unsigned char cam_x, cam_y;                  /* game.h */
 static unsigned char win[WIN * WIN];          /* vis round the player */
 static signed int win_x, win_y;              /* its top left on the map */
 
@@ -66,8 +65,12 @@ unsigned char vis_at(unsigned char x, unsigned char y) {
     if (dx < 0 || dy < 0 || dx >= WIN || dy >= WIN) return 0;
     return win[(unsigned int)dy * WIN + dx];
 }
-static unsigned int top[COLS], bot[COLS];     /* a row of places: its characters */
-static unsigned int ctop[COLS], cbot[COLS];   /* and their colour RAM */
+/* a row of places: its characters and their colour RAM (in game.h's
+ * scratch, as is what is put over the terrain) */
+#define top  ((unsigned int *)scratch)
+#define bot  ((unsigned int *)(scratch + COLS * 2))
+#define ctop ((unsigned int *)(scratch + COLS * 4))
+#define cbot ((unsigned int *)(scratch + COLS * 6))
 
 /* a clear line from the player to (tx, ty): nothing solid between */
 static unsigned char clear_to(unsigned char tx, unsigned char ty) {
@@ -92,52 +95,6 @@ static unsigned char clear_to(unsigned char tx, unsigned char ty) {
 
 unsigned char view_line(unsigned char x, unsigned char y) {
     return (x == pl.x && y == pl.y) || clear_to(x, y);
-}
-
-/* one tile drawn over a place on the screen (a mark, something in flight),
- * as lit as the place is (glowing alone in the dark); view_unput puts the
- * place back as it was */
-static unsigned int keep[8];
-static unsigned char kept_x = 0xFF, kept_y;
-
-static unsigned long cell_at(unsigned char x, unsigned char y) {
-    return ((unsigned int)(VIEW_ROW + (y - cam_y) * 2) * COLS + (x - cam_x) * 2) * 2;
-}
-
-void view_unput(void) {
-    unsigned long c;
-    if (kept_x == 0xFF) return;
-    c = cell_at(kept_x, kept_y);
-    dma_copy_far(SCREEN_LIN + c, (unsigned long)(unsigned int)keep, 4);
-    dma_copy_far(SCREEN_LIN + c + COLS * 2, (unsigned long)(unsigned int)(keep + 2), 4);
-    dma_copy_far(COLOR_LIN + c, (unsigned long)(unsigned int)(keep + 4), 4);
-    dma_copy_far(COLOR_LIN + c + COLS * 2, (unsigned long)(unsigned int)(keep + 6), 4);
-    kept_x = 0xFF;
-}
-
-void view_put(unsigned char x, unsigned char y, unsigned char k) {
-    unsigned long c;
-    unsigned int ch, cells[2], zero[2] = {0, 0};
-    unsigned char v = vis_at(x, y);
-    view_unput();
-    if (x < cam_x || y < cam_y || x >= cam_x + VIEW_W || y >= cam_y + VIEW_H) return;
-    ch = tile_char[k][v && v != VIS_SHADOW ? v - 1 : TV_EYES];
-    if (!ch) return;
-    c = cell_at(x, y);
-    dma_copy_far((unsigned long)(unsigned int)keep, SCREEN_LIN + c, 4);
-    dma_copy_far((unsigned long)(unsigned int)(keep + 2), SCREEN_LIN + c + COLS * 2, 4);
-    dma_copy_far((unsigned long)(unsigned int)(keep + 4), COLOR_LIN + c, 4);
-    dma_copy_far((unsigned long)(unsigned int)(keep + 6), COLOR_LIN + c + COLS * 2, 4);
-    kept_x = x;
-    kept_y = y;
-    cells[0] = ch;
-    cells[1] = ch + 1;
-    dma_copy_far(SCREEN_LIN + c, (unsigned long)(unsigned int)cells, 4);
-    dma_copy_far(COLOR_LIN + c, (unsigned long)(unsigned int)zero, 4);
-    cells[0] = ch + 2;
-    cells[1] = ch + 3;
-    dma_copy_far(SCREEN_LIN + c + COLS * 2, (unsigned long)(unsigned int)cells, 4);
-    dma_copy_far(COLOR_LIN + c + COLS * 2, (unsigned long)(unsigned int)zero, 4);
 }
 
 unsigned char torch_dim(void) {
@@ -186,7 +143,6 @@ void view_fov(void) {
  * where one level meets the next the boundary moves a little from one
  * character to the next (a 4 x 4 ordered dither, b 0-15), so the levels
  * shade into each other instead of making rings. */
-static unsigned int sq[96];
 static const unsigned int edge[4] = {52, 170, 360, 600};
 static const unsigned char bayer[16] = {0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5};
 
@@ -195,7 +151,7 @@ static unsigned char torch(signed int dxq, signed int dyq, unsigned char b) {
     unsigned char k;
     if (dxq < 0) dxq = -dxq;
     if (dyq < 0) dyq = -dyq;
-    d2 = sq[dxq] + sq[dyq];
+    d2 = (unsigned int)dxq * dxq + (unsigned int)dyq * dyq;
     for (k = 0; k < 4; k++) {
         t = edge[k];
         if (d2 <= t + (t >> 5) * b - (t >> 2)) return k;      /* t * (b / 32 - 1/4) either way */
@@ -208,8 +164,13 @@ static unsigned char torch(signed int dxq, signed int dyq, unsigned char b) {
  * tile, and its variant (OV_TORCH: as the torch lights each quarter) */
 #define MAX_OV   (1 + MAX_MON + MAX_OBJ)
 #define OV_TORCH 0xFF
-static unsigned char ov_n, ov_x[MAX_OV], ov_y[MAX_OV], ov_k[MAX_OV], ov_v[MAX_OV];
-static unsigned char row_ov[MAX_OV];
+static unsigned char ov_n;
+#define ov_x   (scratch + COLS * 8)
+#define ov_y   (ov_x + MAX_OV)
+#define ov_k   (ov_y + MAX_OV)
+#define ov_v   (ov_k + MAX_OV)
+#define row_ov (ov_v + MAX_OV)
+typedef char scratch_fits[COLS * 8 + MAX_OV * 5 <= SCRATCH_SIZE ? 1 : -1];
 
 static const unsigned char obj_tile[20] = {
     0, T_CHEST, T_CHEST_OPEN, T_IDOL, T_IDOL_SPENT, T_POTION, T_GOLD, T_BONES, T_BRAZIER,
@@ -253,15 +214,13 @@ void view_draw(void) {
     signed int dx, dy;
     signed int cx = (signed int)pl.x - VIEW_W / 2, cy = (signed int)pl.y - VIEW_H / 2;
     unsigned int *row, *crow;
-    if (!sq[1])
-        for (k = 0; k < 96; k++) sq[k] = (unsigned int)k * k;
     if (cx < 0) cx = 0;
     if (cx > MAP_W - VIEW_W) cx = MAP_W - VIEW_W;
     if (cy < 0) cy = 0;
     if (cy > MAP_H - VIEW_H) cy = MAP_H - VIEW_H;
     cam_x = (unsigned char)cx;
     cam_y = (unsigned char)cy;
-    kept_x = 0xFF;                            /* (all drawn anew) */
+    view_kept = 0;                            /* (all drawn anew: pack.c's view_put) */
     ov_gather();
     for (ty = 0; ty < VIEW_H; ty++) {
         video_poll();
@@ -321,36 +280,6 @@ void view_draw(void) {
         dma_copy_far(COLOR_LIN + (unsigned int)(VIEW_ROW + ty * 2) * (COLS * 2), (unsigned long)(unsigned int)ctop, COLS * 2);
         dma_copy_far(COLOR_LIN + (unsigned int)(VIEW_ROW + ty * 2 + 1) * (COLS * 2), (unsigned long)(unsigned int)cbot, COLS * 2);
     }
-}
-
-/* ---------------------------------------------------------------- messages */
-
-#define NMSG 4
-static char msgs[NMSG][MSG_W + 1];
-static unsigned char msg_col[NMSG];
-
-static void msg_show(void) {
-    unsigned char k;
-    video_blank(1, MSG_ROW, MSG_W, NMSG);
-    for (k = 0; k < NMSG; k++)
-        if (msgs[k][0]) video_text(1, MSG_ROW + k, msgs[k], k == NMSG - 1 ? msg_col[k] : (k == NMSG - 2 ? C_DIM : C_DARK));
-}
-
-void msg(const char *s, unsigned char colour) {
-    unsigned char k, n;
-    for (k = 0; k < NMSG - 1; k++) {
-        for (n = 0; n <= MSG_W; n++) msgs[k][n] = msgs[k + 1][n];
-        msg_col[k] = msg_col[k + 1];
-    }
-    for (n = 0; s[n] && n < MSG_W; n++) msgs[NMSG - 1][n] = s[n];
-    msgs[NMSG - 1][n] = 0;
-    msg_col[NMSG - 1] = colour;
-    msg_show();
-}
-
-void msg_clear(void) {
-    unsigned char k;
-    for (k = 0; k < NMSG; k++) msgs[k][0] = 0;
 }
 
 const char *depth_name(unsigned char depth) {

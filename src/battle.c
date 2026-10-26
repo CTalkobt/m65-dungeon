@@ -36,7 +36,9 @@ static struct {
     unsigned char hp, dice, sides, plus, def, xp, flags;
     unsigned char acts[4], weights[4];
 } mt;
-static char words[SCENE_HDR_SIZE - 32];      /* its name, lines, lore, death: NUL after each */
+/* its name, lines, lore, death: NUL after each (in the scratch, after the log's 12 x 53) */
+#define WORDS_SIZE (SCENE_HDR_SIZE - 32)
+#define words ((char *)scratch + 636)
 static unsigned char dist, intent, last_intent, mhp_max;
 static unsigned char frozen, staggered, roar, parrying;
 static unsigned char poison, snared, ward;
@@ -677,7 +679,7 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
     m = &mons[mi];
     scene_load(mon_scene[m->kind]);
     dma_copy_far((unsigned long)(unsigned int)&mt, SCENE_HDR + 3, sizeof mt);
-    dma_copy_far((unsigned long)(unsigned int)words, SCENE_HDR + 32, sizeof words);
+    dma_copy_far((unsigned long)(unsigned int)words, SCENE_HDR + 32, WORDS_SIZE);
     mhp_max = mt.hp;
     if (m->hp == FRESH) m->hp = mt.hp;
     dist = ambush ? 0 : 1;

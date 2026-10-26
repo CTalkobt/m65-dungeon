@@ -222,7 +222,7 @@ void ui_stats(unsigned char col, unsigned char row) {
 #define LOG_MAX 12
 #define LOG_W   52
 static unsigned char log_c, log_r, log_w, log_h;
-static char logs[LOG_MAX][LOG_W + 1];
+#define LOG_LINE(k) ((char *)scratch + (k) * (LOG_W + 1))   /* (game.h: its lines in the scratch) */
 static unsigned char log_cols[LOG_MAX];
 
 void log_init(unsigned char col, unsigned char row, unsigned char w, unsigned char h) {
@@ -231,18 +231,18 @@ void log_init(unsigned char col, unsigned char row, unsigned char w, unsigned ch
     log_r = row;
     log_w = w > LOG_W ? LOG_W : w;
     log_h = h > LOG_MAX ? LOG_MAX : h;
-    for (k = 0; k < LOG_MAX; k++) logs[k][0] = 0;
+    for (k = 0; k < LOG_MAX; k++) LOG_LINE(k)[0] = 0;
 }
 
 static void log_line(const char *s, unsigned char n, unsigned char colour) {
     unsigned char k, i;
     for (k = 0; k < log_h - 1; k++) {
-        for (i = 0; i <= LOG_W; i++) logs[k][i] = logs[k + 1][i];
+        for (i = 0; i <= LOG_W; i++) LOG_LINE(k)[i] = LOG_LINE(k + 1)[i];
         log_cols[k] = log_cols[k + 1];
         if (log_cols[k] != C_DARK && k < log_h - 3) log_cols[k] = C_DIM;
     }
-    for (i = 0; i < n; i++) logs[log_h - 1][i] = s[i];
-    logs[log_h - 1][n] = 0;
+    for (i = 0; i < n; i++) LOG_LINE(log_h - 1)[i] = s[i];
+    LOG_LINE(log_h - 1)[n] = 0;
     log_cols[log_h - 1] = colour;
 }
 
@@ -263,5 +263,40 @@ void log_add(const char *s, unsigned char colour) {
     }
     video_blank(log_c, log_r, log_w, log_h);
     for (k = 0; k < log_h; k++)
-        if (logs[k][0]) video_text(log_c, log_r + k, logs[k], log_cols[k]);
+        if (LOG_LINE(k)[0]) video_text(log_c, log_r + k, LOG_LINE(k), log_cols[k]);
+}
+
+/* ---------------------------------------------------------------- messages
+
+ the exploration screen's last four messages (rows 46-49, the newest
+ brightest); resident, so any overlay can pass its own text */
+#define MSG_ROW  46
+#define MSG_W    53
+
+#define NMSG 4
+static char msgs[NMSG][MSG_W + 1];
+static unsigned char msg_col[NMSG];
+
+void msg_show(void) {
+    unsigned char k;
+    video_blank(1, MSG_ROW, MSG_W, NMSG);
+    for (k = 0; k < NMSG; k++)
+        if (msgs[k][0]) video_text(1, MSG_ROW + k, msgs[k], k == NMSG - 1 ? msg_col[k] : (k == NMSG - 2 ? C_DIM : C_DARK));
+}
+
+void msg(const char *s, unsigned char colour) {
+    unsigned char k, n;
+    for (k = 0; k < NMSG - 1; k++) {
+        for (n = 0; n <= MSG_W; n++) msgs[k][n] = msgs[k + 1][n];
+        msg_col[k] = msg_col[k + 1];
+    }
+    for (n = 0; s[n] && n < MSG_W; n++) msgs[NMSG - 1][n] = s[n];
+    msgs[NMSG - 1][n] = 0;
+    msg_col[NMSG - 1] = colour;
+    msg_show();
+}
+
+void msg_clear(void) {
+    unsigned char k;
+    for (k = 0; k < NMSG; k++) msgs[k][0] = 0;
 }

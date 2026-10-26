@@ -253,22 +253,26 @@ the levels' tune leaves free. `build/music/*.wav` (`tune45 play --wav`)
 are the tunes to listen to on the PC.
 
 **Memory** (bank 0 is tight). The resident part (video, keys, the UI,
-sound, the tables) ends near $8700, and the overlay region starts at $8800:
-there is little room left. The code overlays `walk` (explore +
+sound, the tables, the message line) ends near $8200; the overlay
+region starts at $8E00. The code overlays `walk` (explore +
 view), `pack` (the inventory, items, the torch), `battle`, `gen` (the
 dungeon generator) and `scenes` (chest, idol, title, endings) are kept in
-attic RAM and copied by DMA into one region at $8800 when called. A call
+attic RAM and copied by DMA into one region at $8E00 when called. A call
 from one overlay into another brings the caller back on return, but not
-the caller's text in the meantime: `pack` copies a message into a buffer
-before handing it to `msg` (in `walk`). The game needs the MEGA65's attic RAM (every
+the caller's text in the meantime; so what takes text from any overlay
+(the message line `msg`, the log, `video_text`) is resident. The map's
+drawing buffers share 1 KB (`scratch`, game.h) with a close-up's log and
+its creature's words, which are never in use at the same time. cc45
+inlines only the smallest functions (`-fmax-inline-ir-size=4`): the fight
+overlay was 1.6 KB larger with the default. The game needs the MEGA65's attic RAM (every
 production MEGA65 and xemu have it). The level itself is the map of
 characters in bank 4; things lying about are a short list, sight a window
 round the player, memory a byte a place in colour RAM.
 
 | Where | What |
 |---|---|
-| $2001-$86FF | the program, its data and variables |
-| $8800-$BBFF | the code overlay region |
+| $2001-$81FF | the program, its data and variables |
+| $8E00-$BBFF | the code overlay region |
 | $BC00-$BFFF | the stack |
 | $12000-$197FF | DG<NAME>B: a close-up's last characters |
 | $19800-$1F7FF | the sounds' play slots (16 KB, 8 KB) |

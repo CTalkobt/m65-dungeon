@@ -3,6 +3,7 @@
 #include "game.h"
 #include "assets.h"
 
+unsigned char scratch[SCRATCH_SIZE];
 struct player pl;
 unsigned int turn;
 struct mon mons[MAX_MON];

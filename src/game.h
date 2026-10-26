@@ -12,6 +12,12 @@
 #define AT(x, y)   ((unsigned int)(y) * MAP_W + (x))
 #define DEPTHS     5
 
+/* memory for what is only ever in use in one place at a time: the map's
+ * drawing (view.c), or a close-up's log (ui.c) and its creature's words
+ * (battle.c) */
+#define SCRATCH_SIZE 1045
+extern unsigned char scratch[SCRATCH_SIZE];
+
 /* the level's map: each place's terrain tile (assets.h TK_*) drawn once
  * as 2 x 2 16-colour characters, 128 x 96 of them at MAP_LIN (vmap.s45),
  * the way the screen shows them; the view copies the part in sight to the
@@ -126,6 +132,7 @@ unsigned char feed_any(void);
 unsigned char light_any(void);
 unsigned char light(unsigned char k);   /* I_FLINT, I_FIRESTICK, I_COUNT: a brazier's coals */
 unsigned char shoot(unsigned char gun); /* the bow (0) or the flintlock (1) at a creature in sight */
+void pick_up(unsigned int i, unsigned char n);   /* what lies at i (O_*), as the player walks over it */
 
 /* the weapons and the armour, worst to best: their names, what they do */
 #define WEAPONS    5
@@ -173,16 +180,18 @@ const char *depth_name(unsigned char depth);   /* view.c */
 void dungeon_make(void);              /* the level for pl.depth; the player placed */
 unsigned char mon_at(unsigned char x, unsigned char y);   /* its index + 1, or 0 */
 
-/* view.c: what the player sees and remembers; the screen of the map */
+/* view.c: what the player sees and remembers; the screen of the map (msg,
+ * msg_clear, msg_show: ui.c, resident) */
 void view_fov(void);
 void view_draw(void);
 void view_hud(void);
 void view_screen(void);               /* the whole exploration screen anew */
 unsigned char view_line(unsigned char x, unsigned char y);   /* a clear line from the player */
-void view_put(unsigned char x, unsigned char y, unsigned char tile);   /* a tile over a place, for now */
-void view_unput(void);                /* the place back as it was */
+extern unsigned char cam_x, cam_y;    /* the map's place at the view's top left */
+extern unsigned char view_kept;       /* pack.c: a place kept under a tile (view_draw: 0) */
 void msg(const char *s, unsigned char colour);
 void msg_clear(void);
+void msg_show(void);                  /* the messages drawn again */
 
 /* explore.c */
 unsigned char explore(void);          /* until the player dies (DIED) or wins (WON) */

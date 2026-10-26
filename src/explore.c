@@ -169,19 +169,10 @@ static unsigned char creatures_move(void) {
 
 /* ---------------------------------------------------------------- the player */
 
-/* the things on the floor one carries: their item (0xFF: not carried) */
-static const unsigned char obj_item[18] = {
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, I_POTION, 0xFF, 0xFF, 0xFF,
-    0xFF, I_KEY, I_DRAUGHT, I_RAGS, I_STICKS, I_FUR, I_CANDLE, I_FLINT, I_FIRESTICK,
+/* the things on the floor one carries (pack.c's pick_up) */
+static const unsigned char carried[20] = {
+    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 };
-
-/* what lay at i taken: one more of item */
-static void take(unsigned int i, unsigned char item, const char *s, unsigned char c) {
-    pl.items[item]++;
-    obj_set(i, O_NONE);
-    msg(s, c);
-    sfx(SFX_CHIME);
-}
 
 /* a turn's burning, and the warnings */
 static void torch_burn(void) {
@@ -200,7 +191,6 @@ static void torch_burn(void) {
 static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
     unsigned char x = pl.x + dx, y = pl.y + dy, m, t, n;
     unsigned int i = AT(x, y);
-    char buf[64];
     m = mon_at(x, y);
     if (m) {
         *out = fight(m - 1, 0);
@@ -235,41 +225,6 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
     pl.y = y;
     sfx(SFX_STEP);
     switch (n) {
-    case O_GOLD:
-        n = (2 + rng_range(10)) * pl.depth;
-        pl.gold += n;
-        obj_set(i, O_NONE);
-        buf[0] = 0;
-        str_cat(buf, "You gather ");
-        str_num(buf, n);
-        str_cat(buf, " gold coins.");
-        msg(buf, C_GOLD);
-        sfx(SFX_COIN);
-        break;
-    case O_ARROWS:
-    case O_SHOT:
-        m = n == O_ARROWS ? I_ARROWS : I_SHOT;
-        n = n == O_ARROWS ? 3 + rng_range(4) : 2 + rng_range(3);
-        pl.items[m] += n;
-        obj_set(i, O_NONE);
-        buf[0] = 0;
-        str_cat(buf, "You gather ");
-        str_num(buf, n);
-        str_cat(buf, " ");
-        str_cat(buf, item_name(m, n));
-        str_cat(buf, ".");
-        msg(buf, item_col[m]);
-        sfx(SFX_CHIME);
-        break;
-    case O_SCROLL:
-        n = rng_range(10);
-        n = n < 4 ? I_FIRE : n < 7 ? I_RECALL : I_SIGHT;
-        buf[0] = 0;
-        str_cat(buf, "You take up a ");
-        str_cat(buf, item_name(n, 1));
-        str_cat(buf, ".");
-        take(i, n, buf, C_BONE);
-        break;
     case O_CHEST:
         view_fov();
         view_draw();
@@ -290,13 +245,14 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
     case O_IDOL_SPENT:
         msg("The idol's eyes are dark now.", C_DIM);
         break;
+    case O_GOLD:
+    case O_ARROWS:
+    case O_SHOT:
+    case O_SCROLL:
+        pick_up(i, n);
+        break;
     default:
-        if (n >= sizeof obj_item || obj_item[n] == 0xFF) break;
-        buf[0] = 0;
-        str_cat(buf, "You pick up a ");
-        str_cat(buf, item_name(obj_item[n], 1));
-        str_cat(buf, ".");
-        take(i, obj_item[n], buf, item_col[obj_item[n]]);
+        if (n < sizeof carried && carried[n]) pick_up(i, n);
         break;
     case O_BONES:
         msg(nth("Old bones crunch underfoot.\0A skull grins up at you from the dust.\0"

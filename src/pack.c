@@ -3,38 +3,27 @@
  * overlay "pack") */
 #pragma cc45 overlay(pack)
 #pragma cc45 noescape_strings
+#include <dma.h>
 #include "hw.h"
 #include "assets.h"
 #include "video.h"
 #include "rng.h"
 #include "game.h"
 
-/* a message: msg is in the overlay "walk", which takes this one's place
- * in the region while it runs, text and all; so the text goes over in a
- * buffer of its own */
-static char said[64];
-
-static void say(const char *s, unsigned char c) {
-    unsigned char n = 0;
-    while ((said[n] = s[n]) != 0 && n < sizeof said - 1) n++;
-    said[n] = 0;
-    msg(said, c);
-}
-
 /* the torch fed with fuel item k (I_RAGS ..); 1 if it was (a turn) */
 static const unsigned char burns_for[4] = {80, 120, 160, 220};
 
 static unsigned char feed(unsigned char k) {
     if (pl.fuel > TORCH_MAX - 40) {
-        say("Your torch has all it can hold.", C_DIM);
+        msg("Your torch has all it can hold.", C_DIM);
         return 0;
     }
     pl.items[k]--;
     pl.fuel += burns_for[k - I_RAGS];
     if (pl.fuel > TORCH_MAX) pl.fuel = TORCH_MAX;
-    say(nth("You wrap the rags round the torch's head.\0You bind the sticks to the torch.\0"
+    msg(nth("You wrap the rags round the torch's head.\0You bind the sticks to the torch.\0"
             "You wrap the fur round the torch. It stinks.\0You melt the tallow onto the torch.", k - I_RAGS), C_ORANGE);
-    if (!pl.lit) say("Now it wants lighting.", C_DIM);
+    if (!pl.lit) msg("Now it wants lighting.", C_DIM);
     return 1;
 }
 
@@ -42,20 +31,20 @@ static unsigned char feed(unsigned char k) {
  * coals); 1 if that took the turn */
 unsigned char light(unsigned char k) {
     if (pl.lit) {
-        say("Your torch is burning.", C_DIM);
+        msg("Your torch is burning.", C_DIM);
         return 0;
     }
     if (!pl.fuel) {
-        say("There is nothing on the torch to burn. Feed it.", C_DIM);
+        msg("There is nothing on the torch to burn. Feed it.", C_DIM);
         return 0;
     }
     if (k == I_FLINT && rng_range(3)) {
-        say("Sparks fly, but the torch will not catch.", C_DIM);
+        msg("Sparks fly, but the torch will not catch.", C_DIM);
         return 1;
     }
     if (k == I_FIRESTICK) pl.items[I_FIRESTICK]--;
     pl.lit = 1;
-    say(nth("Sparks catch. Your torch flares up.\0The firestick flares, and the torch catches.\0"
+    msg(nth("Sparks catch. Your torch flares up.\0The firestick flares, and the torch catches.\0"
             "You hold the torch to the coals. It catches.", k == I_FLINT ? 0 : k == I_FIRESTICK ? 1 : 2), C_ORANGE);
     sfx(SFX_FIRE);
     return 1;
@@ -67,28 +56,92 @@ unsigned char feed_any(void) {
     unsigned char k;
     for (k = I_RAGS; k <= I_CANDLE; k++)
         if (pl.items[k]) return feed(k);
-    say("You have nothing to feed the torch.", C_DIM);
+    msg("You have nothing to feed the torch.", C_DIM);
     return 0;
 }
 
 unsigned char light_any(void) {
     if (!pl.lit && pl.fuel && !pl.items[I_FLINT] && !pl.items[I_FIRESTICK]) {
-        say("You have no flint and no firesticks.", C_DIM);
+        msg("You have no flint and no firesticks.", C_DIM);
         return 0;
     }
     return light(pl.items[I_FLINT] ? I_FLINT : I_FIRESTICK);
 }
 
+/* the things on the floor one carries: their item (0xFF: not carried) */
+static const unsigned char obj_item[18] = {
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, I_POTION, 0xFF, 0xFF, 0xFF,
+    0xFF, I_KEY, I_DRAUGHT, I_RAGS, I_STICKS, I_FUR, I_CANDLE, I_FLINT, I_FIRESTICK,
+};
+
+/* what lay at i taken: one more of item */
+static void take(unsigned int i, unsigned char item, const char *s, unsigned char c) {
+    pl.items[item]++;
+    obj_set(i, O_NONE);
+    msg(s, c);
+    sfx(SFX_CHIME);
+}
+
+/* what lies at i (n: O_*) picked up as the player walks over it */
+void pick_up(unsigned int i, unsigned char n) {
+    unsigned char k;
+    char buf[64];
+    switch (n) {
+    case O_GOLD:
+        n = (2 + rng_range(10)) * pl.depth;
+        pl.gold += n;
+        obj_set(i, O_NONE);
+        buf[0] = 0;
+        str_cat(buf, "You gather ");
+        str_num(buf, n);
+        str_cat(buf, " gold coins.");
+        msg(buf, C_GOLD);
+        sfx(SFX_COIN);
+        break;
+    case O_ARROWS:
+    case O_SHOT:
+        k = n == O_ARROWS ? I_ARROWS : I_SHOT;
+        n = n == O_ARROWS ? 3 + rng_range(4) : 2 + rng_range(3);
+        pl.items[k] += n;
+        obj_set(i, O_NONE);
+        buf[0] = 0;
+        str_cat(buf, "You gather ");
+        str_num(buf, n);
+        str_cat(buf, " ");
+        str_cat(buf, item_name(k, n));
+        str_cat(buf, ".");
+        msg(buf, item_col[k]);
+        sfx(SFX_CHIME);
+        break;
+    case O_SCROLL:
+        n = rng_range(10);
+        n = n < 4 ? I_FIRE : n < 7 ? I_RECALL : I_SIGHT;
+        buf[0] = 0;
+        str_cat(buf, "You take up a ");
+        str_cat(buf, item_name(n, 1));
+        str_cat(buf, ".");
+        take(i, n, buf, C_BONE);
+        break;
+    default:
+        buf[0] = 0;
+        str_cat(buf, "You pick up a ");
+        str_cat(buf, item_name(obj_item[n], 1));
+        str_cat(buf, ".");
+        take(i, obj_item[n], buf, item_col[obj_item[n]]);
+        break;
+    }
+}
+
 /* a healing potion drunk; 1 if it was (a turn) */
 unsigned char drink(void) {
     unsigned char d;
-    if (!pl.items[I_POTION]) say("You have no healing potions.", C_DIM);
-    else if (pl.hp == pl.maxhp) say("You are unhurt.", C_DIM);
+    if (!pl.items[I_POTION]) msg("You have no healing potions.", C_DIM);
+    else if (pl.hp == pl.maxhp) msg("You are unhurt.", C_DIM);
     else {
         pl.items[I_POTION]--;
         d = 15 + pl.level * 2;
         pl.hp = pl.hp + d > pl.maxhp ? pl.maxhp : pl.hp + d;
-        say("You drink. Warmth spreads through you.", C_GREEN);
+        msg("You drink. Warmth spreads through you.", C_GREEN);
         sfx(SFX_DRINK);
         return 1;
     }
@@ -103,32 +156,32 @@ static unsigned char use(unsigned char k) {
         return drink();
     case I_DRAUGHT:
         if (pl.mp == pl.maxmp) {
-            say("Your mana is full.", C_DIM);
+            msg("Your mana is full.", C_DIM);
             return 0;
         }
         pl.items[I_DRAUGHT]--;
         d = 10 + pl.level;
         pl.mp = pl.mp + d > pl.maxmp ? pl.maxmp : pl.mp + d;
-        say("The draught hums on your tongue. Mana returns.", C_BLUE);
+        msg("The draught hums on your tongue. Mana returns.", C_BLUE);
         sfx(SFX_DRINK);
         return 1;
     case I_FIRE:
-        say("A scroll of fire is for a fight.", C_DIM);
+        msg("A scroll of fire is for a fight.", C_DIM);
         return 0;
     case I_RECALL:
         pl.items[I_RECALL]--;
         memory_renew();
-        say("The halls you have walked come back to you.", C_CYAN);
+        msg("The halls you have walked come back to you.", C_CYAN);
         sfx(SFX_CHIME);
         return 1;
     case I_SIGHT:
         pl.items[I_SIGHT]--;
         level_reveal();
-        say("The shape of this level unfolds in your mind.", C_CYAN);
+        msg("The shape of this level unfolds in your mind.", C_CYAN);
         sfx(SFX_BELL);
         return 1;
     case I_KEY:
-        say("Walk into a locked door to turn the key.", C_DIM);
+        msg("Walk into a locked door to turn the key.", C_DIM);
         return 0;
     case I_ARROWS:
         return shoot(0);
@@ -144,7 +197,7 @@ static unsigned char use(unsigned char k) {
 #define INV_COL 18
 #define INV_ROW 5
 #define INV_W   44
-#define INV_H   26
+#define INV_H   28
 
 unsigned char inventory(void) {
     unsigned char k, n = 0, row = INV_ROW + 9, has[I_COUNT];
@@ -208,8 +261,8 @@ unsigned char inventory(void) {
     buf[0] = 0;
     str_cat(buf, "Gold    ");
     str_num(buf, pl.gold);
-    video_text(INV_COL + 3, INV_ROW + 23, buf, C_GOLD);
-    video_text(INV_COL + 3, INV_ROW + 24, n ? "A letter: use it.  Another key: back." : "Any key: back.", C_DIM);
+    video_text(INV_COL + 3, INV_ROW + 24, buf, C_GOLD);
+    video_text(INV_COL + 3, INV_ROW + 26, n ? "A letter: use it.  Another key: back." : "Any key: back.", C_DIM);
     k = key_wait();
     view_draw();
     if (k >= 'a' && k < 'a' + n) return use(has[k - 'a']);
@@ -217,6 +270,56 @@ unsigned char inventory(void) {
 }
 
 /* ---------------------------------------------------------------- shooting */
+
+/* one tile drawn over a place on the map's screen (a mark, something in
+ * flight) (view.c's rows 1-44: 40 x 22 places from cam_x, cam_y),
+ * as lit as the place is (glowing alone in the dark); view_unput puts the
+ * place back as it was */
+static unsigned int keep[8];
+static unsigned char kept_x, kept_y;
+unsigned char view_kept;                      /* a place is kept (view_draw forgets it) */
+
+static unsigned long cell_at(unsigned char x, unsigned char y) {
+    return ((unsigned int)(1 + (y - cam_y) * 2) * COLS + (x - cam_x) * 2) * 2;
+}
+
+static void view_unput(void) {
+    unsigned long c;
+    if (!view_kept) return;
+    c = cell_at(kept_x, kept_y);
+    dma_copy_far(SCREEN_LIN + c, (unsigned long)(unsigned int)keep, 4);
+    dma_copy_far(SCREEN_LIN + c + COLS * 2, (unsigned long)(unsigned int)(keep + 2), 4);
+    dma_copy_far(COLOR_LIN + c, (unsigned long)(unsigned int)(keep + 4), 4);
+    dma_copy_far(COLOR_LIN + c + COLS * 2, (unsigned long)(unsigned int)(keep + 6), 4);
+    view_kept = 0;
+}
+
+static void view_put(unsigned char x, unsigned char y, unsigned char k) {
+    unsigned long c;
+    unsigned int ch, cells[2], zero[2] = {0, 0};
+    unsigned char v = vis_at(x, y);
+    view_unput();
+    if (x < cam_x || y < cam_y || x >= cam_x + 40 || y >= cam_y + 22) return;
+    ch = tile_char[k][v && v != VIS_SHADOW ? v - 1 : TV_EYES];
+    if (!ch) return;
+    c = cell_at(x, y);
+    dma_copy_far((unsigned long)(unsigned int)keep, SCREEN_LIN + c, 4);
+    dma_copy_far((unsigned long)(unsigned int)(keep + 2), SCREEN_LIN + c + COLS * 2, 4);
+    dma_copy_far((unsigned long)(unsigned int)(keep + 4), COLOR_LIN + c, 4);
+    dma_copy_far((unsigned long)(unsigned int)(keep + 6), COLOR_LIN + c + COLS * 2, 4);
+    kept_x = x;
+    kept_y = y;
+    view_kept = 1;
+    cells[0] = ch;
+    cells[1] = ch + 1;
+    dma_copy_far(SCREEN_LIN + c, (unsigned long)(unsigned int)cells, 4);
+    dma_copy_far(COLOR_LIN + c, (unsigned long)(unsigned int)zero, 4);
+    cells[0] = ch + 2;
+    cells[1] = ch + 3;
+    dma_copy_far(SCREEN_LIN + c + COLS * 2, (unsigned long)(unsigned int)cells, 4);
+    dma_copy_far(COLOR_LIN + c + COLS * 2, (unsigned long)(unsigned int)zero, 4);
+}
+
 
 /* the creatures one could shoot at: in sight (lit, or eyes in the dark),
  * within reach, a clear line; nearest first */
@@ -278,7 +381,7 @@ static unsigned char aim(unsigned char key) {
         str_cat(buf, "Aim at ");
         the_mon(buf, &mons[targets[t]]);
         str_cat(buf, ". RETURN: shoot. RUN/STOP: no.");
-        say(buf, C_HILITE);
+        msg(buf, C_HILITE);
         for (;;) {
             if ((f & 15) == 0) view_put(mons[targets[t]].x, mons[targets[t]].y, T_AIM);
             else if ((f & 15) == 8) view_unput();
@@ -301,29 +404,29 @@ unsigned char shoot(unsigned char gun) {
     struct mon *m;
     char buf[64];
     if (!w) {
-        say(gun ? "You have no flintlock." : "You have no bow.", C_DIM);
+        msg(gun ? "You have no flintlock." : "You have no bow.", C_DIM);
         return 0;
     }
     if (!pl.items[ammo]) {
-        say(gun ? "You have no cartridges." : "You have no arrows.", C_DIM);
+        msg(gun ? "You have no cartridges." : "You have no arrows.", C_DIM);
         return 0;
     }
     r = gun * 2 + w - 1;
     find_targets(r_reach[r]);
     if (!ntargets) {
-        say("Nothing in sight and in reach to shoot at.", C_DIM);
+        msg("Nothing in sight and in reach to shoot at.", C_DIM);
         return 0;
     }
     t = aim(gun ? 'g' : 't');
     if (t == 0xFF) {
-        say("You lower your aim.", C_DIM);
+        msg("You lower your aim.", C_DIM);
         return 0;
     }
     m = &mons[targets[t]];
     pl.items[ammo]--;
     if (gun) {
         if (rng_range(6) == 0) {
-            say("The powder flashes in the pan, and no more.", C_DIM);
+            msg("The powder flashes in the pan, and no more.", C_DIM);
             sfx(SFX_CLANG);
             return 1;
         }
@@ -346,11 +449,11 @@ unsigned char shoot(unsigned char gun) {
         str_cat(buf, gun ? "The shot misses " : "The arrow misses ");
         the_mon(buf, m);
         str_cat(buf, ".");
-        say(buf, C_DIM);
+        msg(buf, C_DIM);
         return 1;
     }
     if (mon_flags[m->kind] & MF_BOSS) {
-        say("A cold ward turns it aside. It must be faced.", C_PURPLE);
+        msg("A cold ward turns it aside. It must be faced.", C_PURPLE);
         return 1;
     }
     if (m->hp == FRESH) m->hp = mon_hp[m->kind];
@@ -362,7 +465,7 @@ unsigned char shoot(unsigned char gun) {
     str_cat(buf, " (");
     str_num(buf, d);
     str_cat(buf, ").");
-    say(buf, C_TEXT);
+    msg(buf, C_TEXT);
     if (m->hp > d) {
         m->hp -= d;
         m->stun = 0;
@@ -374,10 +477,10 @@ unsigned char shoot(unsigned char gun) {
     str_cat(buf, "The ");
     str_cat(buf, nth(mon_names, m->kind));
     str_cat(buf, " falls.");
-    say(buf, C_HILITE);
+    msg(buf, C_HILITE);
     sfx(SFX_DEATH);
     if (gain_xp(mon_xp[m->kind])) {
-        say("You have grown stronger!", C_GOLD);
+        msg("You have grown stronger!", C_GOLD);
         sfx(SFX_LEVEL);
     }
     if (!obj_at(AT(m->x, m->y)) && rng_range(3) == 0) obj_set(AT(m->x, m->y), O_GOLD);
