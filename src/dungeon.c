@@ -4,6 +4,7 @@
  */
 #pragma cc45 overlay(gen)
 #pragma cc45 noescape_strings
+#include <dma.h>
 #include "game.h"
 #include "rng.h"
 
@@ -90,10 +91,8 @@ void dungeon_make(void) {
     unsigned int i;
     unsigned char k, t, x, y, w, h, r, last, d = pl.depth - 1;
 
-    for (i = 0; i < MAP_N; i++) {
-        map[i] = TR_ROCK;
-        seen[i] = 0;
-    }
+    for (i = 0; i < MAP_N; i++) map[i] = TR_ROCK;
+    dma_fill_far(SEEN_LIN, MAP_N, 0);
     obj_clear();
     nmons = 0;
     nrooms = 0;

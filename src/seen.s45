@@ -1,0 +1,54 @@
+; seen.s45 — the map's memory (game.h seen_get / seen_set): a byte a place,
+; kept in colour RAM past the screen's 8000 bytes (SEEN_LIN, $FF82000), out
+; of bank 0, reached through a 32-bit pointer (lda [ptr],z)
+;
+; unsigned char seen_get(unsigned int i);          i at $10/$11
+; void seen_set(unsigned int i, unsigned char v);  v at $12
+
+.cpu _45gs02
+.segmentOrder code, data, bss
+
+.global _seen_get, _seen_set
+
+.segment "zp"
+ptr:    .res 4
+
+.segment "code"
+
+; ptr := SEEN_LIN + i
+proc at
+    lda $10
+    sta ptr
+    lda $11
+    clc
+    adc #$20                ; SEEN_LIN = $0FF82000
+    sta ptr+1
+    lda #$F8
+    sta ptr+2
+    lda #$0F
+    sta ptr+3
+    ldz #0
+    rts
+endproc
+
+proc _seen_get
+    .zp_uses $10, $11
+    .reg_clobbers A, X, Z
+    .flag_clobbers C, N, Z
+    jsr at
+    lda [ptr],z
+    ldx #0
+    rts
+    .func_flags zp_call
+endproc
+
+proc _seen_set
+    .zp_uses $10, $11, $12
+    .reg_clobbers A, Z
+    .flag_clobbers C, N, Z
+    jsr at
+    lda $12
+    sta [ptr],z
+    rts
+    .func_flags zp_call
+endproc

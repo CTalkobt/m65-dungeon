@@ -100,6 +100,15 @@ void str_cat(char *d, const char *s) {
     *d = 0;
 }
 
+/* the nth (0, 1, ...) of strings one after another in a literal, each
+ * ending in its NUL: a table of strings that stays with the code that has
+ * the literal (an overlay's, under noescape_strings), not in bank 0 */
+const char *nth(const char *list, unsigned char n) {
+    while (n--)
+        while (*list++) {}
+    return list;
+}
+
 void str_num(char *d, unsigned int v) {
     char buf[6];
     unsigned char i = 5;

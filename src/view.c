@@ -4,7 +4,7 @@
  * (a Bresenham line through nothing solid). Within the torch's reach it is
  * lit, brighter the nearer; in a room with a brazier all of it is lit;
  * further and dark, it is in shadow: only what shines by itself shows
- * (eyes). A lit place is remembered (seen[] = the turn).
+ * (eyes). A lit place is remembered (seen_set: the epoch).
  *
  * Memory: a place out of sight shows only if it is a wall, a door or the
  * stairs, as faint lines - the shape of the place - fading with the turns
@@ -96,7 +96,7 @@ void view_fov(void) {
             else v = VIS_SHADOW;
             if ((map[i] & F_LIT) && v > 2) v = 2;
             win[w] = v;
-            if (v != VIS_SHADOW) seen[i] = now;
+            if (v != VIS_SHADOW) seen_set(i, now);
         }
     }
 }
@@ -114,7 +114,7 @@ static unsigned char open_sides(unsigned int i) {
 /* remembered walls: which neighbours are remembered walls or doors too */
 static unsigned char wallish(unsigned int i) {
     unsigned char t = TERRAIN(i);
-    return seen[i] && ((map[i] & F_BOUND) || t == TR_DOOR || t == TR_OPEN);
+    return ((map[i] & F_BOUND) || t == TR_DOOR || t == TR_OPEN) && seen_get(i);
 }
 
 static unsigned char outline(unsigned int i) {
@@ -175,8 +175,9 @@ static unsigned char cell(unsigned char x, unsigned char y) {
         }
     }
     /* remembered: walls, doors and the stairs, fading */
-    if (!seen[i]) return NONE;
-    age = (unsigned int)epoch_age(seen[i]) * 4 * pl.fade;
+    m = seen_get(i);
+    if (!m) return NONE;
+    age = (unsigned int)epoch_age(m) * 4 * pl.fade;
     if (age < MEM1) cell_var = TV_MEM;
     else if (age < MEM2) cell_var = TV_MEM + 1;
     else if (age < MEM3) cell_var = TV_MEM + 2;
@@ -280,6 +281,10 @@ void msg_clear(void) {
     for (k = 0; k < NMSG; k++) msgs[k][0] = 0;
 }
 
+const char *depth_name(unsigned char depth) {
+    return nth("\0The Sunken Cellars\0The Weeping Halls\0The Bone Galleries\0The Web-Choked Deep\0The Lich's Sanctum", depth);
+}
+
 void view_hud(void) {
     char buf[40];
     video_blank(0, 0, COLS, 1);
@@ -287,7 +292,7 @@ void view_hud(void) {
     str_cat(buf, "Depth ");
     str_num(buf, pl.depth);
     str_cat(buf, ": ");
-    str_cat(buf, depth_name[pl.depth]);
+    str_cat(buf, depth_name(pl.depth));
     video_text(2, 0, buf, C_GOLD);
     buf[0] = 0;
     str_cat(buf, "Turn ");

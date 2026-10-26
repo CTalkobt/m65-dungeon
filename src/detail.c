@@ -94,13 +94,13 @@ void chest_view(unsigned int at) {
         if (pl.weapon == 2) pl.wsides = 10;
         if (pl.weapon == 4) pl.wdice = 2;
         str_cat(buf, "Wrapped in oilcloth: a ");
-        str_cat(buf, weapon_name[pl.weapon]);
+        str_cat(buf, nth("short sword\0long sword\0war axe\0rune blade\0dragonbone sword", pl.weapon));
         str_cat(buf, ". You take it up.");
     } else if (r < 40 && pl.armour < 4) {
         pl.armour++;
         pl.def += 1;
         str_cat(buf, "Folded at the bottom: ");
-        str_cat(buf, armour_name[pl.armour]);
+        str_cat(buf, nth("leather jerkin\0studded leather\0mail shirt\0plate\0rune plate", pl.armour));
         str_cat(buf, ". You put it on.");
     } else if (r < 62) {
         d = 1 + rng_range(2);
@@ -147,12 +147,12 @@ void idol_view(unsigned int at) {
     switch (r) {
     case 0:
         for (i = 0; i < MAP_N; i++)
-            if (seen[i]) seen[i] = epoch();
+            if (seen_get(i)) seen_set(i, epoch());
         s = "The halls you have walked blaze again in your mind.";
         break;
     case 1:
         for (i = 0; i < MAP_N; i++)
-            if ((map[i] & F_BOUND) || TERRAIN(i) == TR_STAIRS || TERRAIN(i) == TR_DOOR) seen[i] = epoch();
+            if ((map[i] & F_BOUND) || TERRAIN(i) == TR_STAIRS || TERRAIN(i) == TR_DOOR) seen_set(i, epoch());
         s = "The shape of this level unfolds behind your eyes.";
         break;
     case 2:

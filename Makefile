@@ -47,7 +47,7 @@ TARGET  := $(BUILD)/dungeon.prg
 OVL     := $(BUILD)/dungeon.ov1
 OVL_STORE := 0x8000000-0x800FFFF
 C_MODS  := main video load rng game dungeon view ui explore battle detail front scene sfx audio audio_boot
-OBJS    := $(C_MODS:%=$(BUILD)/%.o45) $(BUILD)/ld.o45 $(BUILD)/assets.o45 $(BUILD)/sfxdata.o45 $(BUILD)/music.o45 $(BUILD)/tune_ovl.o45
+OBJS    := $(C_MODS:%=$(BUILD)/%.o45) $(BUILD)/ld.o45 $(BUILD)/assets.o45 $(BUILD)/sfxdata.o45 $(BUILD)/music.o45 $(BUILD)/tune_ovl.o45 $(BUILD)/seen.o45
 HEADERS := $(wildcard src/*.h) $(ART)/assets.h $(SFX)/sfxdata.h $(MUSIC)/music.h
 
 # the art: one file a monster, the tiles, the chest and the idol
@@ -100,6 +100,9 @@ $(BUILD)/%.o45: src/%.c $(HEADERS) | $(BUILD)
 
 $(BUILD)/tune_ovl.o45: src/tune_ovl.s45 $(M65)/lib/stdlib_asm/tune.s45 | $(BUILD)
 	$(CA45) -c -I$(M65)/lib/stdlib_asm $< -o $@
+
+$(BUILD)/seen.o45: src/seen.s45 | $(BUILD)
+	$(CA45) -c $< -o $@
 
 $(BUILD)/ld.o45: src/load.s45 | $(BUILD)
 	$(CA45) -c $< -o $@

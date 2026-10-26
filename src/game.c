@@ -5,7 +5,6 @@
 struct player pl;
 unsigned int turn;
 unsigned char map[MAP_N];
-unsigned char seen[MAP_N];
 struct mon mons[MAX_MON];
 unsigned char nmons;
 
@@ -63,39 +62,21 @@ unsigned char epoch_age(unsigned char e) {
  * epochs, 900 turns) are gone for good, before their epochs come round */
 void memory_sweep(void) {
     unsigned int i;
+    unsigned char e;
     for (i = 0; i < MAP_N; i++)
-        if (seen[i] && epoch_age(seen[i]) >= 225) seen[i] = 0;
+        if ((e = seen_get(i)) != 0 && epoch_age(e) >= 225) seen_set(i, 0);
 }
 
 const struct montype montypes[M_KINDS] = {
-    {"giant rat", "bares its yellow teeth", "bites you", S_RAT, T_RAT, 9, 1, 4, 1, 0, 5,
-     {A_MELEE, A_LUNGE, A_POISON, A_NONE}, {5, 3, 2, 0},
-     "A rat the size of a dog, slick with sewer filth."},
-    {"skeleton", "swings its notched blade", "cuts you", S_SKELETON, T_SKELETON, 18, 1, 6, 2, 2, 12,
-     {A_MELEE, A_HEAVY, A_GUARD, A_NONE}, {4, 3, 2, 0},
-     "Old bones bound by older hate. Its eyes are embers."},
-    {"cave spider", "rears, fangs dripping", "bites you", S_SPIDER, T_SPIDER, 15, 1, 6, 1, 1, 14,
-     {A_POISON, A_WEB, A_LUNGE, A_NONE}, {4, 2, 3, 0},
-     "Eight green eyes catch your torchlight."},
-    {"ooze", "surges up to engulf you", "burns you", S_SLIME, T_SLIME, 26, 1, 6, 1, 0, 16,
-     {A_MELEE, A_SPIT, A_REGEN, A_NONE}, {3, 3, 2, 0},
-     "A quivering mass. Something it ate stares out of it."},
-    {"orc brute", "swings its spiked club", "clubs you", S_ORC, T_ORC, 30, 1, 8, 3, 2, 24,
-     {A_MELEE, A_HEAVY, A_ROAR, A_NONE}, {3, 4, 2, 0},
-     "It grins with too many tusks and hefts its club."},
-    {"wraith", "reaches for your heart", "chills you", S_WRAITH, T_WRAITH, 26, 1, 6, 3, 3, 32,
-     {A_DRAIN, A_CHILL, A_PHASE, A_NONE}, {4, 3, 2, 0},
-     "Cold pours from the hood. Your torch gutters."},
-    {"lich", "raises its staff to strike", "smites you", S_LICH, T_LICH, 80, 2, 6, 3, 3, 120,
-     {A_BOLT, A_CURSE, A_HEAVY, A_GUARD}, {4, 2, 2, 1},
-     "The master of the deep. It has waited a long time."},
+    {S_RAT, T_RAT, 9, 1, 4, 1, 0, 5, {A_MELEE, A_LUNGE, A_POISON, A_NONE}, {5, 3, 2, 0}},
+    {S_SKELETON, T_SKELETON, 18, 1, 6, 2, 2, 12, {A_MELEE, A_HEAVY, A_GUARD, A_NONE}, {4, 3, 2, 0}},
+    {S_SPIDER, T_SPIDER, 15, 1, 6, 1, 1, 14, {A_POISON, A_WEB, A_LUNGE, A_NONE}, {4, 2, 3, 0}},
+    {S_SLIME, T_SLIME, 26, 1, 6, 1, 0, 16, {A_MELEE, A_SPIT, A_REGEN, A_NONE}, {3, 3, 2, 0}},
+    {S_ORC, T_ORC, 30, 1, 8, 3, 2, 24, {A_MELEE, A_HEAVY, A_ROAR, A_NONE}, {3, 4, 2, 0}},
+    {S_WRAITH, T_WRAITH, 26, 1, 6, 3, 3, 32, {A_DRAIN, A_CHILL, A_PHASE, A_NONE}, {4, 3, 2, 0}},
+    {S_LICH, T_LICH, 80, 2, 6, 3, 3, 120, {A_BOLT, A_CURSE, A_HEAVY, A_GUARD}, {4, 2, 2, 1}},
 };
 
-const char *const weapon_name[] = {"short sword", "long sword", "war axe", "rune blade", "dragonbone sword"};
-const char *const armour_name[] = {"leather jerkin", "studded leather", "mail shirt", "plate", "rune plate"};
-const char *const depth_name[DEPTHS + 1] = {
-    "", "The Sunken Cellars", "The Weeping Halls", "The Bone Galleries", "The Web-Choked Deep", "The Lich's Sanctum",
-};
 
 void player_new(void) {
     pl.hp = pl.maxhp = 30;

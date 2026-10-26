@@ -42,9 +42,12 @@ unsigned char obj_at(unsigned int at);
 void obj_set(unsigned int at, unsigned char kind);
 void obj_clear(void);
 
-/* seen[]: when a place was last in sight and lit, in epochs of 4 turns
- * (1-255 round and round; 0 never, or long forgotten) */
-extern unsigned char seen[MAP_N];
+/* the memory: when a place was last in sight and lit, in epochs of 4
+ * turns (1-255 round and round; 0 never, or long forgotten); a byte a
+ * place in colour RAM past the screen (seen.s45) */
+#define SEEN_LIN 0xFF82000UL
+unsigned char seen_get(unsigned int i);
+void seen_set(unsigned int i, unsigned char v);
 unsigned char epoch(void);                     /* now */
 unsigned char epoch_age(unsigned char e);      /* epochs since e */
 void memory_sweep(void);                       /* the long forgotten to 0 */
@@ -90,16 +93,12 @@ extern unsigned char nmons;
 #define A_LUNGE   14          /* leaps in from near and bites */
 #define A_CLOSE   15          /* comes closer (chosen when out of reach) */
 
-struct montype {
-    const char *name;         /* "giant rat" */
-    const char *melee_tele;   /* what it does before an ordinary blow */
-    const char *melee_hit;    /* and as it lands */
+struct montype {               /* (its words: battle.c) */
     unsigned char scene;      /* assets.h S_* */
     unsigned char tile;       /* assets.h T_* */
     unsigned char hp, dice, sides, plus, def, xp;
     unsigned char acts[4];    /* battle.c A_*, by weight */
     unsigned char weights[4];
-    const char *lore;         /* a line about it, at the start of a fight */
 };
 extern const struct montype montypes[M_KINDS];
 
@@ -116,9 +115,7 @@ struct player {
 };
 extern struct player pl;
 extern unsigned int turn;
-extern const char *const weapon_name[];
-extern const char *const armour_name[];
-extern const char *const depth_name[DEPTHS + 1];
+const char *depth_name(unsigned char depth);   /* view.c */
 
 /* the outcome of a fight */
 #define WON    1
@@ -166,6 +163,7 @@ void ui_bar(unsigned char col, unsigned char row, unsigned char w, unsigned char
 void ui_wrap(unsigned char col, unsigned char row, unsigned char w, const char *s, unsigned char colour);
 void ui_stats(unsigned char col, unsigned char row);
 void str_cat(char *d, const char *s);
+const char *nth(const char *list, unsigned char n);   /* the nth of "a\0b\0c" */
 void str_num(char *d, unsigned int v);
 /* a short message to the log in the battle's and the views' text area */
 void log_init(unsigned char col, unsigned char row, unsigned char w, unsigned char h);

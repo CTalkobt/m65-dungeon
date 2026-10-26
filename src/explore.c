@@ -15,12 +15,6 @@
 #include "rng.h"
 #include "game.h"
 
-static const char *const bones_say[4] = {
-    "Old bones crunch underfoot.",
-    "A skull grins up at you from the dust.",
-    "Someone came this way before you. They stayed.",
-    "Gnawed bones, and the gnawing is recent.",
-};
 
 static void screen_in(void) {
     v_flicker = 1;
@@ -36,7 +30,7 @@ static void level_enter(void) {
     dungeon_make();
     buf[0] = 0;
     str_cat(buf, "You descend into ");
-    str_cat(buf, depth_name[pl.depth]);
+    str_cat(buf, depth_name(pl.depth));
     str_cat(buf, ".");
     msg(buf, C_GOLD);
     if (pl.depth == 1) msg("Arrows / WASD move, QEZC diagonally. H for help.", C_DIM);
@@ -202,7 +196,9 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
         msg("The idol's eyes are dark now.", C_DIM);
         break;
     case O_BONES:
-        msg(bones_say[(x + y) & 3], C_DIM);
+        msg(nth("Old bones crunch underfoot.\0A skull grins up at you from the dust.\0"
+                    "Someone came this way before you. They stayed.\0Gnawed bones, and the gnawing is recent.",
+                    (x + y) & 3), C_DIM);
         break;
     }
     if (t == TR_STAIRS) msg("Stairs wind down into the dark. RETURN to descend.", C_GOLD);

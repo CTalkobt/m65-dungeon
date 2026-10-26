@@ -34,13 +34,14 @@ static unsigned char frozen, staggered, roar, parrying;
 static unsigned char poison, snared, ward;
 static unsigned char sel, casting;
 static char buf[64];
+__attribute__((noinline)) static const char *mon_name(void);
 
 /* ---------------------------------------------------------------- text */
 
 static void the(const char *rest) {
     buf[0] = 0;
     str_cat(buf, "The ");
-    str_cat(buf, mt->name);
+    str_cat(buf, mon_name());
     str_cat(buf, " ");
     str_cat(buf, rest);
 }
@@ -81,21 +82,20 @@ static void pause(unsigned char frames) {
 /* ---------------------------------------------------------------- the screen */
 
 static void draw_range(void) {
-    static const char *const names[3] = {"close", "near", "far"};
     unsigned char k;
     video_text(2, 8, "Range", C_GOLD);
     for (k = 0; k < 3; k++) {
         video_text(1, 10 + k * 2, k == dist ? ">" : " ", C_HILITE);
-        video_text(3, 10 + k * 2, names[k], k == dist ? C_HILITE : C_DARK);
+        video_text(3, 10 + k * 2, nth("close\0near\0far", k), k == dist ? C_HILITE : C_DARK);
     }
 }
 
 static void draw_foe(void) {
     unsigned char n = 0;
-    while (mt->name[n]) n++;
+    while (mon_name()[n]) n++;
     video_blank(12, 32, 56, 1);
     buf[0] = 0;
-    str_cat(buf, mt->name);
+    str_cat(buf, mon_name());
     buf[0] -= 0x20;                                    /* a capital */
     video_text(38 - n, 32, buf, C_BONE);
     ui_bar(40, 32, 20, m->hp, mhp_max, UI_BAR_G0);
@@ -118,21 +118,46 @@ static void draw_you(void) {
     if (parrying) video_text(STAT_COL, n++, "On guard", C_TEXT);
 }
 
-static const char *const tele[] = {
-    "", "", "gathers itself for a crushing blow!", "raises its guard.", "bares fangs glistening with venom.",
-    "gathers a skein of silk.", "swells, ready to spit.", "draws itself together.", "fills its lungs to roar.",
-    "reaches for your heart.", "breathes out a freezing mist.", "flickers, half in this world.",
-    "gathers violet fire in its staff.", "whispers a word of withering.", "crouches to spring.", "closes in.",
-};
+/* what a creature means to do, as a phrase after its name (by A_*) */
+__attribute__((noinline)) static const char *tele(unsigned char a) {
+    return nth("\0\0gathers itself for a crushing blow!\0raises its guard.\0bares fangs glistening with venom.\0"
+               "gathers a skein of silk.\0swells, ready to spit.\0draws itself together.\0fills its lungs to roar.\0"
+               "reaches for your heart.\0breathes out a freezing mist.\0flickers, half in this world.\0"
+               "gathers violet fire in its staff.\0whispers a word of withering.\0crouches to spring.\0closes in.", a);
+}
+
+/* the creatures' words (by M_*) */
+__attribute__((noinline)) static const char *mon_name(void) {
+    return nth("giant rat\0skeleton\0cave spider\0ooze\0orc brute\0wraith\0lich", m->kind);
+}
+
+__attribute__((noinline)) static const char *mon_tele(void) {
+    return nth("bares its yellow teeth\0swings its notched blade\0rears, fangs dripping\0surges up to engulf you\0"
+               "swings its spiked club\0reaches for your heart\0raises its staff to strike", m->kind);
+}
+
+__attribute__((noinline)) static const char *mon_hit(void) {
+    return nth("bites you\0cuts you\0bites you\0burns you\0clubs you\0chills you\0smites you", m->kind);
+}
+
+__attribute__((noinline)) static const char *mon_lore(void) {
+    return nth("A rat the size of a dog, slick with sewer filth.\0"
+               "Old bones bound by older hate. Its eyes are embers.\0"
+               "Eight green eyes catch your torchlight.\0"
+               "A quivering mass. Something it ate stares out of it.\0"
+               "It grins with too many tusks and hefts its club.\0"
+               "Cold pours from the hood. Your torch gutters.\0"
+               "The master of the deep. It has waited a long time.", m->kind);
+}
 
 static void draw_intent(void) {
     unsigned char n = 0, c;
     if (frozen) the("is frozen in place.");
     else if (staggered) the("reels from your blow.");
     else if (intent == A_MELEE) {
-        the(mt->melee_tele);
+        the(mon_tele());
         str_cat(buf, ".");
-    } else the(tele[intent]);
+    } else the(tele(intent));
     while (buf[n]) n++;
     video_blank(1, 33, 78, 1);
     c = intent == A_HEAVY || intent == A_BOLT || intent == A_LUNGE ? C_RED : intent == A_GUARD || intent == A_PHASE || intent == A_CLOSE ? C_DIM : C_ORANGE;
@@ -142,9 +167,7 @@ static void draw_intent(void) {
 
 /* the actions: what each is called and whether it can be done now */
 #define NACT 6
-static const char *const act_name[NACT] = {"Strike", "Parry", "Cast", "Advance", "Retreat", "Potion"};
 static const char act_key[NACT] = {'s', 'p', 'c', 'a', 'r', 'q'};
-static const char *const spell_name[4] = {"Firebolt  3", "Frost     4", "Heal      5", "Ward      4"};
 static const char spell_key[4] = {'f', 'i', 'h', 'w'};
 static const unsigned char spell_cost[4] = {3, 4, 5, 4};
 static const unsigned char spell_sfx[4] = {SFX_FIRE, SFX_FROST, SFX_HEAL, SFX_WARD};
@@ -171,7 +194,8 @@ static void draw_menu(void) {
         buf[1] = (char)((casting ? spell_key[k] : act_key[k]) - 0x20);
         buf[2] = ' ';
         buf[3] = 0;
-        str_cat(buf, casting ? spell_name[k] : (k == 4 && dist == 2 ? "Flee" : act_name[k]));
+        str_cat(buf, casting ? nth("Firebolt  3\0Frost     4\0Heal      5\0Ward      4", k)
+                             : k == 4 && dist == 2 ? "Flee" : nth("Strike\0Parry\0Cast\0Advance\0Retreat\0Potion", k));
         video_text(MENU_COL, MENU_ROW + 1 + k * 2, buf, c);
     }
     if (casting) video_text(MENU_COL, MENU_ROW + 10, "  Esc: back", C_DARK);
@@ -332,7 +356,7 @@ static unsigned char creature_acts(void) {
             d *= 2;
             the("lands a crushing blow!");
         } else {
-            the(mt->melee_hit);
+            the(mon_hit());
         }
         say(buf, C_ORANGE);
         scene_show(0);
@@ -582,7 +606,7 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
     scene_load(mt->scene);
     log_init(LOG_COL, LOG_ROW, LOG_W, LOG_H);
     draw_all();
-    say(mt->lore, C_BONE);
+    say(mon_lore(), C_BONE);
     if (ambush) say("It is upon you!", C_RED);
     video_fade(16);
     sfx(SFX_GROWL);
