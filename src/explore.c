@@ -1,0 +1,282 @@
+/* explore.c — walking the levels a turn at a time
+ *
+ * The player moves (8 ways), opens doors by walking into them, picks up
+ * gold and potions, opens chests and prays at idols (the close-ups),
+ * fights what it walks into, goes down the stairs. Then every creature
+ * moves: asleep until it notices the player, hunting while it sees the
+ * player, wandering when it loses track. One that walks into the player
+ * starts the fight close (an ambush).
+ */
+#pragma cc45 overlay(walk)
+#pragma cc45 noescape_strings
+#include "hw.h"
+#include "video.h"
+#include "rng.h"
+#include "game.h"
+
+static const char *const bones_say[4] = {
+    "Old bones crunch underfoot.",
+    "A skull grins up at you from the dust.",
+    "Someone came this way before you. They stayed.",
+    "Gnawed bones, and the gnawing is recent.",
+};
+
+static void screen_in(void) {
+    v_flicker = 1;
+    v_fire = 1;
+    view_fov();
+    view_screen();
+    video_fade(16);
+}
+
+static void level_enter(void) {
+    char buf[64];
+    video_fade(0);
+    dungeon_make();
+    buf[0] = 0;
+    str_cat(buf, "You descend into ");
+    str_cat(buf, depth_name[pl.depth]);
+    str_cat(buf, ".");
+    msg(buf, C_GOLD);
+    if (pl.depth == 1) msg("Arrows / WASD move, QEZC diagonally. H for help.", C_DIM);
+    if (pl.depth == DEPTHS) msg("A cold voice whispers your name.", C_PURPLE);
+    screen_in();
+}
+
+static void help(void) {
+    msg("Move: arrows, WASD (QEZC diagonal), joystick. Space: wait.", C_TEXT);
+    msg("Walk into doors, chests, idols and foes. P: drink a potion.", C_TEXT);
+    msg("RETURN on the stairs: go down. RUN/STOP: give up.", C_TEXT);
+}
+
+/* the fight with creature i; WON / FLED / DIED, the screen back */
+static unsigned char fight(unsigned char i, unsigned char ambush) {
+    unsigned char r = battle(i, ambush);
+    if (r == DIED) return DIED;
+    if (r == WON) {
+        if (mons[i].kind == M_LICH) return WON;
+        if (!obj_at(AT(mons[i].x, mons[i].y)) && rng_range(3) == 0) obj_set(AT(mons[i].x, mons[i].y), O_GOLD);
+        msg("The way is clear.", C_DIM);
+    } else {
+        mons[i].stun = 3;
+        msg("You escape, heart pounding.", C_DIM);
+    }
+    screen_in();
+    return FLED;
+}
+
+/* ---------------------------------------------------------------- creatures */
+
+static signed char sgn(signed int v) {
+    return v < 0 ? -1 : v > 0 ? 1 : 0;
+}
+
+static unsigned char free_for(struct mon *c, unsigned char x, unsigned char y) {
+    unsigned int i = AT(x, y);
+    unsigned char t = TERRAIN(i);
+    if (t == TR_ROCK || obj_at(i) == O_BRAZIER || mon_at(x, y)) return 0;
+    if (t == TR_DOOR) {
+        map[i] = (map[i] & ~TR_MASK) | TR_OPEN;     /* it opens the door: that is its move */
+        if (vis_at(x, y)) msg("A door creaks open in the dark.", C_DIM);
+        return 0;
+    }
+    (void)c;
+    return 1;
+}
+
+/* 0, or the outcome of a fight a creature started */
+static unsigned char creatures_move(void) {
+    unsigned char k, d, sees, x, y;
+    signed char dx, dy;
+    struct mon *c;
+    for (k = 0; k < nmons; k++) {
+        c = &mons[k];
+        if (!c->hp) continue;
+        if (c->stun) {
+            c->stun--;
+            continue;
+        }
+        dx = sgn((signed int)pl.x - c->x);
+        dy = sgn((signed int)pl.y - c->y);
+        d = (unsigned char)(c->x > pl.x ? c->x - pl.x : pl.x - c->x);
+        y = (unsigned char)(c->y > pl.y ? c->y - pl.y : pl.y - c->y);
+        if (y > d) d = y;
+        sees = vis_at(c->x, c->y) && d <= 10;
+        if (!c->awake) {
+            if (sees && d <= 6 && rng_range(3) == 0) {
+                c->awake = 2;
+                if (vis_at(c->x, c->y) != VIS_SHADOW) msg("Something stirs.", C_ORANGE);
+            }
+            continue;
+        }
+        if (c->kind == M_SLIME && (turn & 1)) continue;   /* oozes are slow */
+        if (sees) c->awake = 2;
+        else if (c->awake == 2 && rng_range(8) == 0) c->awake = 1;
+        if (c->awake == 1) {
+            if (rng_range(2)) continue;
+            dx = (signed char)rng_range(3) - 1;
+            dy = (signed char)rng_range(3) - 1;
+        }
+        if (!dx && !dy) continue;
+        x = c->x + dx;
+        y = c->y + dy;
+        if (x == pl.x && y == pl.y) {
+            if (c->awake != 2) continue;
+            return fight(k, 1);
+        }
+        if (free_for(c, x, y)) { c->x = x; c->y = y; continue; }
+        if (dx && free_for(c, c->x + dx, c->y) && !(c->x + dx == pl.x && c->y == pl.y)) { c->x += dx; continue; }
+        if (dy && free_for(c, c->x, c->y + dy) && !(c->x == pl.x && c->y + dy == pl.y)) { c->y += dy; continue; }
+    }
+    return 0;
+}
+
+/* ---------------------------------------------------------------- the player */
+
+/* moving (or bumping) toward dx, dy: 1 if it took a turn; the outcome of
+ * a fight in *out */
+static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
+    unsigned char x = pl.x + dx, y = pl.y + dy, m, t, n;
+    unsigned int i = AT(x, y);
+    char buf[64];
+    m = mon_at(x, y);
+    if (m) {
+        *out = fight(m - 1, 0);
+        return 1;
+    }
+    t = TERRAIN(i);
+    if (t == TR_ROCK) return 0;
+    if (t == TR_DOOR) {
+        map[i] = (map[i] & ~TR_MASK) | TR_OPEN;
+        sfx(SFX_DOOR);
+        msg("The door groans open.", C_DIM);
+        return 1;
+    }
+    n = obj_at(i);
+    if (n == O_BRAZIER) {
+        msg("The brazier's coals glow too hot to pass.", C_ORANGE);
+        return 0;
+    }
+    pl.x = x;
+    pl.y = y;
+    sfx(SFX_STEP);
+    switch (n) {
+    case O_GOLD:
+        n = (2 + rng_range(10)) * pl.depth;
+        pl.gold += n;
+        obj_set(i, O_NONE);
+        buf[0] = 0;
+        str_cat(buf, "You gather ");
+        str_num(buf, n);
+        str_cat(buf, " gold coins.");
+        msg(buf, C_GOLD);
+        sfx(SFX_COIN);
+        break;
+    case O_POTION:
+        pl.potions++;
+        obj_set(i, O_NONE);
+        msg("You pocket a healing potion.", C_RED);
+        sfx(SFX_CHIME);
+        break;
+    case O_CHEST:
+        view_fov();
+        view_draw();
+        chest_view(i);
+        screen_in();
+        break;
+    case O_CHEST_OPEN:
+        msg("An empty chest.", C_DIM);
+        break;
+    case O_IDOL:
+        view_fov();
+        view_draw();
+        idol_view(i);
+        screen_in();
+        break;
+    case O_IDOL_SPENT:
+        msg("The idol's eyes are dark now.", C_DIM);
+        break;
+    case O_BONES:
+        msg(bones_say[(x + y) & 3], C_DIM);
+        break;
+    }
+    if (t == TR_STAIRS) msg("Stairs wind down into the dark. RETURN to descend.", C_GOLD);
+    return 1;
+}
+
+unsigned char explore(void) {
+    unsigned char k, took, r;
+    signed char dx, dy;
+    level_enter();
+#ifdef TEST_VIEW
+    /* (tests: a chest (1) or an idol (2) at once) */
+    if (TEST_VIEW == 1) chest_view(AT(pl.x, pl.y));
+    else idol_view(AT(pl.x, pl.y));
+    screen_in();
+#endif
+#ifdef TEST_FIGHT
+    /* (tests: a fight with that kind of creature at once) */
+    mons[0].kind = TEST_FIGHT;
+    mons[0].hp = montypes[TEST_FIGHT].hp;
+    r = fight(0, 0);
+    if (r == DIED || r == WON) return r;
+#endif
+    for (;;) {
+        view_fov();
+        view_draw();
+        view_hud();
+        k = key_wait();
+        took = 0;
+        r = 0;
+        dx = dy = 0;
+        switch (k) {
+        case K_UP: case 'w': case '8': dy = -1; break;
+        case K_DOWN: case 's': case '2': dy = 1; break;
+        case K_LEFT: case 'a': case '4': dx = -1; break;
+        case K_RIGHT: case 'd': case '6': dx = 1; break;
+        case 'q': case '7': dx = -1; dy = -1; break;
+        case 'e': case '9': dx = 1; dy = -1; break;
+        case 'z': case '1': dx = -1; dy = 1; break;
+        case 'c': case '3': dx = 1; dy = 1; break;
+        case ' ': case '5': case '.': took = 1; break;
+        case 'h': case '?': help(); break;
+        case 'p':
+            if (!pl.potions) msg("You have no potions.", C_DIM);
+            else if (pl.hp == pl.maxhp) msg("You are unhurt.", C_DIM);
+            else {
+                pl.potions--;
+                pl.hp = pl.hp + 15 + pl.level * 2 > pl.maxhp ? pl.maxhp : pl.hp + 15 + pl.level * 2;
+                msg("You drink. Warmth spreads through you.", C_GREEN);
+                sfx(SFX_CHIME);
+                took = 1;
+            }
+            break;
+        case K_FIRE: case '>':
+            if (TERRAIN(AT(pl.x, pl.y)) == TR_STAIRS) {
+                pl.depth++;
+                pl.fade = 2;
+                msg_clear();
+                level_enter();
+                continue;
+            }
+            msg("There are no stairs here.", C_DIM);
+            break;
+        case K_STOP:
+            msg("Give up? Y to end your delve, any other key to go on.", C_RED);
+            if (key_wait() == 'y') return DIED;
+            msg("You steel yourself.", C_DIM);
+            break;
+        }
+        if (dx || dy) took = step(dx, dy, &r);
+        if (r == DIED || r == WON) return r;
+        if (!took) continue;
+        turn++;
+        if (!turn) turn = 1;
+        if (turn % 12 == 0 && pl.hp < pl.maxhp) pl.hp++;
+        if (turn % 18 == 0 && pl.mp < pl.maxmp) pl.mp++;
+        if (turn % 64 == 0) memory_sweep();
+        view_fov();
+        r = creatures_move();
+        if (r == DIED || r == WON) return r;
+    }
+}
