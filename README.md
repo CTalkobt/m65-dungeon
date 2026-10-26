@@ -289,7 +289,9 @@ region starts at $8E00. The code overlays `walk` (explore +
 view), `pack` (the inventory, items, the torch), `aim` (shooting, the
 creatures' tricks), `battle`, `gen` (the dungeon generator, saving, traps
 and secrets) and `scenes` (chest, idol, title, endings, settings) are kept in
-attic RAM and copied by DMA into one region at $8E00 when called. A call
+attic RAM ($8000000-$801FFFF: two 64 KB banks, a file each, DUNGEON.OV1
+and, once the first is full, DUNGEON.OV2) and copied by DMA into one
+region at $8E00 when called. A call
 from one overlay into another brings the caller back on return, but not
 the caller's text in the meantime; so what takes text from any overlay
 (the message line `msg`, the log, `video_text`) is resident. The map's
@@ -314,6 +316,6 @@ round the player, memory a byte a place in colour RAM.
 | $4A000-$4FFFF | the level's map: its terrain as characters |
 | $50000-$5DFFF | DG<NAME>A: a close-up's palette, maps, characters |
 | $5E000-$5FF3F | the screen |
-| $8000000- | attic RAM: DUNGEON.OV1, the overlays |
+| $8000000-$801FFFF | attic RAM: the overlays (DUNGEON.OV1, DUNGEON.OV2) |
 | $8080000- | attic RAM: the sounds, decoded |
 | $8100000- | attic RAM: the close-ups seen so far, 128 KB each |
