@@ -69,6 +69,7 @@ void unpack(unsigned long src) {
 
 unsigned char scene_load(unsigned char s) {
     char name[16];
+    unsigned char keep[8];
     unsigned char n = 0, ok;
     unsigned long at = CACHE_LIN + ((unsigned long)s << 17);
     if (loaded == s) return 1;
@@ -85,8 +86,12 @@ unsigned char scene_load(unsigned char s) {
     }
     name[n + 1] = 0;
     name[n] = 'A';
+    /* (the packed file's last few bytes lie on the screen's first cells,
+     * past the close-up's area: they are put back) */
+    dma_copy_far((unsigned long)(unsigned int)keep, SCREEN_LIN, sizeof keep);
     ok = load_file(name, 5);
     if (ok) unpack(SCENE_LIN + scene_skip[s][0]);
+    dma_copy_far(SCREEN_LIN, (unsigned long)(unsigned int)keep, sizeof keep);
     name[n] = 'B';
     if (ok) ok = load_file(name, 1);
     if (ok) unpack(BANK1_LIN + scene_skip[s][1]);

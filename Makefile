@@ -72,7 +72,7 @@ art: $(ART_STAMP)
 $(SFX_STAMP) $(SFX)/sfxdata.h &: tools/gen_sfx.py $(wildcard $(BASEIMAGE))
 	rm -rf $(SFX)
 	mkdir -p $(SFX)/disk
-	if [ -f $(BASEIMAGE) ]; then $(DISK45) extract-all $(BASEIMAGE) $(SFX)/disk "DGSFX*"; fi
+	if [ -f $(BASEIMAGE) ]; then $(DISK45) extract-all $(BASEIMAGE) $(SFX)/disk "DG*"; fi
 	$(PYTHON) tools/gen_sfx.py tables $(SFX)/disk $(SFX)
 	touch $(SFX_STAMP)
 
@@ -82,7 +82,7 @@ sounds:
 	$(PYTHON) tools/gen_sfx.py pack $(SFX_DIR) build/sounds
 	rm -f $(BASEIMAGE)
 	$(DISK45) create $(BASEIMAGE) -n "DUNGEON SOUNDS" -i "DS"
-	for f in build/sounds/dgsfx*.bin; do n=$$(basename $$f .bin | tr a-z A-Z); $(DISK45) add $(BASEIMAGE) $$f $$n || exit 1; done
+	for f in build/sounds/dg*.bin; do n=$$(basename $$f .bin | tr a-z A-Z); $(DISK45) add $(BASEIMAGE) $$f $$n || exit 1; done
 
 # the music: tools/gen_music.py writes it as tune45's text, tune45 makes
 # it the file DGMUSIC (the program keeps it in attic RAM)

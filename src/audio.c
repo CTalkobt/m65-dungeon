@@ -42,18 +42,11 @@ void audio_off(void) {
     REG(0xD711) = 0;
 }
 
-/* the sound id at volumes left and right (0-255) */
-void audio_play(unsigned char id, unsigned char left, unsigned char right) {
-#if SND_COUNT
-    unsigned char ch;
-    unsigned long at;
-    unsigned int end;
-    if (!audio_ok || id >= SND_COUNT) return;
-    ch = snd_slot[id];
-    at = ch ? SLOT_SHORT : SLOT_LONG;
+/* len bytes of 8-bit samples at at (chip RAM, within a bank) on channel
+ * ch, at volumes left and right (0-255) */
+void audio_start(unsigned char ch, unsigned long at, unsigned int len, unsigned char left, unsigned char right) {
+    unsigned int end = (unsigned int)at + len;
     CH(ch, 0) = 0;                                 /* stopped while it is set up */
-    dma_copy_far(at, SND_ATTIC + snd_at[id], snd_len[id]);
-    end = (unsigned int)at + snd_len[id];
     CH(ch, 1) = (unsigned char)at;
     CH(ch, 2) = (unsigned char)(at >> 8);
     CH(ch, 3) = (unsigned char)(at >> 16);
@@ -68,6 +61,20 @@ void audio_play(unsigned char id, unsigned char left, unsigned char right) {
     CH(ch, 9) = left;
     REG(0xD71C + ch) = right;
     CH(ch, 0) = 0xA2;                              /* on, unsigned, 8 bits, once */
+    REG(0xD711) = 0x80;                            /* (the audio DMA on) */
+}
+
+/* the sound id at volumes left and right (0-255) */
+void audio_play(unsigned char id, unsigned char left, unsigned char right) {
+#if SND_COUNT
+    unsigned char ch;
+    unsigned long at;
+    if (!audio_ok || id >= SND_COUNT) return;
+    ch = snd_slot[id];
+    at = ch ? SLOT_SHORT : SLOT_LONG;
+    CH(ch, 0) = 0;
+    dma_copy_far(at, SND_ATTIC + snd_at[id], snd_len[id]);
+    audio_start(ch, at, snd_len[id], left, right);
     busy[ch] = (unsigned char)(snd_len[id] / 200 + 2);
 #else
     (void)id; (void)left; (void)right;

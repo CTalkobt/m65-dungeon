@@ -13,21 +13,31 @@ static unsigned char shown;                   /* the title is on the screen */
 
 /* the title screen, without the prompt (title() adds it) */
 void title_show(void) {
+    static unsigned char intro_done;
     video_fade(0);
     v_flicker = 0;
     v_fire = 0;
-    scene_load(S_LICH);
     video_clear();
     ui_frame(11, 0, 58, 32);
     ui_frame(0, 33, 80, 17);
-    scene_show(0);
     video_centre(35, "T H E    F A D I N G    D E E P", C_GOLD);
     video_centre(37, "Beneath the ruined abbey the old halls go down, and down.", C_TEXT);
     video_centre(38, "At the bottom the lich who emptied the valley keeps its vigil.", C_TEXT);
     video_centre(40, "Take your torch. Mind the dark. And remember -", C_DIM);
     video_centre(41, "the deep makes you forget.", C_DIM);
     video_centre(47, "A game for the MEGA65, written in C with cc45", C_DARK);
-    video_fade(16);
+    if (!intro_done) {
+        /* the first time: out of the dark, a voice; then the lich */
+        intro_done = 1;
+        video_fade(16);
+        intro_play();
+    }
+    scene_load(S_LICH);
+    v_wash_r = v_wash_g = v_wash_b = 0;
+    v_wash = 16;
+    scene_show(0);
+    if (v_bright != 16) video_fade(16);
+    for (; v_wash; v_wash--) video_frames(2);
     shown = 1;
 }
 

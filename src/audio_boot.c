@@ -6,6 +6,7 @@
 #include <dma.h>
 #include "hw.h"
 #include "load.h"
+#include "video.h"
 #include "game.h"
 #include "sfxdata.h"
 
@@ -15,6 +16,8 @@
 
 
 /* one sound: n bytes of blocks at src (the play slots) to dst (attic RAM) */
+static unsigned char quips;                   /* loading_tick while decoding */
+
 static void decode(unsigned long src, unsigned int n, unsigned long dst) {
     /* (locals: their storage is shared with functions not running now) */
     unsigned char buf[16 * 16];               /* decoded samples on their way to attic RAM */
@@ -59,12 +62,28 @@ static void decode(unsigned long src, unsigned int n, unsigned long dst) {
         }
         dma_copy_far(dst, (unsigned long)(unsigned int)buf, (unsigned int)(o - buf));
         dst += o - buf;
-        loading_tick();
+        if (quips) loading_tick();
     }
+}
+
+/* "Welcome to the dungeon." and a laugh: DGINTRO loads into bank 5 at
+ * SND_INTRO_AT and decodes in place down to $50000 (the title's picture
+ * comes there after), and plays, on the left and the right */
+void intro_play(void) {
+#if SND_INTRO
+    unsigned int n[2], f;
+    if (!load_file("DGINTRO", 5)) return;
+    dma_copy_far((unsigned long)(unsigned int)n, SND_INTRO_AT, 4);
+    quips = 0;
+    decode(SND_INTRO_AT + 4, n[0], 0x50000UL);
+    audio_start(0, 0x50000UL, n[1], 0xE0, 0xE0);
+    for (f = n[1] / 240 + 8; f; f--) video_frame();   /* (the length at 12 kHz, in frames) */
+#endif
 }
 
 void audio_init(void) {
 #if SND_COUNT
+    quips = 1;
     char name[8] = "DGSFX1";
     unsigned char f, n, k, e[6];
     unsigned long src;

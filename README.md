@@ -34,8 +34,9 @@ and asks xemu's monitor for the registers and memory.
 
 ## Sound
 
-The sampled sounds are on `assets/baseimage.d81`, which `make` takes them
-from: the build needs nothing else. They were made from free sound packs
+The sampled sounds and the title's intro (a voice, "Welcome to the
+dungeon.", and a laugh) are on `assets/baseimage.d81`, which `make` takes
+them from: the build needs nothing else. They were made from free sound packs
 that are not in this repository; `assets/README.md` says which sound comes
 from where. With the packs' zip files in `~/resources/audio/dungeon` (or
 `SFX_DIR=<dir>`), `make sounds` makes the image anew. Without the image the

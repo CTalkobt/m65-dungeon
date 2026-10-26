@@ -68,6 +68,14 @@ SOUNDS = [
 ]
 AMBIENT = ["DRIP1", "DRIP2", "CHAIN", "FOOT", "EMBER"]
 
+# the title's first words and a laugh (DGINTRO, played once, from bank 5):
+# espeak-ng speaking, a growl through it and an echo; then AntumDeluge's
+# "Evil Laugh 2" (CC0, OpenGameArt), decoded with GStreamer
+INTRO_TEXT = "Welcome to the dungeon."
+INTRO_VOICE = ["-v", "en-us+m3", "-s", "128", "-p", "6", "-g", "2"]
+INTRO_LAUGH = "cc0/evil_laugh_02.flac"
+INTRO_AT = 0x56000                           # where the coded file loads (it decodes to $50000)
+
 
 # ---------------------------------------------------------------- reading
 
@@ -276,9 +284,62 @@ def pack(packs, out):
         w.setframerate(RATE)
         w.writeframes(unblock(data)[:plen])
         w.close()
+    intro(packs, out)
     total = sum(s[2] for s in sounds)
     print("gen_sfx: %d sounds, %.1f s, %d bytes coded in %d files"
           % (len(sounds), total / RATE, sum(len(s[1]) for s in sounds), len(files)))
+
+
+def intro(packs, out):
+    """DGINTRO: the voice and the laugh, coded; at INTRO_AT: the coded
+    length, the length decoded (2 bytes each), the blocks"""
+    import subprocess
+    import tempfile
+    import wave
+    tmp = tempfile.mkdtemp()
+    vw, lw = os.path.join(tmp, "voice.wav"), os.path.join(tmp, "laugh.wav")
+    subprocess.run(["espeak-ng"] + INTRO_VOICE + ["-w", vw, INTRO_TEXT], check=True)
+    subprocess.run(["gst-launch-1.0", "-q", "filesrc", "location=" + os.path.join(packs, INTRO_LAUGH), "!",
+                    "flacparse", "!", "flacdec", "!", "audioconvert", "!", "audio/x-raw,channels=1", "!",
+                    "wavenc", "!", "filesink", "location=" + lw], check=True)
+
+    def load(f):
+        w = wave.open(f)
+        a = np.frombuffer(w.readframes(w.getnframes()), "<i2").astype(np.float32) / 32768
+        return resample(a, w.getframerate())
+
+    def trim(a):
+        on = np.nonzero(np.abs(a) > 0.02 * np.abs(a).max())[0]
+        return a[on[0]:on[-1] + 1]
+
+    def echo(a, secs):
+        out = np.concatenate([a, np.zeros(int(secs * RATE), np.float32)])
+        for d, k in ((0.031, 0.45), (0.047, 0.38), (0.071, 0.3), (0.113, 0.22), (0.167, 0.15)):
+            n = int(d * RATE)
+            t = np.zeros_like(out)
+            t[n:] = out[:-n] * k
+            out = out + t
+        return out
+
+    v = trim(load(vw))
+    v = v * (0.6 + 0.4 * np.sin(2 * np.pi * 38 * np.arange(len(v)) / RATE))   # a growl through it
+    clip = np.concatenate([echo(v, 0.35), np.zeros(int(0.12 * RATE), np.float32), echo(trim(load(lw)), 0.4)])
+    clip = clip / np.abs(clip).max() * PEAK
+    data, pcm = blocks(clip)
+    assert 0x50000 + len(pcm) <= 0x5E000, "the intro is too long for bank 5"
+    assert INTRO_AT + 4 + len(data) <= 0x5E000, "the intro's file reaches the screen"
+    # decoding in place: the writing (from $50000) must stay behind the reading
+    assert all(0x50000 + k * 16 <= INTRO_AT + 4 + k * 9 for k in range(len(data) // 9 + 1)), "the intro overtakes itself"
+    with open(os.path.join(out, "dgintro.bin"), "wb") as f:
+        f.write((INTRO_AT & 0xFFFF).to_bytes(2, "little") + len(data).to_bytes(2, "little")
+                + len(pcm).to_bytes(2, "little") + data)
+    w = wave.open(os.path.join(out, "wav", "intro.wav"), "wb")
+    w.setnchannels(1)
+    w.setsampwidth(1)
+    w.setframerate(RATE)
+    w.writeframes(pcm)
+    w.close()
+    print("gen_sfx: the intro, %.1f s, %d bytes coded" % (len(pcm) / RATE, len(data)))
 
 
 def read_files(d):
@@ -314,9 +375,12 @@ def tables(d, out):
         print("gen_sfx: no sound files in %s: the SID effects only" % d)
     assert not sounds or [s[0] for s in sounds] == list(range(len(names))), \
         "the sound files do not match SOUNDS: make sounds"
+    intro_file = [fn for fn in (os.listdir(d) if os.path.isdir(d) else []) if fn.upper().startswith("DGINTRO")]
     with open(os.path.join(out, "files.txt"), "w") as fl:
         for k, (fn, snds) in enumerate(files):
             fl.write("%s DGSFX%d\n" % (os.path.abspath(os.path.join(d, fn)), k + 1))
+        for fn in intro_file:
+            fl.write("%s DGINTRO\n" % os.path.abspath(os.path.join(d, fn)))
     at, ats = 0, []
     for s in sounds:
         ats.append(at)
@@ -326,6 +390,8 @@ def tables(d, out):
         h.write("#define SND_RATE %d\n#define SND_COUNT %d\n#define SND_FILES %d\n" % (RATE, len(sounds), len(files)))
         h.write("#define SND_RATE_REG 0x%06XUL       /* the audio DMA's rate: Hz * 2^24 / 40.5 MHz */\n"
                 % round(RATE * (1 << 24) / 40500000))
+        h.write("#define SND_INTRO %d             /* DGINTRO is on the disk */\n" % (1 if intro_file else 0))
+        h.write("#define SND_INTRO_AT 0x%05XUL\n" % INTRO_AT)
         h.write("#define SND_NONE 0xFF\n")
         for k, name in enumerate(names):
             h.write("#define SND_%s %s\n" % (name, k if sounds else "SND_NONE"))
