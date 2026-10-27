@@ -19,7 +19,7 @@
 #define CH_W    52
 #define CH_H    44
 #define CH_ROWS 38                    /* the rows shown (more scroll) */
-#define ROW_ITEMS 12                  /* the first item's row; I_COUNT of them */
+#define ROW_ITEMS 13                  /* the first item's row; I_COUNT of them */
 #define NROWS   (ROW_ITEMS + I_COUNT)
 
 static unsigned char depth, kind;
@@ -89,7 +89,7 @@ static void draw_row(unsigned char r, unsigned char row, unsigned char on) {
         str_cat(buf, item_name(r, 2));
     } else {
         str_cat(buf, nth("Depth\0Reveal the level\0Know every flask and charm\0Mend: life, mana, torch, venom\0"
-                         "100 gold\0A level\0Weapon\0Armour\0Bow\0Gun\0Creature\0To the stairs (the lich)", r));
+                         "100 gold\0A level\0Weapon\0Armour\0Bow\0Gun\0Creature\0To the stairs (the lich)\0Venom", r));
         str_cat(buf, "  ");
         switch (r) {
         case 0: v = depth; break;
@@ -98,6 +98,7 @@ static void draw_row(unsigned char r, unsigned char row, unsigned char on) {
         case 8: str_cat(buf, pl.bow ? ranged_name(0, pl.bow) : "none"); break;
         case 9: str_cat(buf, pl.gun ? ranged_name(1, pl.gun) : "none"); break;
         case 10: str_cat(buf, mon_name(kind)); break;
+        case 12: v = pl.venom; break;
         }
     }
     video_blank(CH_COL + 2, row, CH_W - 4, 1);
@@ -138,6 +139,7 @@ unsigned char cheat(void) {
             case 8: pl.bow = r ? (pl.bow + 1) % (RANGED_BEST + 1) : (pl.bow + RANGED_BEST) % (RANGED_BEST + 1); break;
             case 9: pl.gun = r ? (pl.gun + 1) % (RANGED_BEST + 1) : (pl.gun + RANGED_BEST) % (RANGED_BEST + 1); break;
             case 10: kind = r ? (kind + 1) % M_KINDS : (kind + M_KINDS - 1) % M_KINDS; break;
+            case 12: pl.venom = r ? (pl.venom < 200 ? pl.venom + 10 : 200) : (pl.venom > 10 ? pl.venom - 10 : 0); break;
             }
         } else if (k == K_FIRE) {
             if (n) *n = *n > 89 ? 99 : *n + 10;
