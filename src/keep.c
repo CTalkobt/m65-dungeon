@@ -19,7 +19,7 @@
 #define KEEP_KINDS 1024
 #define KEEP_SEEN  (KEEP_KINDS + MAP_N)
 #define KEEP_END   (KEEP_SEEN + MAP_N)
-#define VERSION    10
+#define VERSION    11
 
 extern unsigned char vault_x0, vault_y0, vault_x1, vault_y1;
 
@@ -130,7 +130,7 @@ static void shuffle(unsigned char *a, unsigned char n) {
 }
 
 void player_new(void) {
-    unsigned char k;
+    unsigned char k, j;
     pl.hp = pl.maxhp = 30;
     pl.mp = pl.maxmp = 12;
     pl.level = 1;
@@ -147,6 +147,7 @@ void player_new(void) {
     pl.xp = 0;
     pl.depth = 1;
     pl.fade = 2;
+    pl.wq = pl.aq = pl.bq = pl.gq = Q_PLAIN;
     weapon_take(0);
     armour_take(0);
     pl.ups = pl.keen = pl.steady = pl.aim = pl.wary = 0;
@@ -156,6 +157,10 @@ void player_new(void) {
      * none known */
     shuffle(pl.flask, FLASKS);
     shuffle(pl.charm, CHARMS);
+    for (k = 0; k < CHARMS; k++) {
+        j = rng_range(10);                    /* (mostly plain; now and then Rare) */
+        pl.cq[k] = j < 2 ? Q_MINOR : j < 6 ? Q_PLAIN : j < 8 ? 2 : j < 9 ? 3 : Q_RARE;
+    }
     pl.known = pl.cknown = pl.worn = pl.wfx = 0;
     pl.sight = pl.venom = pl.rite = 0;
     turn = 1;

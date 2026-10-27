@@ -322,34 +322,34 @@ unsigned char put_down(unsigned char x, unsigned char y, unsigned char item, uns
 /* what the player carries, over the map. Up and down choose; RETURN (or
  * U) uses it, D puts all of it down; RUN/STOP or I: back. 1 if that took
  * the turn */
-#define INV_COL 18
+#define INV_COL 14
 #define INV_ROW 5
-#define INV_W   44
+#define INV_W   52
 #define INV_H   30
 #define INV_ROWS 16                   /* the items' rows (more scroll) */
 
 unsigned char inventory(void) {
     unsigned char k, n, sel = 0, top = 0, has[I_COUNT];
-    char buf[48];
+    char buf[64];
     video_blank(INV_COL, INV_ROW, INV_W, INV_H);
     ui_frame(INV_COL, INV_ROW, INV_W, INV_H);
     video_text(INV_COL + 3, INV_ROW + 1, "You carry", C_GOLD);
     buf[0] = 0;
     str_cat(buf, "Weapon  ");
-    str_cat(buf, weapon_name(pl.weapon));
+    str_cat(buf, qual_name(pl.wq, weapon_name(pl.weapon)));
     str_cat(buf, "  ");
     str_num(buf, pl.wdice);
     str_cat(buf, "d");
     str_num(buf, pl.wsides);
     str_cat(buf, "+");
     str_num(buf, pl.wplus);
-    video_text(INV_COL + 3, INV_ROW + 3, buf, C_TEXT);
+    video_text(INV_COL + 3, INV_ROW + 3, buf, qual_col[pl.wq]);
     buf[0] = 0;
     str_cat(buf, "Armour  ");
-    str_cat(buf, armour_name(pl.armour));
+    str_cat(buf, qual_name(pl.aq, armour_name(pl.armour)));
     str_cat(buf, "  +");
     str_num(buf, pl.def);
-    video_text(INV_COL + 3, INV_ROW + 4, buf, C_TEXT);
+    video_text(INV_COL + 3, INV_ROW + 4, buf, qual_col[pl.aq]);
     buf[0] = 0;
     str_cat(buf, "Torch   ");
     str_cat(buf, pl.lit ? "burning, " : "unlit, ");
@@ -365,18 +365,18 @@ unsigned char inventory(void) {
         str_cat(buf, k ? "Gun     " : "Bow     ");
         n = k ? pl.gun : pl.bow;
         if (n) {
-            str_cat(buf, ranged_name(k, n));
+            str_cat(buf, qual_name(k ? pl.gq : pl.bq, ranged_name(k, n)));
             str_cat(buf, "  ");
             n = k * 2 + n - 1;
             str_num(buf, r_dice[n]);
             str_cat(buf, "d");
             str_num(buf, r_sides[n]);
             str_cat(buf, "+");
-            str_num(buf, r_plus[n]);
+            str_num(buf, r_bonus(k));
             str_cat(buf, ", reach ");
             str_num(buf, r_reach[n]);
         } else str_cat(buf, "none");
-        video_text(INV_COL + 3, INV_ROW + 5 + k, buf, C_TEXT);
+        video_text(INV_COL + 3, INV_ROW + 5 + k, buf, (k ? pl.gun : pl.bow) ? qual_col[k ? pl.gq : pl.bq] : C_TEXT);
     }
     buf[0] = 0;
     str_cat(buf, "Gold    ");

@@ -210,6 +210,19 @@ const char *armour_name(unsigned char a);
 void weapon_take(unsigned char w);
 void armour_take(unsigned char a);
 
+/* how well a thing is made: the weapon, the armour, the bow, the gun (pl.wq,
+ * aq, bq, gq) and each charm's look (pl.cq); a chest's find rolls it.
+ * Minor 1 less (a weapon's or a bow's blow, armour), Great 1 more, Superior
+ * 2, Rare 3 (and a Rare weapon's telling blows twice as often); a charm,
+ * stronger or weaker as it does */
+#define QUALITIES  5
+#define Q_MINOR    0
+#define Q_PLAIN    1
+#define Q_RARE     4
+extern const unsigned char qual_col[QUALITIES];          /* game.c: its colour in text */
+const char *qual_name(unsigned char q, const char *n);   /* "Great " n (copied out) */
+unsigned char r_bonus(unsigned char gun);                /* the bow's or the gun's plus, with its quality */
+
 /* the weapons that reach: a bow (pl.bow: 0 none, 1 short bow, 2 longbow)
  * and a flintlock (pl.gun: 0 none, 1 pistol, 2 musket); r = gun * 2 + w - 1 */
 #define RANGED_BEST 2
@@ -242,6 +255,8 @@ struct player {
     unsigned char cknown;     /* the charms known (bit = look) */
     unsigned char worn, wfx;  /* the charm worn: its look + 1, its effect + 1; 0 none */
     unsigned char rite;       /* 1 once the lich has called on its crown (battle.c) */
+    unsigned char wq, aq, bq, gq;   /* how well made the weapon, armour, bow, gun are (Q_*) */
+    unsigned char cq[CHARMS]; /* and each charm's look */
 };
 #define CALL_FIGHTER 0
 #define CALL_HUNTER  1

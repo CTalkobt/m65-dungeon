@@ -93,10 +93,10 @@ static void draw_row(unsigned char r, unsigned char row, unsigned char on) {
         str_cat(buf, "  ");
         switch (r) {
         case 0: v = depth; break;
-        case 6: str_cat(buf, weapon_name(pl.weapon)); break;
-        case 7: str_cat(buf, armour_name(pl.armour)); break;
-        case 8: str_cat(buf, pl.bow ? ranged_name(0, pl.bow) : "none"); break;
-        case 9: str_cat(buf, pl.gun ? ranged_name(1, pl.gun) : "none"); break;
+        case 6: str_cat(buf, qual_name(pl.wq, weapon_name(pl.weapon))); break;
+        case 7: str_cat(buf, qual_name(pl.aq, armour_name(pl.armour))); break;
+        case 8: str_cat(buf, pl.bow ? qual_name(pl.bq, ranged_name(0, pl.bow)) : "none"); break;
+        case 9: str_cat(buf, pl.gun ? qual_name(pl.gq, ranged_name(1, pl.gun)) : "none"); break;
         case 10: str_cat(buf, mon_name(kind)); break;
         case 12: v = pl.venom; break;
         }
@@ -167,6 +167,10 @@ unsigned char cheat(void) {
             case 5:
                 for (r = 0; r < 100 && !gain_xp(10); r++) {}
                 return 0;
+            case 6: pl.wq = (pl.wq + 1) % QUALITIES; weapon_take(pl.weapon); break;   /* (RETURN: the next make) */
+            case 7: pl.aq = (pl.aq + 1) % QUALITIES; armour_take(pl.armour); break;
+            case 8: pl.bq = (pl.bq + 1) % QUALITIES; break;
+            case 9: pl.gq = (pl.gq + 1) % QUALITIES; break;
             case 10:
                 summon();
                 return 0;

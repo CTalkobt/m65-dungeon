@@ -59,27 +59,50 @@ static void leave(void) {
 
 /* one find in a chest, its line of text at line; the next line. good: the
  * weapons, the armour and the potions more likely */
+/* how well made a weapon, armour or bow found is: better deeper down, and
+ * in a vault (good) */
+static unsigned char make(unsigned char good) {
+    unsigned char r = rng_range(16) + pl.depth + (good ? 4 : 0);
+    return r < 4 ? Q_MINOR : r < 11 ? Q_PLAIN : r < 16 ? 2 : r < 20 ? 3 : Q_RARE;
+}
+
 static unsigned char find(unsigned char line, unsigned char good) {
     unsigned char r = rng_range(good ? 60 : 100), d, i;
     char buf[80];
     buf[0] = 0;
-    if (r < 18 && pl.weapon < WEAPONS - 1) {
-        weapon_take(pl.weapon + 1);
-        str_cat(buf, "Wrapped in oilcloth: a ");
-        str_cat(buf, weapon_name(pl.weapon));
-        str_cat(buf, ". You take it up.");
-    } else if (r < 30 && pl.armour < ARMOURS - 1) {
-        armour_take(pl.armour + 1);
+    if (r < 18 && (pl.weapon < WEAPONS - 1 || pl.wq < Q_RARE)) {
+        /* the next weapon, or another like it: taken if it is the better
+         * (a make is worth a third of a step up) */
+        i = pl.weapon < WEAPONS - 1 && rng_range(3) ? pl.weapon + 1 : pl.weapon;
+        d = make(good);
+        str_cat(buf, "Wrapped in oilcloth: ");
+        str_cat(buf, a_an(qual_name(d, weapon_name(i))));
+        str_cat(buf, qual_name(d, weapon_name(i)));
+        if (i * 3 + d > pl.weapon * 3 + pl.wq) {
+            pl.wq = d;
+            weapon_take(i);
+            str_cat(buf, ". You take it up.");
+        } else str_cat(buf, ". Yours serves better.");
+    } else if (r < 30 && (pl.armour < ARMOURS - 1 || pl.aq < Q_RARE)) {
+        i = pl.armour < ARMOURS - 1 && rng_range(3) ? pl.armour + 1 : pl.armour;
+        d = make(good);
         str_cat(buf, "Folded at the bottom: ");
-        str_cat(buf, armour_name(pl.armour));
-        str_cat(buf, ". You put it on.");
+        str_cat(buf, qual_name(d, armour_name(i)));
+        if (i * 3 + d > pl.armour * 3 + pl.aq) {
+            pl.aq = d;
+            armour_take(i);
+            str_cat(buf, ". You put it on.");
+        } else str_cat(buf, ". Yours is the better.");
     } else if (r < 38 && (pl.bow < RANGED_BEST || pl.gun < RANGED_BEST)) {
         /* the bow first, then a flintlock, each with something to shoot */
         i = pl.bow < RANGED_BEST ? 0 : 1;
         d = i ? ++pl.gun : ++pl.bow;
+        if (i) pl.gq = make(good);
+        else pl.bq = make(good);
         pl.items[i ? I_SHOT : I_ARROWS] += i ? 4 : 8;
-        str_cat(buf, "Under a rotten cloak: a ");
-        str_cat(buf, ranged_name(i, d));
+        str_cat(buf, "Under a rotten cloak: ");
+        str_cat(buf, a_an(qual_name(i ? pl.gq : pl.bq, ranged_name(i, d))));
+        str_cat(buf, qual_name(i ? pl.gq : pl.bq, ranged_name(i, d)));
         str_cat(buf, i ? ", and powder and ball." : ", and a sheaf of arrows.");
     } else if (r < 41 || (r < 44 && rng_range(2))) {
         i = I_FLASK + rng_range(FLASKS);

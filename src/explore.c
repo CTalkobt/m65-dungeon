@@ -133,7 +133,7 @@ static void door_open(unsigned char x, unsigned char y) {
 static void torch_burn(void) {
     if (!pl.lit) return;
     if (pl.steady && turn % (5 - pl.steady) == 0) return;   /* (a steady torch: 1 turn in 4, 3, 2 free) */
-    if (WEARS(CH_LAMP) && (turn & 1)) return;                /* (the charm: every other turn free) */
+    if (WEARS(CH_LAMP) && (turn & 7) < 3 + pl.cq[pl.worn - 1]) return;   /* (the charm: 3-7 turns in 8 free, by its make) */
     if (pl.fuel) pl.fuel--;
     if (pl.fuel == TORCH_LOW) msg("Your torch burns lower.", C_ORANGE);
     else if (pl.fuel == TORCH_GUTTER) msg("Your torch gutters. Feed it, or it will die.", C_ORANGE);
@@ -637,7 +637,7 @@ static unsigned char turn_pass(void) {
          * leaves 1 life at the least) */
         if (!--pl.venom) msg("The venom has run its course.", C_DIM);
         else if (turn % 3 == 0 && pl.hp > 1) pl.hp--;
-    } else if (turn % (WEARS(CH_MEND) ? 5 : 12) == 0 && pl.hp < pl.maxhp) pl.hp++;
+    } else if (turn % (WEARS(CH_MEND) ? 6 - pl.cq[pl.worn - 1] : 12) == 0 && pl.hp < pl.maxhp) pl.hp++;
     if (turn % 18 == 0 && pl.mp < pl.maxmp) pl.mp++;
     if (turn % 64 == 0) memory_sweep();
     torch_burn();

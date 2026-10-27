@@ -191,6 +191,19 @@ dimly, torch or no torch), one clears your memory (what you see fades
 slowly, for the level), one is vigour (3 more life, for good), and one
 is poison. Once known, a flask goes by its name.
 
+**How well made.** Weapons, armour, bows and flintlocks come Minor, plain,
+Great, Superior or Rare (grey, white, green, cyan, violet in what you
+carry): Minor is 1 less to the blow (or the armour), Great 1 more,
+Superior 2, Rare 3, and a Rare weapon lands a telling blow twice as often
+(1 in 5). A chest's weapon or armour is the next better one or another
+like yours, its make rolled (better deeper down, and in a vault); you take
+it only if it is the better (a make counts a third of a step up), else
+"yours serves better". Each charm's look has a make too, rolled with the
+descent and named once known ("Great charm of mending"): the steady flame
+spares the torch 3 to 7 turns in 8, mending heals every 6 to 2 turns, the
+ward against the dead is 3 stronger for each make. In the tester's
+lantern, RETURN on the weapon, armour, bow or gun gives the next make.
+
 **Charms.** Rings and amulets (iron, jade or silver rings; bone or amber
 amulets) lie about now and then below the first level, and turn up in
 chests. One is worn at a time: put one on from what you carry (the one

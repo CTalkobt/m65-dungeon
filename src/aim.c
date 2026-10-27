@@ -228,7 +228,7 @@ unsigned char shoot(unsigned char gun) {
         msg("A cold ward turns it aside. It must be faced.", C_PURPLE);
         return 1;
     }
-    d = rng_dice(r_dice[r], r_sides[r]) + r_plus[r] + (pl.level - 1) / 2 + pl.aim;
+    d = rng_dice(r_dice[r], r_sides[r]) + r_bonus(gun) + (pl.level - 1) / 2 + pl.aim;
     d = d > mon_def[m->kind] ? d - mon_def[m->kind] : 1;
     sfx(SFX_HIT);
     str_cat(buf, gun ? "The ball strikes " : "The arrow strikes ");

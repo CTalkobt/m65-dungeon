@@ -207,7 +207,7 @@ static __bank(NAMES_BANK) const char charm_names[] =
 const char *item_name(unsigned char i, unsigned char n) {
     if (i >= I_CHARM) {
         i -= I_CHARM;
-        if (pl.cknown & (1 << i)) i = CHARMS + pl.charm[i];
+        if (pl.cknown & (1 << i)) return qual_name(pl.cq[i], far_nth(charm_names, (CHARMS + pl.charm[i]) * 2 + (n != 1)));
         return far_nth(charm_names, i * 2 + (n != 1));
     }
     if (i >= I_FLASK) {
@@ -247,16 +247,33 @@ const char *armour_name(unsigned char a) {
     return far_nth(gear_names, 4 + WEAPONS + a);
 }
 
+/* (with pl.wq, pl.aq as they are: set them first) */
 void weapon_take(unsigned char w) {
+    unsigned char p = w_plus[w] + pl.wq;
     pl.weapon = w;
     pl.wdice = w_dice[w];
     pl.wsides = w_sides[w];
-    pl.wplus = w_plus[w];
+    pl.wplus = p ? p - 1 : 0;
 }
 
 void armour_take(unsigned char a) {
     pl.armour = a;
-    pl.def = a + 1;
+    pl.def = a + pl.aq;
+}
+
+const unsigned char qual_col[QUALITIES] = {C_DIM, C_TEXT, C_GREEN, C_CYAN, C_PURPLE};
+
+const char *qual_name(unsigned char q, const char *n) {
+    static char qbuf[40];
+    qbuf[0] = 0;
+    str_cat(qbuf, nth("Minor \0\0Great \0Superior \0Rare ", q));
+    str_cat(qbuf, n);
+    return qbuf;
+}
+
+unsigned char r_bonus(unsigned char gun) {
+    unsigned char p = r_plus[gun ? pl.gun + 1 : pl.bow - 1] + (gun ? pl.gq : pl.bq);
+    return p ? p - 1 : 0;
 }
 
 /* each level's name (resident: the title's overlay names it too) */

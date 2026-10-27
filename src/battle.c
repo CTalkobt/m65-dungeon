@@ -545,7 +545,7 @@ static unsigned char player_acts(unsigned char a) {
             say(a ? "The shot goes wide." : "The arrow goes wide.", C_DIM);
         } else {
             d = a ? pl.gun + 1 : pl.bow - 1;          /* (game.h: r = gun * 2 + w - 1) */
-            d = rng_dice(r_dice[d], r_sides[d]) + r_plus[d] + (pl.level - 1) / 2 + pl.aim;
+            d = rng_dice(r_dice[d], r_sides[d]) + r_bonus(a) + (pl.level - 1) / 2 + pl.aim;
             d = d > mt.def ? d - mt.def : 1;
             sfx(SFX_HIT);
             say(a ? "The ball strikes home!" : "Your arrow strikes!", C_TEXT);
@@ -637,7 +637,7 @@ static unsigned char player_acts(unsigned char a) {
         sfx(SFX_HIT);
         d = rng_dice(pl.wdice, pl.wsides) + pl.wplus + pl.level - 1;
         d = d > mt.def ? d - mt.def : 1;
-        if (rng_range(10) == 0) {
+        if (rng_range(pl.wq == Q_RARE ? 5 : 10) == 0) {
             d *= 2;
             say("A telling blow!", C_HILITE);
         } else {
@@ -743,7 +743,7 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
     say(mon_lore(), C_BONE);
     if (ambush) say("It is upon you!", C_RED);
     if (WEARS(CH_BONE) && (mt.flags & MF_UNDEAD)) {
-        ward = 10 + pl.level;
+        ward = 7 + pl.level + pl.cq[pl.worn - 1] * 3;
         say("Your charm grows cold: a ward against the dead.", C_BLUE);
         draw_you();
     }
