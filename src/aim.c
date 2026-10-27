@@ -13,51 +13,53 @@
  * flight) (view.c's rows 1-44: 40 x 22 places from cam_x, cam_y),
  * as lit as the place is (glowing alone in the dark); view_unput puts the
  * place back as it was */
-static unsigned int keep[8];
+static unsigned int keep[8];                  /* the 4 cells' characters, then their colours */
 static unsigned char kept_x, kept_y;
 unsigned char view_kept;                      /* a place is kept (view_draw forgets it) */
 
-static unsigned long cell_at(unsigned char x, unsigned char y) {
-    return ((unsigned int)(1 + (y - cam_y) * 2) * COLS + (x - cam_x) * 2) * 2;
+/* place (x, y)'s first cell on the screen (and in colour RAM): an index */
+static unsigned int cell_at(unsigned char x, unsigned char y) {
+    return (unsigned int)(1 + (y - cam_y) * 2) * COLS + (x - cam_x) * 2;
 }
 
+/* the place's cells, 2 x 2: q 0-3 (left, right, then the row below), in
+ * screen and colour RAM */
+typedef unsigned int __far *cells_t;
+#define CELL(q) (((q) & 2 ? COLS : 0) + ((q) & 1))
+
 static void view_unput(void) {
-    unsigned long c;
+    cells_t s, c;
+    unsigned char q;
     if (!view_kept) return;
-    c = cell_at(kept_x, kept_y);
-    dma_copy_far(SCREEN_LIN + c, (unsigned long)(unsigned int)keep, 4);
-    dma_copy_far(SCREEN_LIN + c + COLS * 2, (unsigned long)(unsigned int)(keep + 2), 4);
-    dma_copy_far(COLOR_LIN + c, (unsigned long)(unsigned int)(keep + 4), 4);
-    dma_copy_far(COLOR_LIN + c + COLS * 2, (unsigned long)(unsigned int)(keep + 6), 4);
+    s = (cells_t)SCREEN_LIN + cell_at(kept_x, kept_y);
+    c = (cells_t)COLOR_LIN + cell_at(kept_x, kept_y);
+    for (q = 0; q < 4; q++) {
+        s[CELL(q)] = keep[q];
+        c[CELL(q)] = keep[q + 4];
+    }
     view_kept = 0;
 }
 
 static void view_put(unsigned char x, unsigned char y, unsigned char k) {
-    unsigned long c;
-    unsigned int ch, cells[2], zero[2] = {0, 0};
-    unsigned char v = vis_at(x, y);
+    cells_t s, c;
+    unsigned int ch;
+    unsigned char q, v = vis_at(x, y);
     view_unput();
     if (x < cam_x || y < cam_y || x >= cam_x + 40 || y >= cam_y + 22) return;
     ch = tile_char[k][v && v != VIS_SHADOW ? v - 1 : TV_EYES];
     if (!ch) return;
-    c = cell_at(x, y);
-    dma_copy_far((unsigned long)(unsigned int)keep, SCREEN_LIN + c, 4);
-    dma_copy_far((unsigned long)(unsigned int)(keep + 2), SCREEN_LIN + c + COLS * 2, 4);
-    dma_copy_far((unsigned long)(unsigned int)(keep + 4), COLOR_LIN + c, 4);
-    dma_copy_far((unsigned long)(unsigned int)(keep + 6), COLOR_LIN + c + COLS * 2, 4);
+    s = (cells_t)SCREEN_LIN + cell_at(x, y);
+    c = (cells_t)COLOR_LIN + cell_at(x, y);
+    for (q = 0; q < 4; q++) {
+        keep[q] = s[CELL(q)];
+        keep[q + 4] = c[CELL(q)];
+        s[CELL(q)] = ch + q;                  /* (a full-colour tile: colour RAM 0) */
+        c[CELL(q)] = 0;
+    }
     kept_x = x;
     kept_y = y;
     view_kept = 1;
-    cells[0] = ch;
-    cells[1] = ch + 1;
-    dma_copy_far(SCREEN_LIN + c, (unsigned long)(unsigned int)cells, 4);
-    dma_copy_far(COLOR_LIN + c, (unsigned long)(unsigned int)zero, 4);
-    cells[0] = ch + 2;
-    cells[1] = ch + 3;
-    dma_copy_far(SCREEN_LIN + c + COLS * 2, (unsigned long)(unsigned int)cells, 4);
-    dma_copy_far(COLOR_LIN + c + COLS * 2, (unsigned long)(unsigned int)zero, 4);
 }
-
 
 /* the creatures one could shoot at: in sight (lit, or eyes in the dark),
  * within reach, a clear line; nearest first */

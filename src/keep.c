@@ -73,14 +73,14 @@ static unsigned char parts(void) {
 }
 
 unsigned char game_save(void) {
-    unsigned char x, y, row[MAP_W];
+    unsigned char x, y;
+    unsigned char __far *k = (unsigned char __far *)(KEEP_LIN + KEEP_KINDS);
     audio_off();
     out = 1;
     parts();
     for (y = 0; y < MAP_H; y++) {
         video_poll();
-        for (x = 0; x < MAP_W; x++) row[x] = vm_kind(x, y);
-        dma_copy_far(KEEP_LIN + KEEP_KINDS + (unsigned int)y * MAP_W, (unsigned long)(unsigned int)row, MAP_W);
+        for (x = 0; x < MAP_W; x++) *k++ = vm_kind(x, y);
     }
     dma_copy_far(KEEP_LIN + KEEP_SEEN, SEEN_LIN, MAP_N);
     return save_file("DGSAVE", 1, (unsigned int)KEEP_LIN, (unsigned int)KEEP_LIN + KEEP_END);
@@ -88,26 +88,23 @@ unsigned char game_save(void) {
 
 /* the file into KEEP_LIN, and whether it is a save */
 unsigned char game_peek(void) {
+    const unsigned char __far *head = (const unsigned char __far *)(KEEP_LIN + KEEP_STATE);
     audio_off();
     if (!load_file("DGSAVE", 1)) return 0;
     out = 0;
-    at = KEEP_STATE;
-    {
-        unsigned char head[4];
-        part(head, 4);
-        return head[0] == 'D' && head[1] == 'G' && head[2] == VERSION && head[3] == sizeof pl;
-    }
+    at = KEEP_STATE + 4;
+    return head[0] == 'D' && head[1] == 'G' && head[2] == VERSION && head[3] == sizeof pl;
 }
 
 unsigned char game_load(void) {
-    unsigned char x, y, row[MAP_W];
+    unsigned char x, y;
+    const unsigned char __far *k = (const unsigned char __far *)(KEEP_LIN + KEEP_KINDS);
     if (!game_peek()) return 0;
     out = 0;
     parts();
     for (y = 0; y < MAP_H; y++) {
         video_poll();
-        dma_copy_far((unsigned long)(unsigned int)row, KEEP_LIN + KEEP_KINDS + (unsigned int)y * MAP_W, MAP_W);
-        for (x = 0; x < MAP_W; x++) vm_set(x, y, row[x]);
+        for (x = 0; x < MAP_W; x++) vm_set(x, y, *k++);
     }
     dma_copy_far(SEEN_LIN, KEEP_LIN + KEEP_SEEN, MAP_N);
     sound_levels();

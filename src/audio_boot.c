@@ -70,18 +70,19 @@ void audio_init(void) {
 #if SND_COUNT
     quips = 1;
     char name[8] = "DGSFX1";
-    unsigned char f, n, k, e[6];
+    unsigned char f, n, k;
+    const unsigned char __far *e;             /* a sound's header in the file */
     unsigned long src;
     unsigned int len;
     for (f = 0; f < SND_FILES; f++) {
         name[5] = (char)('1' + f);
         loading_tick();
         if (!load_file(name, 1)) return;          /* into the play slots: free till now */
-        dma_copy_far((unsigned long)(unsigned int)&n, SLOT_LONG, 1);
+        n = *(const unsigned char __far *)SLOT_LONG;
         src = SLOT_LONG + 1 + (unsigned int)n * 6;
-        for (k = 0; k < n; k++) {
+        e = (const unsigned char __far *)(SLOT_LONG + 1);
+        for (k = 0; k < n; k++, e += 6) {
             /* its header: number, coded length, decoded length, slot */
-            dma_copy_far((unsigned long)(unsigned int)e, SLOT_LONG + 1 + (unsigned int)k * 6, 6);
             len = e[1] | (unsigned int)e[2] << 8;
             decode(src, len, SND_ATTIC + snd_at[e[0]]);
             src += len;

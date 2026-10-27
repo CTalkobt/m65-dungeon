@@ -220,23 +220,21 @@ static struct fame fame[FAMES];
 static unsigned char fame_read;
 
 static void fame_load(void) {
-    unsigned char h[4];
+    const unsigned char __far *h = (const unsigned char __far *)FAME_LIN;
     fame_read = 1;
     audio_off();
     if (!load_file("DGFAME", 1)) return;
-    dma_copy_far((unsigned long)(unsigned int)h, FAME_LIN, 4);
     if (h[0] == 'D' && h[1] == 'F' && h[2] == FAMES && h[3] == sizeof fame[0])
         dma_copy_far((unsigned long)(unsigned int)fame, FAME_LIN + 4, sizeof fame);
 }
 
 static void fame_save(void) {
-    unsigned char h[4];
+    unsigned char __far *h = (unsigned char __far *)FAME_LIN;
+    audio_off();
     h[0] = 'D';
     h[1] = 'F';
     h[2] = FAMES;
     h[3] = sizeof fame[0];
-    audio_off();
-    dma_copy_far(FAME_LIN, (unsigned long)(unsigned int)h, 4);
     dma_copy_far(FAME_LIN + 4, (unsigned long)(unsigned int)fame, sizeof fame);
     save_file("DGFAME", 1, (unsigned int)FAME_LIN, (unsigned int)FAME_LIN + 4 + sizeof fame);
 }
