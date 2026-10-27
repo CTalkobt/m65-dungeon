@@ -68,6 +68,7 @@ static void find_targets(unsigned char reach) {
     ntargets = 0;
     for (k = 0; k < nmons && ntargets < 8; k++) {
         if (!mons[k].hp || !vis_at(mons[k].x, mons[k].y)) continue;
+        if (!mons[k].awake && (mon_habits[mons[k].kind] & MH_MIMIC)) continue;   /* (it looks a chest) */
         d = mons[k].x > pl.x ? mons[k].x - pl.x : pl.x - mons[k].x;
         e = mons[k].y > pl.y ? mons[k].y - pl.y : pl.y - mons[k].y;
         if (e > d) d = e;

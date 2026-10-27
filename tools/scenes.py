@@ -5,7 +5,7 @@ import props
 from artlib import Scene
 from stage import W, H, compose_on, palette_for
 
-SCENES = {e[0]: e[1] for e in monsters.MONSTERS + props.PROPS}
+SCENES = {e[0]: e[1] for e in monsters.MONSTERS + props.PROPS if e[1]}   # (not those borrowing one)
 
 
 def render(name, back):

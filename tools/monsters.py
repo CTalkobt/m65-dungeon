@@ -176,6 +176,56 @@ def rat(sc, pose):
     return dict(glow=(1.0, 0.25, 0.15), pools=((CX + 40, 234, 120, 10, 0.85),))
 
 
+# ------------------------------------------------------------------ bats
+
+def _bat(sc, x, y, z, size, flap, bite, mats):
+    """one bat at (x, y, z), size its scale, flap 0 (wings high) .. 1 (low),
+    bite: its mouth open"""
+    fur, skin, bone, dark, eye, tooth = mats
+    k = size
+    sc.ellipsoid((x, y, z), (9 * k, 12 * k, 8 * k), fur)                          # the body
+    sc.ellipsoid((x, y - 13 * k, z + 3 * k), (7 * k, 6.5 * k, 6.5 * k), fur)      # the head
+    for s in (-1, 1):
+        sc.ellipsoid((x + s * 4.5 * k, y - 21 * k, z), (2.6 * k, 6 * k, 1.6 * k), skin, rot(0, 0, s * 18))   # ears
+        sc.sphere((x + s * 2.8 * k, y - 14 * k, z + 8.4 * k), 1.5 * k, eye)
+        # the wing: three long fingers from the wrist, the skin between
+        lift = (1 - flap) * 26 - flap * 10
+        sh = np.array((x + s * 6 * k, y - 6 * k, z), np.float32)
+        wr = sh + np.array((s * 22 * k, -lift * k * 0.6, -2 * k), np.float32)
+        sc.tube([sh, wr], [2.2 * k, 1.6 * k], bone)
+        tips = [wr + np.array((s * (30 - f * 4) * k, (-lift * 0.5 + f * 14) * k, -f * 2 * k), np.float32) for f in range(3)]
+        for t in tips:
+            sc.tube([wr, t], [1.4 * k, 0.5 * k], bone)
+        body = np.array((x + s * 4 * k, y + 8 * k, z - 1 * k), np.float32)
+        edge = [sh, wr] + tips + [body]
+        for a, c in zip(edge[1:-1], edge[2:]):          # the membrane: a fan of thin strands
+            for f in range(7):
+                p = a + (c - a) * (f + 0.5) / 7
+                sc.tube([sh + (p - sh) * 0.1, p], [3.2 * k, 2.0 * k], skin)
+    if bite:
+        sc.ellipsoid((x, y - 9 * k, z + 8 * k), (3.4 * k, 2.6 * k, 2 * k), dark)
+        for s in (-1, 1):
+            sc.box((x + s * 1.6 * k, y - 10 * k, z + 9.6 * k), (0.5 * k, 1.5 * k, 0.5 * k), tooth)
+
+
+def bats(sc, pose):
+    fur = Mat((70, 52, 44), tex=0.15, texscale=0.1, tex2=(36, 26, 22))
+    skin = Mat((66, 42, 40), rim=1.5)
+    bone = Mat((60, 40, 36))
+    dark = Mat((14, 6, 6))
+    eye = Mat((255, 60, 40), glow=1.0)
+    tooth = Mat((236, 224, 200), spec=0.6)
+    mats = (fur, skin, bone, dark, eye, tooth)
+    # three of them over the dark: the nearest swoops in when they strike
+    # (the one behind the same in both frames: they share its characters)
+    _bat(sc, CX + 120, 70, -40, 0.7, 0.4, 0, mats)
+    if pose:
+        _bat(sc, CX - 6, 124, 60, 1.25, 0.8, 1, mats)
+    else:
+        _bat(sc, CX + 10, 110, 10, 1.0, 0.1, 0, mats)
+    return dict(glow=(1.0, 0.3, 0.2), cast=0.3)
+
+
 # ------------------------------------------------------------------ cave spider
 
 def spider(sc, pose):
@@ -470,14 +520,18 @@ ACTIONS = ["NONE", "MELEE", "HEAVY", "GUARD", "POISON", "WEB", "SPIT", "REGEN", 
 # dead and walking (no hunger: meat thrown to it is not eaten)
 FLAGS = ["FIREWEAK", "COLDPROOF", "HARDFLEE", "VENOM", "SLOW", "BOSS", "UNDEAD"]
 # what it does on the map (the game's MH_*): shoots arrows from afar,
-# snatches fuel or arrows and runs, dissolves what lies in its way
-HABITS = ["ARCHER", "THIEF", "EATER"]
+# snatches fuel or arrows and runs, dissolves what lies in its way,
+# flits erratically and fast (two moves a turn), lies still as a chest
+HABITS = ["ARCHER", "THIEF", "EATER", "FLIT", "MIMIC"]
 
 
-def info(name, tele, hit, lore, death, hp, dice, sides, plus, defense, xp, acts, depths, flags=(), habits=()):
-    """acts: (action, weight) a fight's choices; depths: {level: weight}"""
+def info(name, tele, hit, lore, death, hp, dice, sides, plus, defense, xp, acts, depths, flags=(), habits=(),
+         scene=None, tile=None):
+    """acts: (action, weight) a fight's choices; depths: {level: weight};
+    scene, tile: another's close-up and map tile, not its own"""
     return dict(name=name, tele=tele, hit=hit, lore=lore, death=death, hp=hp, dice=dice, sides=sides,
-                plus=plus, defense=defense, xp=xp, acts=acts, depths=depths, flags=flags, habits=habits)
+                plus=plus, defense=defense, xp=xp, acts=acts, depths=depths, flags=flags, habits=habits,
+                scene=scene, tile=tile)
 
 
 MONSTERS = [
@@ -521,4 +575,18 @@ MONSTERS = [
         hp=80, dice=2, sides=6, plus=3, defense=3, xp=120,
         acts=[("BOLT", 4), ("CURSE", 2), ("HEAVY", 2), ("GUARD", 1)], depths={},
         flags=("COLDPROOF", "HARDFLEE", "BOSS", "UNDEAD"))),
+    ("bats", bats, info(
+        "swarm of bats", "wheels about your head", "bites you",
+        "Leather wings in the dark, and small sharp teeth.", "scatter, and are gone.",
+        hp=8, dice=1, sides=3, plus=0, defense=1, xp=4,
+        acts=[("MELEE", 6), ("LUNGE", 3)], depths={1: 1, 2: 1, 3: 1},
+        habits=("FLIT",))),
+    # the mimic has no close-up of its own: it is fought in the chest's
+    # (its words and numbers from a header file of its own: gen_art.py)
+    ("mimic", None, info(
+        "mimic", "gapes, its lid a maw of teeth", "bites you",
+        "It was never a chest. A grey tongue lolls from the lid.", "shudders, and is only wood.",
+        hp=34, dice=1, sides=8, plus=3, defense=3, xp=30,
+        acts=[("MELEE", 4), ("HEAVY", 3), ("GUARD", 2)], depths={},
+        habits=("MIMIC",), scene="chest", tile="chest")),
 ]

@@ -625,6 +625,25 @@ ART["flames"] = [
     "................",
     "................",
 ]
+# a pair of bats on the wing (the map's; their eyes seen in the dark)
+ART["bats"] = [
+    "................",
+    "................",
+    "k......k........",
+    "kF....Fk........",
+    ".kFkhkFk......k.",
+    ".kFhehFk.k...Fk.",
+    "..kFhFk..kF.kFk.",
+    "...kkk....kFhFk.",
+    "..........kheFk.",
+    "...........kFk..",
+    "....k.......k...",
+    "...kFk..........",
+    "..kFhFk..k......",
+    "..kheFkkFk......",
+    ".kFkhFFFk.......",
+    ".k...kkk........",
+]
 ART["oil"] = [r.replace('r', 'Y').replace('R', 'd').replace('n', 'b') for r in ART["potion"]]
 ART["idol_spent"] = [r.replace('z', 'T') for r in ART["idol"]]
 ART["draught"] = [r.replace('r', 'u').replace('R', 'U') for r in ART["potion"]]
@@ -1024,7 +1043,7 @@ def terrain_kinds(style=0):
 
 SPRITES = ("chest", "chest_open", "idol", "idol_spent", "potion", "gold", "bones", "brazier",
            "brazier_cold", "scroll", "key", "draught", "rags", "sticks", "fur", "candle", "flint", "firestick",
-           "arrows", "shot", "merchant", "fountain", "fountain_dry", "shelf", "oil", "food", "flames", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich")
+           "arrows", "shot", "merchant", "fountain", "fountain_dry", "shelf", "oil", "food", "flames", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats")
 
 
 def sprite_kinds(base, base_nib, pal_map):
@@ -1053,7 +1072,7 @@ def sprite_kinds(base, base_nib, pal_map):
                 b[sh] = -1
             return b
         v = [(lit(comp, l, glow), bg(l)) for l in range(4)]
-        creature = name in ("rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "aim", "missile",
+        creature = name in ("rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats", "aim", "missile",
                             "merchant")     # (his lantern seen in the dark)
         if creature and glow.any():
             eyes = np.zeros((T, T, 3), np.float32)

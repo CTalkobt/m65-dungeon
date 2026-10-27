@@ -157,7 +157,12 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
     unsigned int i = AT(x, y);
     m = mon_at(x, y);
     if (m) {
-        *out = fight(m - 1, 0);
+        t = (mon_habits[mons[m - 1].kind] & MH_MIMIC) && !mons[m - 1].awake;
+        if (t) {
+            msg("You reach for the chest. Its lid gapes, full of teeth!", C_RED);
+            mons[m - 1].awake = 2;
+        }
+        *out = fight(m - 1, t);       /* (a mimic: it strikes first) */
         return 1;
     }
     t = terrain(x, y);
@@ -335,7 +340,8 @@ static void test_beside(unsigned char a, unsigned char b) {
 static unsigned char foe_seen(void) {
     unsigned char k;
     for (k = 0; k < nmons; k++)
-        if (mons[k].hp && vis_at(mons[k].x, mons[k].y)) return 1;
+        if (mons[k].hp && vis_at(mons[k].x, mons[k].y) &&
+            (mons[k].awake || !(mon_habits[mons[k].kind] & MH_MIMIC))) return 1;   /* (a mimic: a chest, till it moves) */
     return 0;
 }
 

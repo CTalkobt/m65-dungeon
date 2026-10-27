@@ -355,6 +355,13 @@ def main():
     table, terrain, ui_nums, (tiles_skip, look_skip, look_size), back, tile_pal = build_tiles(out)
     back_stream2, back_img, back_nums = build_backdrop(out, back)
     files = [("dgtiles.bin", "DGTILES"), ("dglook.bin", "DGLOOK"), ("dgback.bin", "DGBACK")]
+    # a creature fought in another's close-up: its header, loaded over that
+    # one's (raw, at SCENE_HDR: $50300)
+    for m in monsters.MONSTERS:
+        if m[2]["scene"]:
+            with open(os.path.join(out, "dg%sh.bin" % m[0]), "wb") as f:
+                f.write(bytes([0x00, 0x03]) + bytes(header(m[0])))
+            files.append(("dg%sh.bin" % m[0], "DG%sH" % m[0].upper()))
     names = list(scenes.SCENES)
     skips = []
     for name in names:
@@ -410,6 +417,8 @@ def main():
         f.write("extern const char mon_names[];\n")
         f.write("extern const unsigned char level_mons[%d][SPAWN];\n" % DEPTHS)
         f.write("extern const char *const scene_file[%d];\n" % len(names))
+        f.write("/* a creature fought in another's close-up: the file of its header (0: its own) */\n")
+        f.write("extern const char *const mon_hdr_file[M_KINDS];\n")
         f.write("/* where the packed files load: from where they unpack to */\n")
         f.write("#define TILES_SKIP 0x%04X\n" % tiles_skip)
         f.write("/* DGLOOK (into bank 5): each depth's stone, LOOK_SIZE bytes: the characters\n"
@@ -428,9 +437,11 @@ def main():
         f.write("const char *const scene_file[%d] = {%s};\n"
                 % (len(names), ", ".join('"DG%s"' % n.upper() for n in names)))
         f.write("const unsigned char mon_tile[M_KINDS] = {%s};\n"
-                % ", ".join("T_%s" % m[0].upper() for m in monsters.MONSTERS))
+                % ", ".join("T_%s" % (m[2]["tile"] or m[0]).upper() for m in monsters.MONSTERS))
         f.write("const unsigned char mon_scene[M_KINDS] = {%s};\n"
-                % ", ".join("S_%s" % m[0].upper() for m in monsters.MONSTERS))
+                % ", ".join("S_%s" % (m[2]["scene"] or m[0]).upper() for m in monsters.MONSTERS))
+        f.write("const char *const mon_hdr_file[M_KINDS] = {%s};\n"
+                % ", ".join('"DG%sH"' % m[0].upper() if m[2]["scene"] else "0" for m in monsters.MONSTERS))
         f.write("const unsigned char mon_flags[M_KINDS] = {%s};\n"
                 % ", ".join("0x%02X" % flags_of(m[2]) for m in monsters.MONSTERS))
         for t, key in (("mon_hp", "hp"), ("mon_def", "defense"), ("mon_xp", "xp")):

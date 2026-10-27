@@ -120,7 +120,12 @@ places off along a clear line (the arrows can be picked up where they
 fall). Giant rats snatch something carried (fuel first, then an arrow) and
 run off with it; killed, they drop it. Oozes dissolve whatever lies where
 they crawl, but never a key. In a fight a wraith's chill can snuff your
-torch.
+torch. Bats come in flocks on the upper levels: they flit about
+fast and erratic, two moves a turn, weak alone. Deeper down, a chest may
+be a mimic: it never moves and does not show itself as a creature (it is
+not aimed at, and travel does not stop for it) until you reach for it,
+and then it strikes first. It is fought in the chest's close-up, with its
+own words (DGMIMICH, its header, loaded over the chest's).
 
 **Shooting** (T: the bow, G: the flintlock). A red mark blinks on the
 nearest creature you can see (lit, or eyes in the dark) within reach and

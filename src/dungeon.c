@@ -386,8 +386,18 @@ void dungeon_make(void) {
     if (rng_range(2)) put(spot(rng_range(nrooms)), O_PILE + I_FOOD);
 
     /* creatures: more, and worse, deeper down; none in the first room */
-    for (k = 0; k < 6 + d * 2; k++)
-        add_mon(level_mons[d][rng_range(SPAWN)], spot(1 + rng_range(last)));
+    for (k = 0; k < 6 + d * 2; k++) {
+        r = 1 + rng_range(last);
+        t = level_mons[d][rng_range(SPAWN)];
+        add_mon(t, spot(r));
+        if (mon_habits[t] & MH_FLIT) add_mon(t, spot(r));    /* (bats: a flock) */
+    }
+    /* now and then, deeper down, a chest that is not one */
+    if (pl.depth > 1 && rng_range(2)) {
+        k = nmons;
+        add_mon(M_MIMIC, spot(1 + rng_range(last)));
+        if (nmons > k) mons[k].awake = 0;
+    }
 
     /* a merchant on some levels (not the last), stocked with six of his
      * ten kinds of wares, one to three of each */

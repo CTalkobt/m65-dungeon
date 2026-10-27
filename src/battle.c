@@ -21,6 +21,7 @@
 #include "video.h"
 #include "rng.h"
 #include "game.h"
+#include "load.h"
 
 #define LOG_COL   23
 #define LOG_ROW   36
@@ -683,6 +684,7 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
     unsigned char a, r;
     m = &mons[mi];
     scene_load(mon_scene[m->kind]);
+    if (mon_hdr_file[m->kind]) load_file(mon_hdr_file[m->kind], 5);   /* (another's close-up: its own words) */
     dma_copy_far((unsigned long)(unsigned int)&mt, SCENE_HDR + 3, sizeof mt);
     dma_copy_far((unsigned long)(unsigned int)words, SCENE_HDR + 32, WORDS_SIZE);
     mhp_max = mt.hp;

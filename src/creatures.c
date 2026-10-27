@@ -49,9 +49,30 @@ static void devour(struct mon *c) {
     msg(buf, C_GREEN);
 }
 
+/* creature k a step toward dx, dy (round what is in the way): 0, or the
+ * outcome of the fight it starts, walking into the player */
+static unsigned char go(unsigned char k, signed char dx, signed char dy) {
+    struct mon *c = &mons[k];
+    unsigned char x = c->x + dx, y = c->y + dy;
+    if (!dx && !dy) return 0;
+    if (x == pl.x && y == pl.y) {
+        if (c->awake != 2) return 0;
+        if ((mon_habits[c->kind] & MH_THIEF) && !c->carry && rng_range(2) == 0 && steal(k)) return 0;
+        return fight(k, 1);
+    }
+    if (free_for(c, x, y)) {
+        c->x = x;
+        c->y = y;
+    } else if (dx && free_for(c, c->x + dx, c->y) && !(c->x + dx == pl.x && c->y == pl.y)) c->x += dx;
+    else if (dy && free_for(c, c->x, c->y + dy) && !(c->x == pl.x && c->y + dy == pl.y)) c->y += dy;
+    else return 0;
+    if (mon_habits[c->kind] & MH_EATER) devour(c);
+    return 0;
+}
+
 /* every creature's move: 0, or the outcome of a fight one started */
 unsigned char creatures_move(void) {
-    unsigned char k, d, sees, x, y;
+    unsigned char k, d, sees, y;
     signed char dx, dy;
     struct mon *c;
     /* the burning oil: its flames die down, the rooms it lit go dark */
@@ -70,6 +91,7 @@ unsigned char creatures_move(void) {
             c->stun--;
             continue;
         }
+        if (mon_habits[c->kind] & MH_MIMIC) continue;   /* (a mimic waits to be walked into) */
         dx = sgn((signed int)pl.x - c->x);
         dy = sgn((signed int)pl.y - c->y);
         d = (unsigned char)(c->x > pl.x ? c->x - pl.x : pl.x - c->x);
@@ -97,26 +119,26 @@ unsigned char creatures_move(void) {
             dx = -dx;
             dy = -dy;
         }
+        if (mon_habits[c->kind] & MH_FLIT) {
+            /* bats: two flits a turn, and one in two of them anywhere */
+            for (d = 0; d < 2; d++) {
+                if (c->awake == 1 || rng_range(2)) {
+                    dx = (signed char)rng_range(3) - 1;
+                    dy = (signed char)rng_range(3) - 1;
+                } else {
+                    dx = sgn((signed int)pl.x - c->x);
+                    dy = sgn((signed int)pl.y - c->y);
+                }
+                if ((y = go(k, dx, dy)) != 0) return y;
+            }
+            continue;
+        }
         if (c->awake == 1) {
             if (rng_range(2)) continue;
             dx = (signed char)rng_range(3) - 1;
             dy = (signed char)rng_range(3) - 1;
         }
-        if (!dx && !dy) continue;
-        x = c->x + dx;
-        y = c->y + dy;
-        if (x == pl.x && y == pl.y) {
-            if (c->awake != 2) continue;
-            if ((mon_habits[c->kind] & MH_THIEF) && !c->carry && rng_range(2) == 0 && steal(k)) continue;
-            return fight(k, 1);
-        }
-        if (free_for(c, x, y)) {
-            c->x = x;
-            c->y = y;
-        } else if (dx && free_for(c, c->x + dx, c->y) && !(c->x + dx == pl.x && c->y == pl.y)) c->x += dx;
-        else if (dy && free_for(c, c->x, c->y + dy) && !(c->x == pl.x && c->y + dy == pl.y)) c->y += dy;
-        else continue;
-        if (mon_habits[c->kind] & MH_EATER) devour(c);
+        if ((y = go(k, dx, dy)) != 0) return y;
     }
     return 0;
 }
