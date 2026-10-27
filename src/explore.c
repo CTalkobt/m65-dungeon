@@ -457,6 +457,10 @@ static unsigned char explore_run(unsigned char resume) {
 #ifdef TEST_TRAP
     obj_set(AT(pl.x + 1, pl.y), O_TRAP);   /* (tests: a hidden trap one step east) */
 #endif
+#ifdef TEST_SIGHT
+    pl.sight = SIGHT_TURNS;          /* (tests: dark-sight, the torch out) */
+    pl.lit = 0;
+#endif
 #ifdef TEST_FUEL
     pl.fuel = TEST_FUEL;             /* (tests: the torch near its end) */
 #endif
@@ -506,6 +510,10 @@ static unsigned char explore_run(unsigned char resume) {
             break;
         case 'h': case '?':
             help_screen();
+            view_screen();
+            break;
+        case 'j':
+            history_screen();
             view_screen();
             break;
         case 'p':
@@ -579,6 +587,7 @@ static unsigned char turn_pass(void) {
     if (turn % 18 == 0 && pl.mp < pl.maxmp) pl.mp++;
     if (turn % 64 == 0) memory_sweep();
     torch_burn();
+    if (pl.sight && !--pl.sight) msg("The shadows close in again.", C_DIM);
     view_fov();
     return creatures_move();
 }

@@ -2,6 +2,7 @@
  * log of a battle or a view, the player's numbers
  */
 #include <input.h>
+#include <dma.h>
 #include "hw.h"
 #include "assets.h"
 #include "video.h"
@@ -284,6 +285,10 @@ void msg_show(void) {
         if (msgs[k][0]) video_text(1, MSG_ROW + k, msgs[k], k == NMSG - 1 ? msg_col[k] : (k == NMSG - 2 ? C_DIM : C_DARK));
 }
 
+/* each message also into the history: the last HIST_N, round and round
+ * in attic RAM (HIST_LIN: HIST_STRIDE bytes each), their colours here */
+unsigned char hist_n, hist_at, hist_col[HIST_N];
+
 void msg(const char *s, unsigned char colour) {
     unsigned char k, n;
     for (k = 0; k < NMSG - 1; k++) {
@@ -293,6 +298,10 @@ void msg(const char *s, unsigned char colour) {
     for (n = 0; s[n] && n < MSG_W; n++) msgs[NMSG - 1][n] = s[n];
     msgs[NMSG - 1][n] = 0;
     msg_col[NMSG - 1] = colour;
+    dma_copy_far(HIST_LIN + (unsigned int)hist_at * HIST_STRIDE, (unsigned long)(unsigned int)msgs[NMSG - 1], n + 1);
+    hist_col[hist_at] = colour;
+    if (++hist_at == HIST_N) hist_at = 0;
+    if (hist_n < HIST_N) hist_n++;
     msg_show();
 }
 

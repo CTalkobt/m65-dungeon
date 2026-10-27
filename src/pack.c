@@ -169,6 +169,51 @@ unsigned char drink(void) {
     return 0;
 }
 
+/* the flask of colour c drunk: what it does, and from now on its name */
+unsigned char quaff(unsigned char c) {
+    unsigned char d;
+    char buf[64];
+    pl.items[I_FLASK + c]--;
+    buf[0] = 0;
+    str_cat(buf, "You drink the ");
+    str_cat(buf, item_name(I_FLASK + c, 1));
+    str_cat(buf, ".");
+    msg(buf, item_col[I_FLASK + c]);
+    pl.known |= 1 << c;
+    sfx(SFX_DRINK);
+    switch (pl.flask[c]) {
+    case FX_SIGHT:
+        pl.sight = SIGHT_TURNS;
+        msg("The dark thins. Shapes stand out in the shadows.", C_CYAN);
+        break;
+    case FX_MEMORY:
+        pl.fade = 1;
+        msg("Your mind clears. What you see, you will keep.", C_CYAN);
+        break;
+    case FX_VIGOUR:
+        pl.maxhp += 3;
+        pl.hp = pl.maxhp;
+        msg("Warmth runs through you, and stays. (+3 life)", C_GREEN);
+        sfx(SFX_HEAL);
+        break;
+    default:
+        d = 4 + pl.depth * 2;
+        pl.hp = pl.hp > d ? pl.hp - d : 1;
+        buf[0] = 0;
+        str_cat(buf, "Bitter! Poison burns in your veins. (");
+        str_num(buf, d);
+        str_cat(buf, ")");
+        msg(buf, C_RED);
+        sfx(SFX_POISON);
+    }
+    buf[0] = 0;
+    str_cat(buf, "It was a ");
+    str_cat(buf, item_name(I_FLASK + c, 1));
+    str_cat(buf, ".");
+    msg(buf, C_DIM);
+    return 1;
+}
+
 /* an item used on the map; 1 if that took the turn */
 static unsigned char use(unsigned char k) {
     unsigned char d;
@@ -212,6 +257,7 @@ static unsigned char use(unsigned char k) {
     case I_FOOD:
         return throw_it(k);
     }
+    if (k >= I_FLASK) return quaff(k - I_FLASK);
     if (k >= I_FLINT) return light(k);
     return feed(k);
 }
@@ -242,9 +288,10 @@ unsigned char put_down(unsigned char x, unsigned char y, unsigned char item, uns
 #define INV_ROW 5
 #define INV_W   44
 #define INV_H   30
+#define INV_ROWS 16                   /* the items' rows (more scroll) */
 
 unsigned char inventory(void) {
-    unsigned char k, n, sel = 0, has[I_COUNT];
+    unsigned char k, n, sel = 0, top = 0, has[I_COUNT];
     char buf[48];
     video_blank(INV_COL, INV_ROW, INV_W, INV_H);
     ui_frame(INV_COL, INV_ROW, INV_W, INV_H);
@@ -304,15 +351,18 @@ unsigned char inventory(void) {
     }
     video_text(INV_COL + 3, INV_ROW + 28, "RETURN: use.  D: put down.  I: back.", C_DIM);
     for (;;) {
-        for (k = 0; k < n; k++) {
+        /* (more than fit: the list scrolls with the choice) */
+        if (sel < top) top = sel;
+        if (sel >= top + INV_ROWS) top = sel - INV_ROWS + 1;
+        for (k = top; k < n && k < top + INV_ROWS; k++) {
             buf[0] = k == sel ? '>' : ' ';
             buf[1] = ' ';
             buf[2] = 0;
             str_num(buf, pl.items[has[k]]);
             str_cat(buf, " ");
             str_cat(buf, item_name(has[k], pl.items[has[k]]));
-            video_blank(INV_COL + 2, INV_ROW + 9 + k, INV_W - 4, 1);
-            video_text(INV_COL + 2, INV_ROW + 9 + k, buf, k == sel ? C_HILITE : item_col[has[k]]);
+            video_blank(INV_COL + 2, INV_ROW + 9 + k - top, INV_W - 4, 1);
+            video_text(INV_COL + 2, INV_ROW + 9 + k - top, buf, k == sel ? C_HILITE : item_col[has[k]]);
         }
         k = key_wait();
         if (k == K_UP) sel = sel ? sel - 1 : n - 1;

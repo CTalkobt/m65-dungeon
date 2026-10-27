@@ -74,6 +74,7 @@ memory, but only 26 life). The ending names who it was.
 | T / G | | shoot the bow / fire the flintlock (again: the next target, RETURN: shoot) | |
 | X | | throw a flask of oil or meat (O / M when you carry both) | |
 | M | | the level as you remember it; a cursor, RETURN puts a note (! $ * ?) | |
+| J | | the last 36 messages, to read again | |
 | S P C A R I T | | | strike, parry, cast, advance, retreat, item, shoot |
 | F I H W | | | (casting) firebolt, frost, heal, ward |
 | H M F | | | (items) potion, draught, scroll of fire |
@@ -153,6 +154,14 @@ one in four that missed); after a fight you win, half the arrows you shot
 in it are gathered up whole. The lich is warded:
 it must be faced. You start with a short bow and 8 arrows; chests give
 the better bows, then the flintlocks, and arrows and cartridges lie about.
+
+**Strange flasks.** Cloudy green, smoky grey, violet and amber: what each
+colour does is shuffled for every descent, and unknown until you drink
+one (from what you carry) or read of it on an apothecary's page in a
+bookshelf. One gives dark-sight (120 turns of seeing what is in shadow,
+dimly, torch or no torch), one clears your memory (what you see fades
+slowly, for the level), one is vigour (3 more life, for good), and one
+is poison. Once known, a flask goes by its name.
 
 **Throwing** (X, or use it from what you carry; reach 5, aimed as a shot).
 A *flask of oil* bursts into fire where it lands: 2d6+2 that no armour

@@ -60,6 +60,21 @@ unsigned char fixture(unsigned int i, unsigned char n) {
     } else if (r < 5) {
         pl.items[I_RAGS]++;
         msg("Old pages, dry enough to burn: a twist of rags.", C_ORANGE);
+    } else if (r < 6 && pl.known != (1 << FLASKS) - 1) {
+        /* an apothecary's page: what one of the flasks does */
+        do d = rng_range(FLASKS); while (pl.known & (1 << d));
+        buf[0] = 0;
+        str_cat(buf, "An apothecary's page names the ");
+        str_cat(buf, item_name(I_FLASK + d, 1));
+        str_cat(buf, ":");
+        msg(buf, C_BONE);
+        pl.known |= 1 << d;
+        buf[0] = 0;
+        str_cat(buf, "it is a ");
+        str_cat(buf, item_name(I_FLASK + d, 1));
+        str_cat(buf, ".");
+        msg(buf, C_BONE);
+        sfx(SFX_CHIME);
     } else if (r < 7) {
         msg("A journal, its last page legible:", C_DIM);
         msg(nth("'Feed the torch, and the dark keeps its distance.'\0"

@@ -33,6 +33,7 @@
 #define SCREEN_LIN 0x005E000UL
 #define MUSIC_LIN  0x8070000UL       /* DGMUSIC, the tunes: attic RAM (tune_play_far) */
 #define LOOK_LIN   0x8310000UL       /* DGLOOK, each depth's stone: attic RAM (explore.c) */
+#define HIST_LIN   0x8320000UL       /* the messages' history (ui.c msg, help.c) */
 
 /* a file's palette: 256 red, 256 green, 256 blue (plain 8-bit values) */
 #define PAL_BYTES  768

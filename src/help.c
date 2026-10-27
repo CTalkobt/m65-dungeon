@@ -6,6 +6,7 @@
 #include "hw.h"
 #include "assets.h"
 #include "video.h"
+#include <dma.h>
 #include "game.h"
 
 #define HP_COL 1
@@ -31,6 +32,7 @@ static const char __noescape lines[] =
     "F / L\0feed the torch / light it\0"
     "M\0the level as you remember it, and notes on it\0"
     "O\0settings: the music's and the sounds' levels\0"
+    "J\0the messages so far, to read again\0"
     "H, ?\0this help\0"
     "RUN/STOP\0save and stop (S), or give up (Y)\0"
     "\0In a fight\0"
@@ -43,7 +45,7 @@ static const char __noescape lines[] =
     "\0On the title\0"
     "RETURN\0begin: then choose who goes down\0"
     "C, S, F\0continue the saved descent, settings, the fallen\0";
-#define LINES 25
+#define LINES 26
 
 void help_screen(void) {
     unsigned char k, row = HP_ROW + 3;
@@ -61,6 +63,24 @@ void help_screen(void) {
             video_text(KEY_COL, row, key, C_HILITE);
             video_text(WHAT_COL, row++, what, C_TEXT);
         }
+    }
+    video_text(HP_COL + 3, HP_ROW + HP_H - 2, "Press a key.", C_DARK);
+    key_wait();
+}
+
+/* the messages so far, oldest first, on the same panel (J on the map) */
+void history_screen(void) {
+    unsigned char k, i;
+    char line[HIST_STRIDE];
+    video_blank(HP_COL, HP_ROW, HP_W, HP_H);
+    ui_frame(HP_COL, HP_ROW, HP_W, HP_H);
+    video_text(HP_COL + 3, HP_ROW + 1, "What has happened", C_GOLD);
+    if (!hist_n) video_text(KEY_COL, HP_ROW + 4, "Nothing yet.", C_DIM);
+    for (k = 0; k < hist_n; k++) {
+        i = (unsigned char)((hist_at + HIST_N - hist_n + k) % HIST_N);
+        dma_copy_far((unsigned long)(unsigned int)line, HIST_LIN + (unsigned int)i * HIST_STRIDE, HIST_STRIDE);
+        line[HIST_STRIDE - 1] = 0;
+        video_text(KEY_COL, HP_ROW + 3 + k, line, k + 4 < hist_n ? (hist_col[i] == C_DARK ? C_DARK : C_DIM) : hist_col[i]);
     }
     video_text(HP_COL + 3, HP_ROW + HP_H - 2, "Press a key.", C_DARK);
     key_wait();

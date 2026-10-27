@@ -19,7 +19,7 @@
 #define KEEP_KINDS 1024
 #define KEEP_SEEN  (KEEP_KINDS + MAP_N)
 #define KEEP_END   (KEEP_SEEN + MAP_N)
-#define VERSION    7
+#define VERSION    8
 
 extern unsigned char vault_x0, vault_y0, vault_x1, vault_y1;
 
@@ -143,6 +143,15 @@ void player_new(void) {
     pl.ups = pl.keen = pl.steady = pl.aim = pl.wary = 0;
     pl.kills = 0;
     pl.cause = 0;
+    /* the flasks' colours: a new order each descent, none known */
+    for (k = 0; k < FLASKS; k++) pl.flask[k] = k;
+    for (k = FLASKS - 1; k; k--) {
+        unsigned char j = rng_range(k + 1), t = pl.flask[k];
+        pl.flask[k] = pl.flask[j];
+        pl.flask[j] = t;
+    }
+    pl.known = 0;
+    pl.sight = 0;
     turn = 1;
 }
 

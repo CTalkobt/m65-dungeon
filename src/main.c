@@ -90,6 +90,7 @@ int main(void) {
             calling_take();
         }
         msg_clear();
+        hist_n = 0;                           /* (a new history for each descent) */
         r = explore(r == 2);
         if (r != SAVED) ending(r);
     }

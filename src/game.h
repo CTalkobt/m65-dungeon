@@ -147,7 +147,16 @@ extern unsigned char nmons;
 #define I_SHOT     13         /* the flintlock's: paper cartridges, powder and ball */
 #define I_OIL      14         /* a flask of lamp oil: thrown, it bursts into fire (aim.c) */
 #define I_FOOD     15         /* dried meat: thrown, the hungry fall on it */
-#define I_COUNT    16
+#define I_FLASK    16         /* + 0-3: a strange flask, by its colour (green, grey, violet, amber) */
+#define FLASKS     4
+#define I_COUNT    20
+/* what a flask's colour does: shuffled for each descent (pl.flask), known
+ * once drunk (pl.known, a bit a colour) or read of on a shelf's page */
+#define FX_SIGHT   0          /* dark-sight: what is in shadow is seen, dimly, a while */
+#define FX_MEMORY  1          /* clear memory: what is seen fades slowly, this level */
+#define FX_VIGOUR  2          /* more life, for good */
+#define FX_POISON  3
+#define SIGHT_TURNS 120
 const char *item_name(unsigned char i, unsigned char n);   /* game.c: as for n of them */
 extern const unsigned char item_col[I_COUNT];               /* game.c: its colour in text */
 extern const unsigned char item_tile[I_COUNT];              /* game.c: its tile, put down (T_*) */
@@ -163,6 +172,7 @@ unsigned char fixture(unsigned int i, unsigned char n);   /* fixture.c: a founta
 #define WARE_KINDS 12
 extern unsigned char ware[WARES], ware_left[WARES];
 unsigned char drink(void);
+unsigned char quaff(unsigned char c);   /* pack.c: the flask of colour c drunk */
 unsigned char feed_any(void);
 unsigned char light_any(void);
 unsigned char light(unsigned char k);   /* I_FLINT, I_FIRESTICK, I_COUNT: a brazier's coals */
@@ -207,6 +217,9 @@ struct player {
     unsigned int kills;       /* creatures slain */
     unsigned char cause;      /* what ended the descent (CAUSE_*) */
     unsigned char calling;    /* who went down (front.c: CALL_*) */
+    unsigned char flask[FLASKS];    /* each colour's effect (FX_*) */
+    unsigned char known;      /* the colours known (bit = colour) */
+    unsigned char sight;      /* turns of dark-sight left */
 };
 #define CALL_FIGHTER 0
 #define CALL_HUNTER  1
@@ -247,6 +260,10 @@ extern unsigned char view_kept;       /* pack.c: a place kept under a tile (view
 void msg(const char *s, unsigned char colour);
 void msg_clear(void);
 void msg_show(void);                  /* the messages drawn again */
+#define HIST_N      36                /* ui.c: the messages kept, to read again (J: help.c) */
+#define HIST_STRIDE 64
+extern unsigned char hist_n, hist_at, hist_col[HIST_N];
+void history_screen(void);
 
 /* explore.c */
 unsigned char explore(unsigned char resume);   /* until DIED, WON or SAVED; resume: a saved game, loaded */

@@ -660,6 +660,9 @@ ART["note1"] = _note(["   ##", "   ##", "   ##", "   ##", "   ##", "   ##", "", 
 ART["note2"] = _note(["   #", "  ####", " # #", "  ###", "   # #", " ####", "   #"], "Z")
 ART["note3"] = _note(["#    #", " #  #", "  ##", "  ##", " #  #", "#    #"], "c")
 ART["note4"] = _note([" ####", "#    #", "    #", "   #", "  ##", "", "  ##"], "v")
+# the strange flasks: the potion in four colours
+for _k, (_a, _b) in enumerate((("g", "G"), ("s", "S"), ("p", "P"), ("Y", "d"))):
+    ART["flask%d" % (_k + 1)] = [r.replace('r', _a).replace('R', _b) for r in ART["potion"]]
 ART["oil"] = [r.replace('r', 'Y').replace('R', 'd').replace('n', 'b') for r in ART["potion"]]
 ART["idol_spent"] = [r.replace('z', 'T') for r in ART["idol"]]
 ART["draught"] = [r.replace('r', 'u').replace('R', 'U') for r in ART["potion"]]
@@ -1059,7 +1062,8 @@ def terrain_kinds(style=0):
 
 SPRITES = ("chest", "chest_open", "idol", "idol_spent", "potion", "gold", "bones", "brazier",
            "brazier_cold", "scroll", "key", "draught", "rags", "sticks", "fur", "candle", "flint", "firestick",
-           "arrows", "shot", "merchant", "fountain", "fountain_dry", "shelf", "oil", "food", "flames", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats", "ghoul", "ember",
+           "arrows", "shot", "merchant", "fountain", "fountain_dry", "shelf", "oil", "food", "flames",
+           "flask1", "flask2", "flask3", "flask4", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats", "ghoul", "ember",
            "note1", "note2", "note3", "note4")
 
 

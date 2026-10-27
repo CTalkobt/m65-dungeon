@@ -155,20 +155,29 @@ void memory_sweep(void) {
 /* each item's colour in lists and messages */
 const unsigned char item_col[I_COUNT] = {
     C_RED, C_BLUE, C_BONE, C_BONE, C_BONE, C_GOLD, C_ORANGE, C_ORANGE, C_ORANGE, C_ORANGE, C_GREY, C_ORANGE,
-    C_TEXT, C_GREY, C_ORANGE, C_BLOOD,
+    C_TEXT, C_GREY, C_ORANGE, C_BLOOD, C_GREEN, C_GREY, C_PURPLE, C_GOLD,
 };
 
 /* each thing's tile, lying on the floor */
 const unsigned char item_tile[I_COUNT] = {
     T_POTION, T_DRAUGHT, T_SCROLL, T_SCROLL, T_SCROLL, T_KEY, T_RAGS, T_STICKS, T_FUR, T_CANDLE,
-    T_FLINT, T_FIRESTICK, T_ARROWS, T_SHOT, T_OIL, T_FOOD,
+    T_FLINT, T_FIRESTICK, T_ARROWS, T_SHOT, T_OIL, T_FOOD, T_FLASK1, T_FLASK2, T_FLASK3, T_FLASK4,
 };
 
 unsigned char arrows_spent;
 unsigned char ware[WARES], ware_left[WARES];
 
-/* the things one carries, one and many */
+/* the things one carries, one and many; a flask by its colour until it
+ * is known, then by what it does */
 const char *item_name(unsigned char i, unsigned char n) {
+    if (i >= I_FLASK) {
+        i -= I_FLASK;
+        if (pl.known & (1 << i)) i = FLASKS + pl.flask[i];
+        return nth("cloudy green flask\0cloudy green flasks\0smoky grey flask\0smoky grey flasks\0"
+                   "violet flask\0violet flasks\0amber flask\0amber flasks\0"
+                   "flask of dark-sight\0flasks of dark-sight\0flask of clear memory\0flasks of clear memory\0"
+                   "flask of vigour\0flasks of vigour\0flask of poison\0flasks of poison", i * 2 + (n != 1));
+    }
     return nth("healing potion\0healing potions\0mana draught\0mana draughts\0"
                "scroll of fire\0scrolls of fire\0scroll of recall\0scrolls of recall\0"
                "scroll of far sight\0scrolls of far sight\0iron key\0iron keys\0"
