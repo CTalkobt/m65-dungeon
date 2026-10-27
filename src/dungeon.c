@@ -385,6 +385,8 @@ void dungeon_make(void) {
     /* oil and meat, to throw */
     put(spot(rng_range(nrooms)), O_PILE + I_OIL);
     if (rng_range(2)) put(spot(rng_range(nrooms)), O_PILE + I_FOOD);
+    /* an antidote, now and then: the venomous are on every level */
+    if (rng_range(3)) put(spot(rng_range(nrooms)), O_PILE + I_ANTIDOTE);
     /* strange flasks, what they do unknown till drunk */
     for (k = 0; k < 1 + (pl.depth > 2); k++) put(spot(rng_range(nrooms)), O_PILE + I_FLASK + rng_range(FLASKS));
 

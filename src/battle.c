@@ -42,7 +42,7 @@ static struct {
 #define words ((char *)scratch + 636)
 static unsigned char dist, intent, last_intent, mhp_max;
 static unsigned char frozen, staggered, roar, parrying;
-static unsigned char poison, snared, ward;
+static unsigned char poison, snared, ward, burning, numb, chilled;
 static unsigned char sel, menu, casting;     /* menu: MENU_*; casting: a spell lands (no guard stops it) */
 #define MENU_ACTS   0
 #define MENU_SPELLS 1
@@ -121,6 +121,7 @@ static void draw_foe(void) {
     if (frozen) { video_text(71, n, "frozen", C_CYAN); n += 2; }
     if (staggered) { video_text(71, n, "reeling", C_ORANGE); n += 2; }
     if (roar) { video_text(71, n, "enraged", C_RED); n += 2; }
+    if (chilled) video_text(71, n, "chilled", C_CYAN);
 }
 
 static void draw_you(void) {
@@ -129,6 +130,8 @@ static void draw_you(void) {
     video_blank(STAT_COL, 42, 21, 6);
     if (ward) { buf[0] = 0; str_cat(buf, "Warded ("); str_num(buf, ward); str_cat(buf, ")"); video_text(STAT_COL, n++, buf, C_BLUE); }
     if (poison) video_text(STAT_COL, n++, "Poisoned", C_GREEN);
+    if (burning) video_text(STAT_COL, n++, "Burning", C_ORANGE);
+    if (numb) video_text(STAT_COL, n++, "Numbed", C_PURPLE);
     if (snared) video_text(STAT_COL, n++, "Caught in silk", C_BONE);
     if (parrying) video_text(STAT_COL, n++, "On guard", C_TEXT);
 }
@@ -138,7 +141,8 @@ __attribute__((noinline)) static const char *tele(unsigned char a) {
     return nth("\0\0gathers itself for a crushing blow!\0raises its guard.\0bares fangs glistening with venom.\0"
                "gathers a skein of silk.\0swells, ready to spit.\0draws itself together.\0fills its lungs to roar.\0"
                "reaches for your heart.\0breathes out a freezing mist.\0flickers, half in this world.\0"
-               "gathers violet fire in its staff.\0whispers a word of withering.\0crouches to spring.\0closes in.", a);
+               "gathers violet fire in its staff.\0whispers a word of withering.\0crouches to spring.\0closes in.\0"
+               "rears, fire welling in its maw!\0reaches out with grave-cold claws.", a);
 }
 
 /* the creature's words, from its header */
@@ -157,7 +161,7 @@ static void draw_intent(void) {
     } else the(tele(intent));
     while (buf[n]) n++;
     video_blank(1, 33, 78, 1);
-    c = intent == A_HEAVY || intent == A_BOLT || intent == A_LUNGE ? C_RED : intent == A_GUARD || intent == A_PHASE || intent == A_CLOSE ? C_DIM : C_ORANGE;
+    c = intent == A_HEAVY || intent == A_BOLT || intent == A_LUNGE || intent == A_BURN ? C_RED : intent == A_GUARD || intent == A_PHASE || intent == A_CLOSE ? C_DIM : C_ORANGE;
     if (frozen || staggered) c = C_CYAN;
     video_text(40 - n / 2, 33, buf, c);
 }
@@ -173,9 +177,9 @@ static const char shoot_key[2] = {'b', 'g'};
 static const char spell_key[4] = {'f', 'i', 'h', 'w'};
 static const unsigned char spell_cost[4] = {3, 4, 5, 4};
 static const unsigned char spell_sfx[4] = {SFX_FIRE, SFX_FROST, SFX_HEAL, SFX_WARD};
-#define NITEM 3
-static const char item_key[NITEM] = {'h', 'm', 'f'};
-static const unsigned char item_of[NITEM] = {I_POTION, I_DRAUGHT, I_FIRE};
+#define NITEM 4
+static const char item_key[NITEM] = {'h', 'm', 'f', 'a'};
+static const unsigned char item_of[NITEM] = {I_POTION, I_DRAUGHT, I_FIRE, I_ANTIDOTE};
 
 static unsigned char menu_n(void) {
     return menu == MENU_SPELLS ? 4 : menu == MENU_ITEMS ? NITEM : menu == MENU_SHOOT ? 2 : NACT;
@@ -200,7 +204,7 @@ static unsigned char can(unsigned char a) {
     case 2: return pl.mp >= 3;
     case 3: return dist > 0 && !snared;
     case 4: return !snared;
-    case 5: return pl.items[I_POTION] || pl.items[I_DRAUGHT] || pl.items[I_FIRE];
+    case 5: return pl.items[I_POTION] || pl.items[I_DRAUGHT] || pl.items[I_FIRE] || pl.items[I_ANTIDOTE];
     case 6: return dist > 0 && (armed(0) || armed(1));     /* (close, it is on you) */
     }
     return 1;
@@ -218,7 +222,7 @@ static void draw_menu(void) {
         buf[3] = 0;
         if (menu == MENU_SPELLS) str_cat(buf, nth("Firebolt  3\0Frost     4\0Heal      5\0Ward      4", k));
         else if (menu == MENU_ITEMS) {
-            str_cat(buf, nth("Potion     \0Draught    \0Fire scroll", k));
+            str_cat(buf, nth("Potion     \0Draught    \0Fire scroll\0Antidote   ", k));
             str_cat(buf, " ");
             str_num(buf, pl.items[item_of[k]]);
         } else if (menu == MENU_SHOOT) {
@@ -257,7 +261,7 @@ static void draw_all(void) {
 /* ---------------------------------------------------------------- the creature */
 
 static unsigned char needs_close(unsigned char a) {
-    return a == A_MELEE || a == A_HEAVY || a == A_POISON;
+    return a == A_MELEE || a == A_HEAVY || a == A_POISON || a == A_BURN || a == A_NUMB;
 }
 
 static unsigned char choose(void) {
@@ -316,6 +320,7 @@ static unsigned char roll(void) {
         d += d / 2;
         roar = 0;
     }
+    if (chilled) d -= d / 3;              /* (frost: stiff and slow) */
     return d;
 }
 
@@ -328,7 +333,7 @@ static void lunge(unsigned char s) {
 
 /* 1 if the player still stands */
 static unsigned char creature_acts(void) {
-    unsigned char d, a = intent;
+    unsigned char d, h, a = intent;
     if (frozen) {
         frozen = 0;
         the("is frozen and cannot act.");
@@ -351,11 +356,13 @@ static unsigned char creature_acts(void) {
             dist = 0;
             draw_range();
         }
-        a = mt.flags & MF_VENOM ? A_POISON : A_MELEE;
+        a = mt.flags & MF_VENOM ? A_POISON : mt.flags & MF_FIERY ? A_BURN : A_MELEE;
     }
     switch (a) {
     case A_MELEE:
     case A_POISON:
+    case A_BURN:
+    case A_NUMB:
     case A_HEAVY:
         if (dist) {
             the("strikes at empty air.");
@@ -390,12 +397,23 @@ static unsigned char creature_acts(void) {
         }
         say(buf, C_ORANGE);
         scene_show(0);
+        h = pl.hp;
         if (!hurt(d, 1)) return 0;
+        if (pl.hp == h) return 1;            /* (the ward took it all) */
         if (a == A_POISON) {
             poison = 3;
             sfx(SFX_POISON);
             say("Venom burns in your veins.", C_GREEN);
+        } else if (a == A_BURN) {
+            burning = 3;
+            sfx(SFX_FIRE);
+            say("Fire catches on your clothes!", C_ORANGE);
+        } else if (a == A_NUMB && rng_range(2) == 0) {
+            numb = 1;
+            sfx(SFX_CURSE);
+            say("A deathly numbness creeps up your arm.", C_PURPLE);
         }
+        draw_you();
         return 1;
     case A_SPIT:
     case A_CHILL:
@@ -477,6 +495,19 @@ static unsigned char creature_acts(void) {
 
 /* ---------------------------------------------------------------- the player */
 
+/* fire's damage, as the creature takes it */
+static unsigned char fire(unsigned char d) {
+    if (mt.flags & MF_FIREWEAK) {
+        d += d / 2;
+        say("It burns fiercely!", C_ORANGE);
+    }
+    if (mt.flags & MF_FIERY) {
+        d = d / 2 + 1;
+        say("It drinks in the fire.", C_DIM);
+    }
+    return d;
+}
+
 static void wound(unsigned char d) {
     if (intent == A_PHASE && !casting) {
         say("Your blade passes through it!", C_DIM);
@@ -541,14 +572,14 @@ static unsigned char player_acts(unsigned char a) {
             sfx(SFX_FIRE);
             say("The scroll flares, and fire pours from it!", C_ORANGE);
             flash(255, 120, 20, 16);
-            d = rng_dice(3, 6) + pl.depth * 3;
-            if (mt.flags & MF_FIREWEAK) {
-                d += d / 2;
-                say("It burns fiercely!", C_ORANGE);
-            }
             casting = 1;               /* (no guard stops it) */
-            wound(d);
+            wound(fire(rng_dice(3, 6) + pl.depth * 3));
             casting = 0;
+            break;
+        case 3:
+            poison = 0;
+            sfx(SFX_DRINK);
+            say("Bitter as gall. The venom is gone.", C_CYAN);
             break;
         }
         draw_you();
@@ -562,13 +593,8 @@ static unsigned char player_acts(unsigned char a) {
         case 0:
             say("You hurl a bolt of fire!", C_ORANGE);
             flash(255, 140, 30, 16);
-            d = rng_dice(2, 6) + pl.level * 2;
-            if (mt.flags & MF_FIREWEAK) {
-                d += d / 2;
-                say("It burns fiercely!", C_ORANGE);
-            }
             casting = 1;               /* (spells are not stopped by a guard) */
-            wound(d);
+            wound(fire(rng_dice(2, 6) + pl.level * 2));
             casting = 0;
             break;
         case 1:
@@ -579,6 +605,7 @@ static unsigned char player_acts(unsigned char a) {
             casting = 0;
             if (!(mt.flags & MF_COLDPROOF) || rng_range(3) == 0) {
                 frozen = 1;
+                chilled = 4;           /* (the round frozen, then 3 more) */
                 the("is frozen fast!");
                 say(buf, C_CYAN);
             } else {
@@ -628,6 +655,10 @@ static unsigned char player_acts(unsigned char a) {
         break;
     case 4:
         sfx(SFX_STEP);
+        if (burning) {
+            burning = 0;
+            say("You roll, and beat out the flames.", C_TEXT);
+        }
         if (dist == 2) {
             d = mt.flags & MF_HARDFLEE ? 35 : 65;
             if (rng_range(100) < d) {
@@ -681,7 +712,7 @@ static unsigned char pick(void) {
 }
 
 unsigned char battle(unsigned char mi, unsigned char ambush) {
-    unsigned char a, r;
+    unsigned char r;
     m = &mons[mi];
     scene_load(mon_scene[m->kind]);
     if (mon_hdr_file[m->kind]) {
@@ -696,7 +727,8 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
     mhp_max = mt.hp;
     if (m->hp == FRESH) m->hp = mt.hp;
     dist = ambush ? 0 : 1;
-    frozen = staggered = roar = parrying = poison = snared = ward = 0;
+    frozen = staggered = roar = parrying = snared = ward = burning = numb = chilled = 0;
+    poison = pl.venom ? 3 : 0;                /* (venom from before goes on burning) */
     sel = menu = casting = 0;
     intent = last_intent = A_NONE;
 
@@ -715,9 +747,20 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
         draw_intent();
         if (!can(sel)) sel = dist ? 3 : 0;
         draw_foe();
-        a = pick();
-        r = player_acts(a);
+        if (numb) {
+            numb = 0;
+            say("Your limbs will not answer you!", C_PURPLE);
+            pause(30);
+            r = 0;
+        } else r = player_acts(pick());
         if (r == FLED) {
+            m->stun = 3;
+            if (chilled) {
+                m->stun = 8;
+                the("is too stiff with cold to follow.");
+                say(buf, C_CYAN);
+            }
+            pl.venom = poison * 8;
             pause(30);
             video_fade(0);
             return FLED;
@@ -744,6 +787,20 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
                 return DIED;
             }
         }
+        if (burning) {
+            burning--;
+            sfx(SFX_FIRE);
+            say("The flames sear you.", C_ORANGE);
+            if (!hurt(3, 0)) {
+                pl.cause = CAUSE_SLAIN + m->kind;
+                video_fade(0);
+                return DIED;
+            }
+        }
+        if (chilled && !--chilled) {
+            the("shakes off the cold.");
+            say(buf, C_DIM);
+        }
         if (snared) snared--;
         parrying = 0;
         draw_you();
@@ -762,6 +819,7 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
         draw_you();
     }
     m->hp = 0;
+    pl.venom = poison * 8;
     pause(20);
     say("Press a key.", C_DARK);
     key_wait();

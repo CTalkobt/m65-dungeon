@@ -39,7 +39,7 @@ static const char __noescape lines[] =
     "S P C A R I T\0strike, parry, cast, advance, retreat, item, shoot\0"
     "Up, down, RETURN\0choose an action, and do it\0"
     "F I H W\0(casting) firebolt, frost, heal, ward\0"
-    "H M F\0(items) potion, draught, scroll of fire\0"
+    "H M F A\0(items) potion, draught, fire scroll, antidote\0"
     "B G\0(shooting) the bow, the flintlock\0"
     "RUN/STOP\0back out of the spells, items or shots\0"
     "\0On the title\0"

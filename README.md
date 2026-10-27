@@ -77,7 +77,7 @@ memory, but only 26 life). The ending names who it was.
 | J | | the last 36 messages, to read again | |
 | S P C A R I T | | | strike, parry, cast, advance, retreat, item, shoot |
 | F I H W | | | (casting) firebolt, frost, heal, ward |
-| H M F | | | (items) potion, draught, scroll of fire |
+| H M F A | | | (items) potion, draught, scroll of fire, antidote |
 | B G | | | (shooting) the bow, the flintlock |
 | H, ? | | every key, on one screen | |
 | RUN/STOP | | save and stop (S), or give up (Y) | back out of the spells or items |
@@ -163,6 +163,19 @@ dimly, torch or no torch), one clears your memory (what you see fades
 slowly, for the level), one is vigour (3 more life, for good), and one
 is poison. Once known, a flask goes by its name.
 
+**Venom, fire and worse.** A venomous bite (rats, cave spiders) burns 2
+a round for three rounds of the fight, and what is left of it goes on in
+your blood after: no mending while it lasts, and a pang every third turn
+(it leaves you 1 life at the least; "venom in your blood" on the top
+line). A *vial of antidote* (pale green: found lying about, in chests,
+and sold by the merchant) cures it, in a fight (Item, A) or out of one;
+a healing potion does not. An *ember spider*'s bite sets you alight: 3 a
+round that armour does not turn, until you *retreat* and roll the flames
+out; fire hurts it half as much. A *ghoul*'s grave-cold claws can numb
+you, and you lose your next action. *Frost* leaves what it froze chilled
+for three rounds after (its blows a third weaker), and a chilled
+creature you flee is slow to follow.
+
 **Throwing** (X, or use it from what you carry; reach 5, aimed as a shot).
 A *flask of oil* bursts into fire where it lands: 2d6+2 that no armour
 turns, twice that to what fire is the bane of (spiders, oozes); the
@@ -214,10 +227,11 @@ block sight and creatures; the generator never lets them shut a level
 
 **The merchant.** On some levels (not the last) a hooded merchant waits
 with his lantern (seen in the dark). Walk into him to buy, with gold, from
-six of his ten wares: healing potions (25), mana draughts (30), rags (6),
-sticks (10), tallow candles (18), firesticks (12), a flint (40), five
-arrows (15), three cartridges (24), a scroll of far sight (45); one to
-three of each.
+six of his thirteen kinds of wares: healing potions (25), mana draughts
+(30), rags (6), sticks (10), tallow candles (18), firesticks (12), a flint
+(40), five arrows (15), three cartridges (24), a scroll of far sight (45),
+a flask of oil (20), two strips of meat (8), a vial of antidote (20); one
+to three of each.
 
 **What you carry** (I). Choose with up and down; RETURN (or U) uses it,
 D puts all of it down where you stand (or on a free place beside you),
@@ -225,7 +239,8 @@ where it lies as one pile until you walk over it again. Healing potions and mana
 fire* (for a fight: fire that no guard stops); a *scroll of recall* (all
 you have seen comes back fresh); a *scroll of far sight* (the level's
 walls, doors and stairs, seen or not); *iron keys*; the torch's fuel and
-flints and firesticks; flasks of oil and dried meat, to throw. Most levels have a
+flints and firesticks; flasks of oil and dried meat, to throw; vials of
+antidote. Most levels have a
 vault: a room whose doors are locked, with two chests that hold two finds
 each and the better ones. Its key lies somewhere you can reach without it.
 Chests give weapons and armour (each better than the last), potions,
@@ -245,7 +260,7 @@ answer:
 - *Advance* / *Retreat*: the range is close, near or far. Blows need close.
   A lunge reaches from near. Retreating when already far is an attempt to
   flee. Silk keeps you from moving.
-- *Item*: a healing potion, a mana draught, or a scroll of fire.
+- *Item*: a healing potion, a mana draught, a scroll of fire, or an antidote.
 - *Shoot* (from near or far, not close): the bow or the flintlock, as on
   the map; a hit is likelier near (85 in 100) than far (70). A guard
   halves it, and it passes through a wraith that has faded.
@@ -309,7 +324,7 @@ address once a frame, at its top, so it cannot be changed between rows.)
 function that draws its close-up, and its numbers (life, blow, armour,
 experience), what it does in a fight (actions and their weights), flags
 (burns easily, shrugs off frost, hard to flee, venomous, slow, the last
-foe), the levels it lives on, and its words (name, its lines, its lore, its
+foe, undead, fiery), the levels it lives on, and its words (name, its lines, its lore, its
 death). The fight's part goes in the header of its close-up's file, which
 the battle reads when it starts; the map's part (its tile, its close-up,
 its flags, which creatures each level draws from) goes in `assets.h`.

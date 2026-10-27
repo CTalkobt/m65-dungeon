@@ -514,11 +514,12 @@ def lich(sc, pose):
 
 # what a creature can do in a fight (the game's A_* numbers, in order)
 ACTIONS = ["NONE", "MELEE", "HEAVY", "GUARD", "POISON", "WEB", "SPIT", "REGEN", "ROAR", "DRAIN",
-           "CHILL", "PHASE", "BOLT", "CURSE", "LUNGE", "CLOSE"]
+           "CHILL", "PHASE", "BOLT", "CURSE", "LUNGE", "CLOSE", "BURN", "NUMB"]
 # flags (the game's MF_*): burns easily, shrugs off frost (2 in 3), hard to
 # flee from, its lunge is venomous, moves every other turn, the last foe,
-# dead and walking (no hunger: meat thrown to it is not eaten)
-FLAGS = ["FIREWEAK", "COLDPROOF", "HARDFLEE", "VENOM", "SLOW", "BOSS", "UNDEAD"]
+# dead and walking (no hunger: meat thrown to it is not eaten), fire in it
+# (its lunge sets the player alight; fire hurts it half as much)
+FLAGS = ["FIREWEAK", "COLDPROOF", "HARDFLEE", "VENOM", "SLOW", "BOSS", "UNDEAD", "FIERY"]
 # what it does on the map (the game's MH_*): shoots arrows from afar,
 # snatches fuel or arrows and runs, dissolves what lies in its way,
 # flits erratically and fast (two moves a turn), lies still as a chest,
@@ -597,14 +598,14 @@ MONSTERS = [
         "ghoul", "hunches, claws spread", "rakes you",
         "Grave-flesh stretched over old bones. It hates the light.", "falls, and the stink lingers.",
         hp=22, dice=1, sides=6, plus=2, defense=1, xp=16,
-        acts=[("MELEE", 4), ("LUNGE", 3), ("POISON", 2)], depths={2: 1, 3: 1, 4: 1},
+        acts=[("MELEE", 4), ("LUNGE", 3), ("NUMB", 2)], depths={2: 1, 3: 1, 4: 1},
         flags=("UNDEAD",), habits=("DARK",), scene="skeleton", tile="ghoul",
         look=((0.78, 1.0, 0.62), 0.55, 0.8, (0.5, 1.0, 0.3)))),
     ("ember", None, info(
         "ember spider", "rears, embers in its maw", "sears you",
         "Its belly glows like a coal. The air shimmers over it.", "curls up, and its glow fades.",
         hp=20, dice=1, sides=8, plus=1, defense=2, xp=20,
-        acts=[("POISON", 3), ("SPIT", 3), ("LUNGE", 3)], depths={3: 1, 4: 1, 5: 1},
-        flags=("VENOM",), scene="spider", tile="ember",
+        acts=[("BURN", 3), ("SPIT", 3), ("LUNGE", 3)], depths={3: 1, 4: 1, 5: 1},
+        flags=("FIERY",), scene="spider", tile="ember",
         look=((1.35, 0.62, 0.32), 1.2, 1.05, (1.0, 0.55, 0.1)))),
 ]

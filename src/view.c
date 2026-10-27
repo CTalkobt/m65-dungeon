@@ -313,7 +313,8 @@ void view_hud(void) {
     str_cat(buf, "Turn ");
     str_num(buf, turn);
     video_text(70, 0, buf, C_DARK);
-    if (pl.fade > 2) video_text(49, 0, "your memory slips", C_PURPLE);
+    if (pl.venom) video_text(49, 0, "venom in your blood", C_GREEN);
+    else if (pl.fade > 2) video_text(49, 0, "your memory slips", C_PURPLE);
     else if (pl.fade < 2) video_text(49, 0, "your memory is keen", C_CYAN);
     ui_stats(STAT_COL, MSG_ROW);
 }

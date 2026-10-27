@@ -256,6 +256,16 @@ static unsigned char use(unsigned char k) {
     case I_OIL:
     case I_FOOD:
         return throw_it(k);
+    case I_ANTIDOTE:
+        if (!pl.venom) {
+            msg("There is no venom in you to cure.", C_DIM);
+            return 0;
+        }
+        pl.items[I_ANTIDOTE]--;
+        pl.venom = 0;
+        msg("Bitter as gall - and the venom's burning fades.", C_CYAN);
+        sfx(SFX_DRINK);
+        return 1;
     }
     if (k >= I_FLASK) return quaff(k - I_FLASK);
     if (k >= I_FLINT) return light(k);

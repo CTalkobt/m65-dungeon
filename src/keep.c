@@ -19,7 +19,7 @@
 #define KEEP_KINDS 1024
 #define KEEP_SEEN  (KEEP_KINDS + MAP_N)
 #define KEEP_END   (KEEP_SEEN + MAP_N)
-#define VERSION    8
+#define VERSION    9
 
 extern unsigned char vault_x0, vault_y0, vault_x1, vault_y1;
 
@@ -148,7 +148,7 @@ void player_new(void) {
         pl.flask[j] = t;
     }
     pl.known = 0;
-    pl.sight = 0;
+    pl.sight = pl.venom = 0;
     turn = 1;
 }
 

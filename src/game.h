@@ -147,9 +147,10 @@ extern unsigned char nmons;
 #define I_SHOT     13         /* the flintlock's: paper cartridges, powder and ball */
 #define I_OIL      14         /* a flask of lamp oil: thrown, it bursts into fire (aim.c) */
 #define I_FOOD     15         /* dried meat: thrown, the hungry fall on it */
-#define I_FLASK    16         /* + 0-3: a strange flask, by its colour (green, grey, violet, amber) */
+#define I_ANTIDOTE 16         /* a vial of antidote: the venom's cure */
+#define I_FLASK    17         /* + 0-3: a strange flask, by its colour (green, grey, violet, amber) */
 #define FLASKS     4
-#define I_COUNT    20
+#define I_COUNT    21
 /* what a flask's colour does: shuffled for each descent (pl.flask), known
  * once drunk (pl.known, a bit a colour) or read of on a shelf's page */
 #define FX_SIGHT   0          /* dark-sight: what is in shadow is seen, dimly, a while */
@@ -169,7 +170,7 @@ unsigned char fixture(unsigned int i, unsigned char n);   /* fixture.c: a founta
 /* the merchant's wares on this level (WARES of the shop's list, WARE_KINDS
  * kinds), and how many of each are left (game.c; dungeon.c stocks him) */
 #define WARES      6
-#define WARE_KINDS 12
+#define WARE_KINDS 13
 extern unsigned char ware[WARES], ware_left[WARES];
 unsigned char drink(void);
 unsigned char quaff(unsigned char c);   /* pack.c: the flask of colour c drunk */
@@ -220,6 +221,7 @@ struct player {
     unsigned char flask[FLASKS];    /* each colour's effect (FX_*) */
     unsigned char known;      /* the colours known (bit = colour) */
     unsigned char sight;      /* turns of dark-sight left */
+    unsigned char venom;      /* turns of a creature's venom still in the blood (explore.c) */
 };
 #define CALL_FIGHTER 0
 #define CALL_HUNTER  1

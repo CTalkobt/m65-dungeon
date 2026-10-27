@@ -95,9 +95,12 @@ static unsigned char find(unsigned char line, unsigned char good) {
         str_cat(buf, " ");
         str_cat(buf, item_name(I_POTION, d));
         str_cat(buf, ".");
-    } else if (r < 56) {
+    } else if (r < 52) {
         pl.items[I_DRAUGHT]++;
         str_cat(buf, "A vial of blue glass, faintly humming: a mana draught.");
+    } else if (r < 56) {
+        pl.items[I_ANTIDOTE]++;
+        str_cat(buf, "A slim vial, bitter-smelling: a vial of antidote.");
     } else if (r < 70) {
         r = rng_range(10);
         i = r < 4 ? I_FIRE : r < 7 ? I_RECALL : I_SIGHT;

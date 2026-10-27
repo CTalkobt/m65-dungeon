@@ -110,8 +110,7 @@ unsigned char fight(unsigned char i, unsigned char ambush) {
         if (!obj_at(AT(mons[i].x, mons[i].y)) && r < sizeof drops) obj_set(AT(mons[i].x, mons[i].y), drops[r]);
         msg("The way is clear.", C_DIM);
     } else {
-        mons[i].stun = 3;
-        msg("You escape, heart pounding.", C_DIM);
+        msg("You escape, heart pounding.", C_DIM);   /* (battle.c: how long it is stunned) */
     }
     screen_in();
     return FLED;
@@ -464,6 +463,10 @@ static unsigned char explore_run(unsigned char resume) {
 #ifdef TEST_FUEL
     pl.fuel = TEST_FUEL;             /* (tests: the torch near its end) */
 #endif
+#ifdef TEST_VENOM
+    pl.venom = 40;                   /* (tests: venom in the blood, and an antidote) */
+    pl.items[I_ANTIDOTE] = 1;
+#endif
 #ifdef TEST_VIEW
     /* (tests: a chest (1) or an idol (2) at once) */
     if (TEST_VIEW == 1) chest_view(AT(pl.x, pl.y));
@@ -583,7 +586,12 @@ static unsigned char explore_run(unsigned char resume) {
 static unsigned char turn_pass(void) {
     turn++;
     if (!turn) turn = 1;
-    if (turn % 12 == 0 && pl.hp < pl.maxhp) pl.hp++;
+    if (pl.venom) {
+        /* venom: no mending while it lasts, and now and then a pang (it
+         * leaves 1 life at the least) */
+        if (!--pl.venom) msg("The venom has run its course.", C_DIM);
+        else if (turn % 3 == 0 && pl.hp > 1) pl.hp--;
+    } else if (turn % 12 == 0 && pl.hp < pl.maxhp) pl.hp++;
     if (turn % 18 == 0 && pl.mp < pl.maxmp) pl.mp++;
     if (turn % 64 == 0) memory_sweep();
     torch_burn();
