@@ -410,7 +410,8 @@ round the player, memory a byte a place in colour RAM.
 | Where | What |
 |---|---|
 | $2001-$81FF | the program, its data and variables |
-| $8E00-$BBFF | the code overlay region |
+| $8200-$89FF | the heap (unused: room for the program to grow) |
+| $8A00-$BBFF | the code overlay region (12,800 bytes: one overlay at a time) |
 | $BC00-$BFFF | the stack |
 | $12000-$197FF | DG<NAME>B: a close-up's last characters |
 | $19800-$1F7FF | the sounds' play slots (16 KB, 8 KB) |
@@ -419,7 +420,13 @@ round the player, memory a byte a place in colour RAM.
 | $40000-$4FFFF | DGTILES: the palette (and the map's banks), the terrain's 16-colour tiles, the full-colour tiles, frame and bar characters |
 | $50000-$5DFFF | DG<NAME>A: a close-up's palette, maps, characters |
 | $5E000-$5FF3F | the screen |
-| $8000000-$801FFFF | attic RAM: the overlays (DUNGEON.OV1, DUNGEON.OV2) |
+| $FF80000-$FF81F3F | colour RAM: the screen's colours |
+| $FF82000-$FF82BFF | colour RAM: the map's memory, a byte a place (`seen_*`) |
+| $8000000-$801FFFF | attic RAM: the code overlays, unpacked from DUNGEON.OV1 (bank 800) and DUNGEON.OV2 (bank 801) |
+| $8070000- | attic RAM: the tunes (DGMUSIC) |
 | $8080000- | attic RAM: the sounds, decoded |
 | $8100000- | attic RAM: the close-ups seen so far, 128 KB each |
-| $8300000-$8305FFF | attic RAM: the level's map, its terrain as characters |
+| $8300000-$8305FFF | attic RAM: the level's map, its terrain as characters (128 x 96) |
+| $8310000-$831A27F | attic RAM: DGLOOK, each depth's stone (5 x 8,320 bytes) |
+| $8320000-$83208FF | attic RAM: the messages' history (36 x 64 bytes) |
+| $8340000-$8340623 | attic RAM: the names and `tile_char`, `__bank(0x834)` data (DUNGEON.OV3) |
