@@ -67,6 +67,12 @@ game builds with its SID effects only.
 
 ## Playing
 
+**The day's descent** (D on the title). The dungeon from the date on the
+MEGA65's clock (xemu gives it the host's): everyone who goes down on the
+same day finds the same levels, whichever calling they choose. The ending
+names the day, and the Hall of the Deep marks such a descent with a *. If
+the clock has not been set, the title says so.
+
 The title shows a hint under its keys, another every eight seconds (twelve
 of them: disarming plates, wedging doors, antidotes, luring hunters over
 plates, charms, fire, the level map).

@@ -257,6 +257,7 @@ struct player {
     unsigned char rite;       /* 1 once the lich has called on its crown (battle.c) */
     unsigned char wq, aq, bq, gq;   /* how well made the weapon, armour, bow, gun are (Q_*) */
     unsigned char cq[CHARMS]; /* and each charm's look */
+    unsigned int day;         /* the day's descent: its date (front.c day_of: month * 31 + day + ...), 0 none */
 };
 #define CALL_FIGHTER 0
 #define CALL_HUNTER  1
@@ -266,6 +267,7 @@ struct player {
 #define CAUSE_DART  2         /* a trap's dart */
 #define CAUSE_SLAIN 16        /* + the creature's kind: in a fight */
 #define CAUSE_SHOT  32        /* + the archer's kind */
+#define CAUSE_DAY   0x80      /* (the Hall's record: a day's descent) */
 #define GIFT_MAX   3
 #define TORCH_MAX  600
 #define TORCH_LOW  150        /* below: it burns lower (the light shorter) */

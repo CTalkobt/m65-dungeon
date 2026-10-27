@@ -108,9 +108,39 @@ static unsigned char saved;
 
 static void prompt(void) {
     video_blank(1, 44, 78, 1);
-    video_centre(44, saved ? "RETURN: begin  C: continue  S: settings  F: the fallen  STOP: leave"
-                           : "RETURN: begin    S: settings    F: the fallen    RUN/STOP: leave", C_HILITE);
+    video_centre(44, saved ? "RETURN: begin  C: continue  D: the day's  S: settings  F: fallen"
+                           : "RETURN: begin   D: the day's descent   S: settings   F: the fallen", C_HILITE);
 }
+
+/* ---------------------------------------------------------------- the day's descent */
+
+/* the day by the MEGA65's clock: (year - 2000) * 372 + month * 31 + day
+ * (1 and up; one number a date), 0 if the clock does not know the day.
+ * The clock's day, month and year are BCD at $FFD7113-5 (a DMA's reach;
+ * <time.h>'s rtc_read would bring mktime and 3 KB with it) */
+static unsigned char bcd(unsigned char b) {
+    return (b >> 4) * 10 + (b & 15);
+}
+
+static unsigned int day_of(void) {
+    unsigned char r[3], d, m, y;
+    dma_copy_far((unsigned long)(unsigned int)r, 0xFFD7113UL, 3);
+    d = bcd(r[0] & 0x3F);
+    m = bcd(r[1] & 0x1F);
+    y = bcd(r[2]);
+    if (y < 20 || m < 1 || m > 12 || d < 1 || d > 31) return 0;
+    return (unsigned int)y * 372 + (m - 1) * 31 + d;
+}
+
+/* "27 October" of a day's number */
+static void day_text(char *buf, unsigned int d) {
+    str_num(buf, d % 31 ? d % 31 : 31);
+    str_cat(buf, " ");
+    str_cat(buf, nth("January\0February\0March\0April\0May\0June\0July\0August\0September\0October\0"
+                     "November\0December", (unsigned char)((d - 1) % 372 / 31)));
+}
+
+static unsigned int today;                    /* the day's descent chosen on the title (0: not) */
 
 /* ---------------------------------------------------------------- who goes down */
 
@@ -141,6 +171,7 @@ static unsigned char calling_choose(void) {
 
 void calling_take(void) {
     pl.calling = chosen;
+    pl.day = today;
     switch (chosen) {
     case CALL_FIGHTER:                        /* the front of the fight */
         pl.hp = pl.maxhp = 40;
@@ -206,11 +237,30 @@ unsigned char title(void) {
             }
         }
         if (k == K_FIRE || k == ' ') {
+            today = 0;
             k = calling_choose();
             if (k != 0xFF) {
                 chosen = k;
                 break;
             }
+            title_text();
+            prompt();
+        }
+        if (k == 'd') {
+            /* the day's descent: the same dungeon for everyone today */
+            today = day_of();
+            if (!today) {
+                video_blank(1, 44, 78, 1);
+                video_centre(44, "The clock does not know the day: set the MEGA65's clock.", C_RED);
+                continue;
+            }
+            k = calling_choose();
+            if (k != 0xFF) {
+                chosen = k;
+                r = 3;
+                break;
+            }
+            today = 0;
             title_text();
             prompt();
         }
@@ -240,6 +290,7 @@ unsigned char title(void) {
     rng_state ^= t * 31 + REG(0xD012);
     if (!rng_state) rng_state = 0xACE1;
 #endif
+    if (r == 3) rng_state = today * 0x9E37 + 0x5A5B;   /* (the day's: the same for all; odd, never 0) */
     sfx(SFX_BELL);
     video_fade(0);
     return r;
@@ -295,7 +346,7 @@ static unsigned char fame_add(unsigned char won) {
     f.won = won;
     f.depth = pl.depth;
     f.level = pl.level;
-    f.cause = pl.cause;
+    f.cause = pl.cause | (pl.day ? CAUSE_DAY : 0);
     f.turns = turn;
     f.gold = pl.gold;
     f.kills = pl.kills;
@@ -318,6 +369,7 @@ static void a_mon(char *buf, unsigned char kind) {
 
 /* what ended it, in a few words */
 static void cause_text(char *buf, unsigned char won, unsigned char cause) {
+    cause &= ~CAUSE_DAY;
     if (won) str_cat(buf, "destroyed the lich");
     else if (cause >= CAUSE_SHOT) {
         str_cat(buf, "shot by ");
@@ -330,7 +382,7 @@ static void cause_text(char *buf, unsigned char won, unsigned char cause) {
 
 /* the hall, in the title's box of words (F) */
 static void fame_show(void) {
-    unsigned char k;
+    unsigned char k, g = 0;
     char buf[80];
     if (!fame_read) fame_load();
     video_blank(1, 34, 78, 15);
@@ -343,8 +395,10 @@ static void fame_show(void) {
         }
         buf[0] = (char)('1' + k);
         buf[1] = '.';
-        buf[2] = ' ';
-        buf[3] = 0;
+        buf[2] = fame[k].cause & CAUSE_DAY ? '*' : ' ';   /* (a day's descent) */
+        buf[3] = ' ';
+        buf[4] = 0;
+        if (fame[k].cause & CAUSE_DAY) g = 1;
         if (fame[k].won) str_cat(buf, "The lich's bane");
         else {
             str_cat(buf, "Depth ");
@@ -360,6 +414,7 @@ static void fame_show(void) {
         cause_text(buf, fame[k].won, fame[k].cause);
         video_text(3, 37 + k * 2, buf, k ? C_TEXT : C_HILITE);
     }
+    if (g) video_centre(46, "* a day's descent", C_DIM);
     video_centre(47, "Press a key.", C_DARK);
     key_wait();
 }
@@ -474,6 +529,13 @@ void ending(unsigned char how) {
         str_num(buf, k);
         str_cat(buf, k == 1 ? "st." : k == 2 ? "nd." : k == 3 ? "rd." : "th.");
         video_centre(44, buf, C_GOLD);
+    }
+    if (pl.day) {
+        buf[0] = 0;
+        str_cat(buf, "The day's descent of ");
+        day_text(buf, pl.day);
+        str_cat(buf, ".");
+        video_centre(45, buf, C_GOLD);
     }
     video_centre(47, "Press a key.", C_DARK);
     video_frames(50);

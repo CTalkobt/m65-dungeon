@@ -45,7 +45,7 @@ static const char __noescape lines[] =
     "RUN/STOP\0back out of the spells, items or shots\0"
     "\0On the title\0"
     "RETURN\0begin: then choose who goes down\0"
-    "C, S, F\0continue the saved descent, settings, the fallen\0";
+    "C, D, S, F\0continue; the day's descent; settings; the fallen\0";
 #define LINES 27
 
 void help_screen(void) {
