@@ -156,12 +156,14 @@ void memory_sweep(void) {
 const unsigned char item_col[I_COUNT] = {
     C_RED, C_BLUE, C_BONE, C_BONE, C_BONE, C_GOLD, C_ORANGE, C_ORANGE, C_ORANGE, C_ORANGE, C_GREY, C_ORANGE,
     C_TEXT, C_GREY, C_ORANGE, C_BLOOD, C_CYAN, C_GREEN, C_GREY, C_PURPLE, C_GOLD,
+    C_GREY, C_GREEN, C_TEXT, C_BONE, C_GOLD,
 };
 
 /* each thing's tile, lying on the floor */
 const unsigned char item_tile[I_COUNT] = {
     T_POTION, T_DRAUGHT, T_SCROLL, T_SCROLL, T_SCROLL, T_KEY, T_RAGS, T_STICKS, T_FUR, T_CANDLE,
     T_FLINT, T_FIRESTICK, T_ARROWS, T_SHOT, T_OIL, T_FOOD, T_ANTIDOTE, T_FLASK1, T_FLASK2, T_FLASK3, T_FLASK4,
+    T_CHARM, T_CHARM, T_CHARM, T_CHARM, T_CHARM,
 };
 
 unsigned char arrows_spent;
@@ -185,7 +187,19 @@ static __bank(NAMES_BANK) const char flask_names[] =
     "flask of dark-sight\0flasks of dark-sight\0flask of clear memory\0flasks of clear memory\0"
     "flask of vigour\0flasks of vigour\0flask of poison\0flasks of poison";
 
+static __bank(NAMES_BANK) const char charm_names[] =
+    "iron ring\0iron rings\0jade ring\0jade rings\0silver ring\0silver rings\0"
+    "bone amulet\0bone amulets\0amber amulet\0amber amulets\0"
+    "charm of the steady flame\0charms of the steady flame\0charm of mending\0charms of mending\0"
+    "charm of the cat's eye\0charms of the cat's eye\0charm against the dead\0charms against the dead\0"
+    "charm against venom\0charms against venom";
+
 const char *item_name(unsigned char i, unsigned char n) {
+    if (i >= I_CHARM) {
+        i -= I_CHARM;
+        if (pl.cknown & (1 << i)) i = CHARMS + pl.charm[i];
+        return far_nth(charm_names, i * 2 + (n != 1));
+    }
     if (i >= I_FLASK) {
         i -= I_FLASK;
         if (pl.known & (1 << i)) i = FLASKS + pl.flask[i];

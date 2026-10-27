@@ -151,7 +151,9 @@ extern unsigned char nmons;
 #define I_ANTIDOTE 16         /* a vial of antidote: the venom's cure */
 #define I_FLASK    17         /* + 0-3: a strange flask, by its colour (green, grey, violet, amber) */
 #define FLASKS     4
-#define I_COUNT    21
+#define I_CHARM    21         /* + 0-4: a ring or an amulet, by its look (iron, jade, silver, bone, amber) */
+#define CHARMS     5
+#define I_COUNT    26
 /* what a flask's colour does: shuffled for each descent (pl.flask), known
  * once drunk (pl.known, a bit a colour) or read of on a shelf's page */
 #define FX_SIGHT   0          /* dark-sight: what is in shadow is seen, dimly, a while */
@@ -159,6 +161,15 @@ extern unsigned char nmons;
 #define FX_VIGOUR  2          /* more life, for good */
 #define FX_POISON  3
 #define SIGHT_TURNS 120
+/* what a charm's look does, worn: shuffled for each descent (pl.charm),
+ * known once worn (pl.cknown); one worn at a time (pl.worn: look + 1,
+ * pl.wfx: what it does + 1) */
+#define CH_LAMP    0          /* the torch burns half as fast */
+#define CH_MEND    1          /* wounds mend over twice as fast */
+#define CH_EYE     2          /* what is in shadow, seen dimly (as dark-sight) */
+#define CH_BONE    3          /* a ward at the start of a fight with the undead */
+#define CH_SNAKE   4          /* no venom takes hold */
+#define WEARS(fx)  (pl.wfx == (fx) + 1)
 const char *item_name(unsigned char i, unsigned char n);   /* game.c: as for n of them */
 extern const unsigned char item_col[I_COUNT];               /* game.c: its colour in text */
 extern const unsigned char item_tile[I_COUNT];              /* game.c: its tile, put down (T_*) */
@@ -223,6 +234,9 @@ struct player {
     unsigned char known;      /* the colours known (bit = colour) */
     unsigned char sight;      /* turns of dark-sight left */
     unsigned char venom;      /* turns of a creature's venom still in the blood (explore.c) */
+    unsigned char charm[CHARMS];    /* each charm's effect (CH_*) */
+    unsigned char cknown;     /* the charms known (bit = look) */
+    unsigned char worn, wfx;  /* the charm worn: its look + 1, its effect + 1; 0 none */
 };
 #define CALL_FIGHTER 0
 #define CALL_HUNTER  1
@@ -321,6 +335,7 @@ void ui_bar(unsigned char col, unsigned char row, unsigned char w, unsigned char
 void ui_wrap(unsigned char col, unsigned char row, unsigned char w, const char *s, unsigned char colour);
 void ui_stats(unsigned char col, unsigned char row);
 void str_cat(char *d, const char *s);
+const char *a_an(const char *s);      /* "a " or "an ", as s begins */
 const char *nth(const char *list, unsigned char n);   /* the nth of "a\0b\0c" */
 const char *far_nth(const char __far *list, unsigned char n);   /* the same of a far table: copied out */
 const char *mon_name(unsigned char kind);   /* game.c: "giant rat" (copied out: far_nth) */

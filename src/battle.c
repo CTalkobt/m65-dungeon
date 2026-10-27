@@ -401,9 +401,12 @@ static unsigned char creature_acts(void) {
         if (!hurt(d, 1)) return 0;
         if (pl.hp == h) return 1;            /* (the ward took it all) */
         if (a == A_POISON) {
-            poison = 3;
-            sfx(SFX_POISON);
-            say("Venom burns in your veins.", C_GREEN);
+            if (WEARS(CH_SNAKE)) say("The venom finds no hold in you.", C_DIM);
+            else {
+                poison = 3;
+                sfx(SFX_POISON);
+                say("Venom burns in your veins.", C_GREEN);
+            }
         } else if (a == A_BURN) {
             burning = 3;
             sfx(SFX_FIRE);
@@ -739,6 +742,11 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
     draw_all();
     say(mon_lore(), C_BONE);
     if (ambush) say("It is upon you!", C_RED);
+    if (WEARS(CH_BONE) && (mt.flags & MF_UNDEAD)) {
+        ward = 10 + pl.level;
+        say("Your charm grows cold: a ward against the dead.", C_BLUE);
+        draw_you();
+    }
     video_fade(16);
     sfx(SFX_GROWL);
 

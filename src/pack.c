@@ -94,7 +94,8 @@ void pick_up(unsigned int i, unsigned char n) {
         obj_set(i, O_NONE);
         buf[0] = 0;
         if (n == 1) {
-            str_cat(buf, "You pick up a ");
+            str_cat(buf, "You pick up ");
+            str_cat(buf, a_an(item_name(k, 1)));
             str_cat(buf, item_name(k, 1));
         } else {
             str_cat(buf, "You gather ");
@@ -214,6 +215,32 @@ unsigned char quaff(unsigned char c) {
     return 1;
 }
 
+/* the charm of look c put on (the one worn before back with the rest):
+ * what it does, and from now on its name */
+static unsigned char wear(unsigned char c) {
+    char buf[64];
+    pl.items[I_CHARM + c]--;
+    if (pl.worn) pl.items[I_CHARM + pl.worn - 1]++;
+    pl.worn = c + 1;
+    pl.wfx = pl.charm[c] + 1;
+    buf[0] = 0;
+    str_cat(buf, "You put on the ");
+    str_cat(buf, item_name(I_CHARM + c, 1));
+    str_cat(buf, ".");
+    msg(buf, item_col[I_CHARM + c]);
+    pl.cknown |= 1 << c;
+    msg(nth("Your torch's flame steadies, and burns slower.\0A warmth settles in your wounds.\0"
+            "Your eyes sharpen: the shadows give up their shapes.\0It is cold as a grave, and you feel guarded.\0"
+            "Your blood runs strong and clean.", pl.charm[c]), C_CYAN);
+    buf[0] = 0;
+    str_cat(buf, "It is a ");
+    str_cat(buf, item_name(I_CHARM + c, 1));
+    str_cat(buf, ".");
+    msg(buf, C_DIM);
+    sfx(SFX_CHIME);
+    return 1;
+}
+
 /* an item used on the map; 1 if that took the turn */
 static unsigned char use(unsigned char k) {
     unsigned char d;
@@ -267,6 +294,7 @@ static unsigned char use(unsigned char k) {
         sfx(SFX_DRINK);
         return 1;
     }
+    if (k >= I_CHARM) return wear(k - I_CHARM);
     if (k >= I_FLASK) return quaff(k - I_FLASK);
     if (k >= I_FLINT) return light(k);
     return feed(k);
@@ -328,6 +356,10 @@ unsigned char inventory(void) {
     str_num(buf, pl.fuel);
     str_cat(buf, " turns of fuel");
     video_text(INV_COL + 3, INV_ROW + 7, buf, pl.lit ? C_ORANGE : C_RED);
+    buf[0] = 0;
+    str_cat(buf, "Charm   ");
+    str_cat(buf, pl.worn ? item_name(I_CHARM + pl.worn - 1, 1) : "none");
+    video_text(INV_COL + 3, INV_ROW + 8, buf, pl.worn ? item_col[I_CHARM + pl.worn - 1] : C_TEXT);
     for (k = 0; k < 2; k++) {
         buf[0] = 0;
         str_cat(buf, k ? "Gun     " : "Bow     ");
@@ -389,7 +421,7 @@ unsigned char inventory(void) {
             }
             buf[0] = 0;
             str_cat(buf, "You put down ");
-            if (pl.items[k] == 1) str_cat(buf, "a ");
+            if (pl.items[k] == 1) str_cat(buf, a_an(item_name(k, 1)));
             else {
                 str_num(buf, pl.items[k]);
                 str_cat(buf, " ");

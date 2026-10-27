@@ -117,6 +117,18 @@ void game_unsave(void) {
 
 /* ---------------------------------------------------------------- the player */
 
+/* 0 .. n - 1 in a new order */
+static void shuffle(unsigned char *a, unsigned char n) {
+    unsigned char k, j, t;
+    for (k = 0; k < n; k++) a[k] = k;
+    for (k = n - 1; k; k--) {
+        j = rng_range(k + 1);
+        t = a[k];
+        a[k] = a[j];
+        a[j] = t;
+    }
+}
+
 void player_new(void) {
     unsigned char k;
     pl.hp = pl.maxhp = 30;
@@ -140,14 +152,11 @@ void player_new(void) {
     pl.ups = pl.keen = pl.steady = pl.aim = pl.wary = 0;
     pl.kills = 0;
     pl.cause = 0;
-    /* the flasks' colours: a new order each descent, none known */
-    for (k = 0; k < FLASKS; k++) pl.flask[k] = k;
-    for (k = FLASKS - 1; k; k--) {
-        unsigned char j = rng_range(k + 1), t = pl.flask[k];
-        pl.flask[k] = pl.flask[j];
-        pl.flask[j] = t;
-    }
-    pl.known = 0;
+    /* the flasks' colours, the charms' looks: a new order each descent,
+     * none known */
+    shuffle(pl.flask, FLASKS);
+    shuffle(pl.charm, CHARMS);
+    pl.known = pl.cknown = pl.worn = pl.wfx = 0;
     pl.sight = pl.venom = 0;
     turn = 1;
 }

@@ -164,6 +164,16 @@ dimly, torch or no torch), one clears your memory (what you see fades
 slowly, for the level), one is vigour (3 more life, for good), and one
 is poison. Once known, a flask goes by its name.
 
+**Charms.** Rings and amulets (iron, jade or silver rings; bone or amber
+amulets) lie about now and then below the first level, and turn up in
+chests. One is worn at a time: put one on from what you carry (the one
+worn before goes back with the rest). As with the flasks, what each look
+does is shuffled for every descent and known once worn: the *steady
+flame* (the torch burns half as fast), *mending* (wounds mend over twice
+as fast), the *cat's eye* (what is in shadow is seen dimly, as with
+dark-sight), *against the dead* (a ward at the start of every fight with
+the undead) and *against venom* (no venom takes hold).
+
 **Doors.** Creatures open shut doors (it takes them a move), but a shut
 door breaks their line of sight: K shuts an open door beside you. K again
 wedges it with a bundle of sticks, and then nothing opens it, though a

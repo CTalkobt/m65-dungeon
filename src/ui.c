@@ -95,6 +95,10 @@ unsigned char key_wait(void) {
 
 /* ---------------------------------------------------------------- strings */
 
+const char *a_an(const char *s) {
+    return *s == 'a' || *s == 'e' || *s == 'i' || *s == 'o' || *s == 'u' ? "an " : "a ";
+}
+
 void str_cat(char *d, const char *s) {
     while (*d) d++;
     while (*s) *d++ = *s++;

@@ -165,6 +165,7 @@ static unsigned char door_shut(void) {
 static void torch_burn(void) {
     if (!pl.lit) return;
     if (pl.steady && turn % (5 - pl.steady) == 0) return;   /* (a steady torch: 1 turn in 4, 3, 2 free) */
+    if (WEARS(CH_LAMP) && (turn & 1)) return;                /* (the charm: every other turn free) */
     if (pl.fuel) pl.fuel--;
     if (pl.fuel == TORCH_LOW) msg("Your torch burns lower.", C_ORANGE);
     else if (pl.fuel == TORCH_GUTTER) msg("Your torch gutters. Feed it, or it will die.", C_ORANGE);
@@ -500,6 +501,11 @@ static unsigned char explore_run(unsigned char resume) {
 #ifdef TEST_FUEL
     pl.fuel = TEST_FUEL;             /* (tests: the torch near its end) */
 #endif
+#ifdef TEST_CHARMS
+    for (k = 0; k < CHARMS; k++) pl.items[I_CHARM + k] = 1;   /* (tests: one of each charm, */
+    pl.worn = 1;                                              /* and one worn: CH_* TEST_CHARMS) */
+    pl.wfx = TEST_CHARMS + 1;
+#endif
 #ifdef TEST_VENOM
     pl.venom = 40;                   /* (tests: venom in the blood, and an antidote) */
     pl.items[I_ANTIDOTE] = 1;
@@ -631,7 +637,7 @@ static unsigned char turn_pass(void) {
          * leaves 1 life at the least) */
         if (!--pl.venom) msg("The venom has run its course.", C_DIM);
         else if (turn % 3 == 0 && pl.hp > 1) pl.hp--;
-    } else if (turn % 12 == 0 && pl.hp < pl.maxhp) pl.hp++;
+    } else if (turn % (WEARS(CH_MEND) ? 5 : 12) == 0 && pl.hp < pl.maxhp) pl.hp++;
     if (turn % 18 == 0 && pl.mp < pl.maxmp) pl.mp++;
     if (turn % 64 == 0) memory_sweep();
     torch_burn();

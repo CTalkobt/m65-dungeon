@@ -666,6 +666,25 @@ for _k, (_a, _b) in enumerate((("g", "G"), ("s", "S"), ("p", "P"), ("Y", "d"))):
 ART["oil"] = [r.replace('r', 'Y').replace('R', 'd').replace('n', 'b') for r in ART["potion"]]
 ART["idol_spent"] = [r.replace('z', 'T') for r in ART["idol"]]
 ART["draught"] = [r.replace('r', 'u').replace('R', 'U') for r in ART["potion"]]
+# a charm: a ring or an amulet, a stone in gold on its loop (one tile for all)
+ART["charm"] = [
+    "................",
+    "................",
+    "................",
+    ".....kkkkkk.....",
+    "....kYddddYk....",
+    "...kYk....kYk...",
+    "...kYk....kYk...",
+    "....kYk..kYk....",
+    ".....kYkkYk.....",
+    "......kYYk......",
+    ".....kkcckk.....",
+    "....kYcwccYk....",
+    "....kYccccYk....",
+    ".....kYccYk.....",
+    "......kkkk......",
+    "................",
+]
 # the antidote: a slim vial, pale green, a paper label round it
 ART["antidote"] = ["................"] * 3 + [
     ".......kk.......",
@@ -1077,7 +1096,7 @@ def terrain_kinds(style=0):
 SPRITES = ("chest", "chest_open", "idol", "idol_spent", "potion", "gold", "bones", "brazier",
            "brazier_cold", "scroll", "key", "draught", "rags", "sticks", "fur", "candle", "flint", "firestick",
            "arrows", "shot", "merchant", "fountain", "fountain_dry", "shelf", "oil", "food", "flames",
-           "flask1", "flask2", "flask3", "flask4", "antidote", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats", "ghoul", "ember",
+           "flask1", "flask2", "flask3", "flask4", "antidote", "charm", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats", "ghoul", "ember",
            "note1", "note2", "note3", "note4")
 
 

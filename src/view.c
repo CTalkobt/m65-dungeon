@@ -128,7 +128,7 @@ void view_fov(void) {
             else if (d2 <= 22) v = 3;
             else if (d2 <= 38) v = 4;
             else v = VIS_SHADOW;
-            if (dim == TORCH_OUT || v + dim > 4) v = pl.sight ? 4 : VIS_SHADOW;   /* (dark-sight: dimly) */
+            if (dim == TORCH_OUT || v + dim > 4) v = (pl.sight || WEARS(CH_EYE)) ? 4 : VIS_SHADOW;   /* (dark-sight: dimly) */
             else v += dim;
             if (v > 2 && lit_at((unsigned char)x, (unsigned char)y)) v = 2;
             win[w] = v;
@@ -274,7 +274,7 @@ void view_draw(void) {
                          torch(dx * 4 + (q & 1) * 2 - 1, dy * 4 + (q >> 1) * 2 - 1,
                                bayer[(((ty * 2 + (q >> 1)) & 3) << 2) | ((c + (q & 1)) & 3)]) + dim;
                     if (room && lv > 1) lv = 1;
-                    if (lv > 3) lv = pl.sight ? 3 : 0xFF;   /* beyond the light: as remembered (dark-sight: dim) */
+                    if (lv > 3) lv = (pl.sight || WEARS(CH_EYE)) ? 3 : 0xFF;   /* beyond the light: as remembered (dark-sight: dim) */
                 }
                 if (o != 0xFF) {
                     k = ov_v[o] == OV_TORCH ? lv : ov_v[o];

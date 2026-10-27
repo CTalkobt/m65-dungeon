@@ -1,6 +1,6 @@
 /* fixture.c — what stands in the rooms to be used: a fountain to drink
- * from, a bookshelf to search; once each (the overlay "pack") */
-#pragma cc45 overlay(pack)
+ * from, a bookshelf to search; once each (the overlay "scenes") */
+#pragma cc45 overlay(scenes)
 #pragma cc45 noescape_strings
 #include "hw.h"
 #include "assets.h"
