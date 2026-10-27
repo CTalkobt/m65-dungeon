@@ -32,6 +32,8 @@ LEAN = {1: (1, 0, 0, 2), 2: (1, 0, 0, 2), 3: (2, 0, 0, 2), 4: (3, 1, 0, 2), 5: (
 CALLINGS = ("fighter", "hunter", "lamplighter")
 # fights on a level: about half of its creatures (6 + 2 per depth below the first)
 FIGHTS = {d: (6 + 2 * (d - 1)) // 2 for d in range(1, 6)}
+BOLT_DICE = 2     # the lich's violet fire: 2d6 - 2 (1 at the least) more than its blow (battle.c A_BOLT)
+BOLT_PLUS = -2
 REST = 5          # life mended between fights (a regain a 12 turns, some walking)
 
 
@@ -164,7 +166,7 @@ class Fight:
         elif a in (A["SPIT"], A["CHILL"], A["BOLT"]):
             d = self.roll()
             if a == A["BOLT"]:
-                d += dice(2, 6)
+                d += max(1, dice(BOLT_DICE, 6) + BOLT_PLUS)
             if self.parrying:
                 d = d // 2 + 1
             self.hurt(d, a == A["SPIT"])

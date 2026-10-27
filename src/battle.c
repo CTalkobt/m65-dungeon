@@ -427,7 +427,8 @@ static unsigned char creature_acts(void) {
         lunge(SFX_GROWL);
         d = roll();
         if (a == A_BOLT) {
-            d += rng_dice(2, 6);
+            h = rng_dice(2, 6);                  /* (2d6 - 2, 1 at the least: tools/balance.py) */
+            d += h > 3 ? h - 2 : 1;
             sfx(SFX_SPELL);
             flash(200, 120, 255, 14);
             say("Violet fire sears you!", C_PURPLE);

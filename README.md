@@ -117,7 +117,9 @@ from them) and its memory.
 
 **The sanctum.** On the last level the lich waits in the last room, with
 two of its skeletons on guard and bones strewn about. When it notices you
-it speaks, and every creature on the level wakes and hunts. Once in a
+it speaks, and every creature on the level wakes and hunts. Its violet
+fire burns 2d6-2 more than its blow (1 at the least), and armour does not
+turn it. Once in a
 descent, brought to half its life, it calls on its crown: it mends half of
 the life it has taken from you in that fight, less 3 (1 at the least;
 what a ward or a parry kept from it does not count), and its next blow will be terrible (enraged).
