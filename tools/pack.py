@@ -21,29 +21,7 @@ MIN_RUN = 3
 MAX_RUN = 0x3F + MIN_RUN
 MAX_LIT = 0x40
 WINDOW = 0xFFFF
-CHAIN = 96          # candidates looked at for each position
-
-
-def _match(data, i, cands, n):
-    """the best earlier copy of data[i:] (offset >= length): (len, off, cost)
-    by the bytes it saves"""
-    best = (0, 0, 0)
-    for j in reversed(cands[-CHAIN:]):
-        off = i - j
-        if off > WINDOW:
-            break
-        lim = min(MAX_RUN, off, n - i)
-        if lim < MIN_RUN:
-            continue
-        L = MIN_RUN
-        while L < lim and data[j + L] == data[i + L]:
-            L += 1
-        cost = 2 if off <= 256 else 3
-        if L - cost > best[0] - best[2]:
-            best = (L, off, cost)
-            if L == MAX_RUN and cost == 2:
-                break
-    return best
+CHAIN = 96          # candidates looked at for each position (more: little gained)
 
 
 def _run(data, i, n):
@@ -56,72 +34,96 @@ def _run(data, i, n):
 
 def pack(data, dest):
     """data unpacking to dest: (the stream, skip: where to load it, as an
-    offset from dest)"""
+    offset from dest). The tokens are chosen for the shortest stream: a
+    parse from the end, each place's cheapest way on (a token, or a literal
+    run); the copies looked for among the CHAIN last places that began
+    with the same 3 bytes"""
     data = bytes(data)
     n = len(data)
-    out = bytearray([dest & 0xFF, (dest >> 8) & 0xFF, (dest >> 16) & 0xFF])
-    lits = bytearray()
+    INF = 1 << 30
+    # the longest copy from a near (<= 256 back) and from a far offset
+    # at each place, and the run of one byte there
+    near = [0] * n
+    far = [0] * n
+    near_off = [0] * n
+    far_off = [0] * n
+    run = [0] * n
     chains = {}
-    marks = []                     # (bytes unpacked, bytes of stream read) after each token
-    nxt = [0]                      # the next position to go into the chains
-
-    def add_upto(p):
-        while nxt[0] < p:
-            q = nxt[0]
-            if q + MIN_RUN <= n:
-                chains.setdefault(data[q:q + MIN_RUN], []).append(q)
-            nxt[0] += 1
-
-    def best(p):
-        """the best token at p: (len, off (0: a fill), cost)"""
-        add_upto(p)
-        m = (0, 0, 0)
-        if p + MIN_RUN <= n:
-            m = _match(data, p, chains.get(data[p:p + MIN_RUN], []), n)
-        r = _run(data, p, n)
-        if r and r - 2 >= m[0] - m[2]:
-            m = (r, 0, 2)
-        return m
-
-    def flush(upto):
-        """the literals waiting (they end at upto) as literal tokens"""
-        while lits:
-            k = min(len(lits), MAX_LIT)
-            out.append(k - 1)
-            out.extend(lits[:k])
-            del lits[:k]
-            marks.append((upto - len(lits), len(out)))
-
-    def literal(p):
-        lits.append(data[p])
-        if len(lits) == MAX_LIT:
-            flush(p + 1)
-
+    for i in range(n):
+        if i + MIN_RUN <= n:
+            key = data[i:i + MIN_RUN]
+            cands = chains.get(key)
+            if cands:
+                bn = bf = 0
+                for j in reversed(cands[-CHAIN:]):
+                    off = i - j
+                    if off > WINDOW:
+                        break
+                    lim = min(MAX_RUN, off, n - i)
+                    if lim < MIN_RUN or (off <= 256 and lim <= bn) or (off > 256 and lim <= bf):
+                        continue
+                    L = MIN_RUN
+                    while L < lim and data[j + L] == data[i + L]:
+                        L += 1
+                    if off <= 256:
+                        if L > bn:
+                            bn, near_off[i] = L, off
+                    elif L > bf:
+                        bf, far_off[i] = L, off
+                near[i], far[i] = bn, bf
+            chains.setdefault(key, []).append(i)
+        r = _run(data, i, n)
+        run[i] = r
+    # A[i]: the cheapest from i at a token's start; B[i]: from i inside a
+    # literal run (data[i] one of its bytes)
+    A = [INF] * (n + 1)
+    B = [INF] * (n + 1)
+    choice = [None] * (n + 1)
+    A[n] = 0
+    for i in range(n - 1, -1, -1):
+        B[i] = 1 + min(B[i + 1], A[i + 1])
+        best, how = 1 + B[i], None
+        for L in range(MIN_RUN, run[i] + 1):
+            c = 2 + A[i + L]
+            if c < best:
+                best, how = c, (L, 0)
+        for L in range(MIN_RUN, near[i] + 1):
+            c = 2 + A[i + L]
+            if c < best:
+                best, how = c, (L, near_off[i])
+        for L in range(max(MIN_RUN, near[i] + 1), far[i] + 1):
+            c = 3 + A[i + L]
+            if c < best:
+                best, how = c, (L, far_off[i])
+        A[i] = best
+        choice[i] = how
+    out = bytearray([dest & 0xFF, (dest >> 8) & 0xFF, (dest >> 16) & 0xFF])
+    marks = []
     i = 0
     while i < n:
-        L, off, cost = best(i)
-        if L > cost and i + 1 < n:
-            # lazy: if what starts one byte on saves more, that byte is a literal
-            L2, off2, cost2 = best(i + 1)
-            if L2 - cost2 > L - cost + 1:
-                literal(i)
-                i += 1
-                L, off, cost = L2, off2, cost2
-        if L > cost:
-            flush(i)
-            t = L - MIN_RUN
-            if off == 0:
-                out += bytes([0x40 | t, data[i]])
-            elif off <= 256:
-                out += bytes([0x80 | t, off - 1])
-            else:
-                out += bytes([0xC0 | t, off & 0xFF, off >> 8])
-            i += L
-            marks.append((i, len(out)))
+        how = choice[i]
+        if how is None:
+            # a literal run: on while staying in it is the cheaper way
+            j = i + 1
+            while j < n and B[j] <= A[j]:
+                j += 1
+            while i < j:
+                k = min(j - i, MAX_LIT)
+                out.append(k - 1)
+                out.extend(data[i:i + k])
+                i += k
+                marks.append((i, len(out)))
+            continue
+        L, off = how
+        t = L - MIN_RUN
+        if off == 0:
+            out += bytes([0x40 | t, data[i]])
+        elif off <= 256:
+            out += bytes([0x80 | t, off - 1])
         else:
-            literal(i)
-            i += 1
-    flush(n)
+            out += bytes([0xC0 | t, off & 0xFF, off >> 8])
+        i += L
+        marks.append((i, len(out)))
     out += b"\xC0\x00\x00"
     marks.append((n, len(out)))
     skip = max(0, max(o - r for o, r in marks))

@@ -125,7 +125,12 @@ fast and erratic, two moves a turn, weak alone. Deeper down, a chest may
 be a mimic: it never moves and does not show itself as a creature (it is
 not aimed at, and travel does not stop for it) until you reach for it,
 and then it strikes first. It is fought in the chest's close-up, with its
-own words (DGMIMICH, its header, loaded over the chest's).
+own words (DGMIMICH, its header, loaded over the chest's). Ghouls (depths 2-4) shrink from
+the light: they keep to the edge of your torch's reach and close in
+only when it gutters out, quick in the dark then. Ember spiders (depths
+3-5) spit fire. Both are fought in another's close-up recoloured: their
+file (DGGHOULH, DGEMBERH: 5 blocks) holds a palette (the creature's own
+colours only, not its shadow on the wall) and the header.
 
 **Shooting** (T: the bow, G: the flintlock). A red mark blinks on the
 nearest creature you can see (lit, or eyes in the dark) within reach and

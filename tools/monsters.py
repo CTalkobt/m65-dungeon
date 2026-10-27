@@ -521,17 +521,20 @@ ACTIONS = ["NONE", "MELEE", "HEAVY", "GUARD", "POISON", "WEB", "SPIT", "REGEN", 
 FLAGS = ["FIREWEAK", "COLDPROOF", "HARDFLEE", "VENOM", "SLOW", "BOSS", "UNDEAD"]
 # what it does on the map (the game's MH_*): shoots arrows from afar,
 # snatches fuel or arrows and runs, dissolves what lies in its way,
-# flits erratically and fast (two moves a turn), lies still as a chest
-HABITS = ["ARCHER", "THIEF", "EATER", "FLIT", "MIMIC"]
+# flits erratically and fast (two moves a turn), lies still as a chest,
+# shrinks from the light (and hunts fast in the dark)
+HABITS = ["ARCHER", "THIEF", "EATER", "FLIT", "MIMIC", "DARK"]
 
 
 def info(name, tele, hit, lore, death, hp, dice, sides, plus, defense, xp, acts, depths, flags=(), habits=(),
-         scene=None, tile=None):
+         scene=None, tile=None, look=None):
     """acts: (action, weight) a fight's choices; depths: {level: weight};
-    scene, tile: another's close-up and map tile, not its own"""
+    scene, tile: another's close-up and map tile, not its own; look: that
+    close-up's creature recoloured (tint, how much colour kept, brightness,
+    the glow's colour)"""
     return dict(name=name, tele=tele, hit=hit, lore=lore, death=death, hp=hp, dice=dice, sides=sides,
                 plus=plus, defense=defense, xp=xp, acts=acts, depths=depths, flags=flags, habits=habits,
-                scene=scene, tile=tile)
+                scene=scene, tile=tile, look=look)
 
 
 MONSTERS = [
@@ -589,4 +592,19 @@ MONSTERS = [
         hp=34, dice=1, sides=8, plus=3, defense=3, xp=30,
         acts=[("MELEE", 4), ("HEAVY", 3), ("GUARD", 2)], depths={},
         habits=("MIMIC",), scene="chest", tile="chest")),
+    # two in others' close-ups, recoloured: a palette and a header each
+    ("ghoul", None, info(
+        "ghoul", "hunches, claws spread", "rakes you",
+        "Grave-flesh stretched over old bones. It hates the light.", "falls, and the stink lingers.",
+        hp=22, dice=1, sides=6, plus=2, defense=1, xp=16,
+        acts=[("MELEE", 4), ("LUNGE", 3), ("POISON", 2)], depths={2: 1, 3: 1, 4: 1},
+        flags=("UNDEAD",), habits=("DARK",), scene="skeleton", tile="ghoul",
+        look=((0.78, 1.0, 0.62), 0.55, 0.8, (0.5, 1.0, 0.3)))),
+    ("ember", None, info(
+        "ember spider", "rears, embers in its maw", "sears you",
+        "Its belly glows like a coal. The air shimmers over it.", "curls up, and its glow fades.",
+        hp=20, dice=1, sides=8, plus=1, defense=2, xp=20,
+        acts=[("POISON", 3), ("SPIT", 3), ("LUNGE", 3)], depths={3: 1, 4: 1, 5: 1},
+        flags=("VENOM",), scene="spider", tile="ember",
+        look=((1.35, 0.62, 0.32), 1.2, 1.05, (1.0, 0.55, 0.1)))),
 ]

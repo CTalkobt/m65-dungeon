@@ -119,6 +119,15 @@ unsigned char creatures_move(void) {
             dx = -dx;
             dy = -dy;
         }
+        if ((mon_habits[c->kind] & MH_DARK) && c->awake == 2) {
+            /* a ghoul shrinks from the light (but strikes what it is next
+             * to), and is quick in the dark while the torch is out */
+            y = vis_at(c->x, c->y);
+            if (y && y != VIS_SHADOW && d > 1) {
+                dx = -dx;
+                dy = -dy;
+            } else if (!pl.lit && (y = go(k, dx, dy)) != 0) return y;
+        }
         if (mon_habits[c->kind] & MH_FLIT) {
             /* bats: two flits a turn, and one in two of them anywhere */
             for (d = 0; d < 2; d++) {

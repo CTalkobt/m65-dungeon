@@ -684,7 +684,13 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
     unsigned char a, r;
     m = &mons[mi];
     scene_load(mon_scene[m->kind]);
-    if (mon_hdr_file[m->kind]) load_file(mon_hdr_file[m->kind], 5);   /* (another's close-up: its own words) */
+    if (mon_hdr_file[m->kind]) {
+        /* another's close-up: its own words (and colours, when it has
+         * them); the next close-up comes from the cache again, unchanged */
+        load_file(mon_hdr_file[m->kind], 5);
+        video_pal_load(SCENE_LIN, PAL_SCENE, 255 - PAL_SCENE);
+        scene_forget();
+    }
     dma_copy_far((unsigned long)(unsigned int)&mt, SCENE_HDR + 3, sizeof mt);
     dma_copy_far((unsigned long)(unsigned int)words, SCENE_HDR + 32, WORDS_SIZE);
     mhp_max = mt.hp;

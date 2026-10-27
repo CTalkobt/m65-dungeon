@@ -644,6 +644,9 @@ ART["bats"] = [
     ".kFkhFFFk.......",
     ".k...kkk........",
 ]
+# the ghoul and the ember spider: the skeleton and the spider recoloured
+ART["ghoul"] = [r.replace('b', 't').replace('w', 'T').replace('e', 'z') for r in ART["skeleton"]]
+ART["ember"] = [r.replace('F', 'R').replace('f', 'd').replace('z', 'Z').replace('r', 'e') for r in ART["spider"]]
 ART["oil"] = [r.replace('r', 'Y').replace('R', 'd').replace('n', 'b') for r in ART["potion"]]
 ART["idol_spent"] = [r.replace('z', 'T') for r in ART["idol"]]
 ART["draught"] = [r.replace('r', 'u').replace('R', 'U') for r in ART["potion"]]
@@ -1043,7 +1046,7 @@ def terrain_kinds(style=0):
 
 SPRITES = ("chest", "chest_open", "idol", "idol_spent", "potion", "gold", "bones", "brazier",
            "brazier_cold", "scroll", "key", "draught", "rags", "sticks", "fur", "candle", "flint", "firestick",
-           "arrows", "shot", "merchant", "fountain", "fountain_dry", "shelf", "oil", "food", "flames", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats")
+           "arrows", "shot", "merchant", "fountain", "fountain_dry", "shelf", "oil", "food", "flames", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats", "ghoul", "ember")
 
 
 def sprite_kinds(base, base_nib, pal_map):
@@ -1072,7 +1075,8 @@ def sprite_kinds(base, base_nib, pal_map):
                 b[sh] = -1
             return b
         v = [(lit(comp, l, glow), bg(l)) for l in range(4)]
-        creature = name in ("rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats", "aim", "missile",
+        creature = name in ("rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats", "ghoul", "ember",
+                            "aim", "missile",
                             "merchant")     # (his lantern seen in the dark)
         if creature and glow.any():
             eyes = np.zeros((T, T, 3), np.float32)

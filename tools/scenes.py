@@ -10,9 +10,11 @@ SCENES = {e[0]: e[1] for e in monsters.MONSTERS + props.PROPS if e[1]}   # (not 
 
 def render(name, back):
     """back: the backdrop's RGB as the screen shows it. [(rgb frame, palette
-    indices, -1 where the backdrop shows as it is)], the palette (128-254)"""
+    indices, -1 where the backdrop shows as it is, the creature's pixels)],
+    the palette (128-254)"""
     fn = SCENES[name]
     shots = []
+    masks = []          # (the creature's own pixels: gen_art.py recolours them)
     glow = (1, 1, 1)
     for pose in (0, 1):
         sc = Scene(W, H)
@@ -22,5 +24,6 @@ def render(name, back):
                                      exposure=o.get("exposure", 1.0), cast=o.get("cast", 0.75))
         glow = o.get("glow", glow)
         shots.append((img, changed, g))
+        masks.append(mask)
     pal, idx = palette_for(shots, glow)
-    return [(s[0], i) for s, i in zip(shots, idx)], pal
+    return [(s[0], i, m) for s, i, m in zip(shots, idx, masks)], pal

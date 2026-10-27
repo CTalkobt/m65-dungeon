@@ -309,7 +309,15 @@ def build_scene(out, name, pv, back_img, back_nums, tile_pal):
     comb = pal.copy()                            # (the backdrop's colours too, for the merging)
     comb[16:128] = tile_pal[16:128]
     owned, blks = [], []
-    for _, idx in frames:
+    # which colours are the creature's own (most of their pixels in it):
+    # a creature fought in this close-up recolours only those (look)
+    mine = np.zeros(256)
+    other = np.zeros(256)
+    for _, idx, mask in frames:
+        np.add.at(mine, idx[mask & (idx >= 0)], 1)
+        np.add.at(other, idx[~mask & (idx >= 0)], 1)
+    own_col = mine > other
+    for _, idx, _ in frames:
         own = (idx >= 0).reshape(SH, 8, SW, 8).any(axis=(1, 3)).reshape(-1)
         b = blocks(np.where(idx >= 0, idx, back_img))
         owned.append(own)
@@ -345,7 +353,24 @@ def build_scene(out, name, pv, back_img, back_nums, tile_pal):
     print("%-9s %4d cells its own, %4d characters (%d unique before merging), %6d bytes, packed %6d"
           % (name, max(o.sum() for o in owned), len(uniq), len(np.unique(np.concatenate(blks), axis=0)),
              len(a) + len(b), pa + pb))
-    return base, skip_a, skip_b
+    return base, skip_a, skip_b, pal, own_col, hdr
+
+
+def recolour(pal, own, look):
+    """a close-up's palette with the creature's own colours (own) as look
+    shows them (tiles.look's tint, colour kept and brightness; the glow
+    ramp in the glow colour)"""
+    tint, sat, bright, glow = look
+    p = pal.astype(np.float32) / 255
+    sel = own.copy()
+    sel[:128] = False
+    sel[247:] = False
+    lum = p[sel].mean(axis=-1, keepdims=True)
+    p[sel] = (lum + (p[sel] - lum) * sat) * np.array(tint, np.float32) * bright
+    g = np.array(glow, np.float32)
+    for k in range(8):                                  # (stage.palette_for's ramp, in the new colour)
+        p[247 + k] = g * (0.25 + 0.75 * k / 7)
+    return to8(np.clip(p, 0, 1))
 
 
 def main():
@@ -355,19 +380,26 @@ def main():
     table, terrain, ui_nums, (tiles_skip, look_skip, look_size), back, tile_pal = build_tiles(out)
     back_stream2, back_img, back_nums = build_backdrop(out, back)
     files = [("dgtiles.bin", "DGTILES"), ("dglook.bin", "DGLOOK"), ("dgback.bin", "DGBACK")]
+    names = list(scenes.SCENES)
+    skips = []
+    built = {}
+    for name in names:
+        base, sa, sb, pal, own, _ = build_scene(out, name, pv, back_img, back_nums, tile_pal)
+        built[name] = (pal, own)
+        skips.append((sa, sb))
+        files += [(base + "a.bin", base.upper() + "A"), (base + "b.bin", base.upper() + "B")]
     # a creature fought in another's close-up: its header, loaded over that
-    # one's (raw, at SCENE_HDR: $50300)
+    # one's (raw, at SCENE_HDR: $50300); recoloured, its palette before it
+    # (at SCENE_LIN: $50000)
     for m in monsters.MONSTERS:
         if m[2]["scene"]:
             with open(os.path.join(out, "dg%sh.bin" % m[0]), "wb") as f:
-                f.write(bytes([0x00, 0x03]) + bytes(header(m[0])))
+                if m[2]["look"]:
+                    pal, own = built[m[2]["scene"]]
+                    f.write(bytes([0x00, 0x00]) + pal_bytes(recolour(pal, own, m[2]["look"])) + bytes(header(m[0])))
+                else:
+                    f.write(bytes([0x00, 0x03]) + bytes(header(m[0])))
             files.append(("dg%sh.bin" % m[0], "DG%sH" % m[0].upper()))
-    names = list(scenes.SCENES)
-    skips = []
-    for name in names:
-        base, sa, sb = build_scene(out, name, pv, back_img, back_nums, tile_pal)
-        skips.append((sa, sb))
-        files += [(base + "a.bin", base.upper() + "A"), (base + "b.bin", base.upper() + "B")]
     with open(os.path.join(out, "files.txt"), "w") as f:
         for fn, n in files:
             f.write("%s %s\n" % (fn, n))

@@ -113,6 +113,10 @@ unsigned char scene_load(unsigned char s) {
     return ok;
 }
 
+void scene_forget(void) {
+    loaded = 0xFF;
+}
+
 void scene_show(unsigned char frame) {
     unsigned char r;
     unsigned long src = SCENE_HDR + SCENE_HDR_SIZE + (unsigned long)frame * (SCENE_W * SCENE_H * 2);
