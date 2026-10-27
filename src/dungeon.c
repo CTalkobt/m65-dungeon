@@ -309,9 +309,11 @@ void dungeon_make(void) {
     }
 
     /* braziers: some rooms are lit (always the first and the last); in
-     * some of the dark ones a cold brazier waits for the torch */
+     * some of the dark ones a cold brazier waits for the torch. Every room
+     * is in the list of them: burning oil lights a dark one a while */
     for (r = 0; r < nrooms; r++) {
         w = r == 0 || r == last || rng_range(5) < 2;     /* (w: it burns) */
+        lit_add(rx[r] - 1, ry[r] - 1, rx[r] + rw[r], ry[r] + rh[r], w);
         if (!w && rng_range(2)) continue;
         /* in a corner, but never one next to a way in (a brazier there
          * would leave only a diagonal step into the room) */
@@ -325,7 +327,6 @@ void dungeon_make(void) {
                 break;
             }
         }
-        if (w || k < 4) lit_add(rx[r] - 1, ry[r] - 1, rx[r] + rw[r], ry[r] + rh[r], w);
     }
 
     /* the vault: a room every way into which is a door (not the first, not
@@ -380,6 +381,9 @@ void dungeon_make(void) {
     /* something to shoot */
     for (k = 0; k < 1 + rng_range(2); k++) put(spot(rng_range(nrooms)), O_ARROWS);
     if (pl.depth > 1 && rng_range(2)) put(spot(rng_range(nrooms)), O_SHOT);
+    /* oil and meat, to throw */
+    put(spot(rng_range(nrooms)), O_PILE + I_OIL);
+    if (rng_range(2)) put(spot(rng_range(nrooms)), O_PILE + I_FOOD);
 
     /* creatures: more, and worse, deeper down; none in the first room */
     for (k = 0; k < 6 + d * 2; k++)

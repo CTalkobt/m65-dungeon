@@ -60,12 +60,13 @@ game builds with its SID effects only.
 | cursor keys, W A S D | directions | move | up / down: choose |
 | Q E Z C (or the number keys) | | move diagonally | |
 | SPACE, 5, . | | rest a turn, searching round about | |
-| RETURN | FIRE | go down the stairs | do the chosen action |
+| RETURN | FIRE | go down the stairs; off them, walk to them (once found) | do the chosen action |
 | P | | drink a healing potion | parry |
 | I | | what you carry: up / down choose, RETURN (U) use, D put down | |
 | F / L | | feed the torch / light it | |
 | O (S on the title) | | settings: music and sound levels | |
 | T / G | | shoot the bow / fire the flintlock (again: the next target, RETURN: shoot) | |
+| X | | throw a flask of oil or meat (O / M when you carry both) | |
 | S P C A R I T | | | strike, parry, cast, advance, retreat, item, shoot |
 | F I H W | | | (casting) firebolt, frost, heal, ward |
 | H M F | | | (items) potion, draught, scroll of fire |
@@ -136,6 +137,18 @@ in it are gathered up whole. The lich is warded:
 it must be faced. You start with a short bow and 8 arrows; chests give
 the better bows, then the flintlocks, and arrows and cartridges lie about.
 
+**Throwing** (X, or use it from what you carry; reach 5, aimed as a shot).
+A *flask of oil* bursts into fire where it lands: 2d6+2 that no armour
+turns, twice that to what fire is the bane of (spiders, oozes); the
+flames burn there for 12 turns, barring the way, and light a dark room
+they are in for 30. *Dried meat* is fallen on by any creature that
+hungers (not the dead that walk): it stays put a while and loses track of
+you. The merchant sells both; they lie about and turn up in chests.
+
+**Travel** (RETURN off the stairs). Once you have seen the stairs down,
+you walk to them over the places you remember, a step a turn, until
+something comes into sight, a key is pressed, or you are hurt.
+
 **The torch** burns a turn at a time (the bar at the top). Below 150
 turns its light reaches less far, below 60 it gutters, and at 0 it goes
 out: then only the braziers' rooms are lit, creatures are eyes in the
@@ -179,7 +192,7 @@ where it lies as one pile until you walk over it again. Healing potions and mana
 fire* (for a fight: fire that no guard stops); a *scroll of recall* (all
 you have seen comes back fresh); a *scroll of far sight* (the level's
 walls, doors and stairs, seen or not); *iron keys*; the torch's fuel and
-flints and firesticks. Most levels have a
+flints and firesticks; flasks of oil and dried meat, to throw. Most levels have a
 vault: a room whose doors are locked, with two chests that hold two finds
 each and the better ones. Its key lies somewhere you can reach without it.
 Chests give weapons and armour (each better than the last), potions,
@@ -216,6 +229,18 @@ flickers by scaling the tiles' palette each few frames, and the flames of
 the braziers and the player's torch are four entries of their own (120-123)
 that turn round a red-to-gold ramp. Fades, hit flashes
 and spell colours wash the palette, never the pixels.
+
+**Each depth its own stone.** The walls, corridors, fallen stones and
+cracked walls are drawn in five styles (cellar blocks, wet ashlar, an
+ossuary, raw rock, basalt columns), and the stone recoloured: sandstone,
+mossy grey, chalk, umber, violet basalt; wood and iron stay as they are.
+A terrain colour number means the same at every depth (1-7 the stone,
+8-11 the wood and iron, 12-13 the stone's edges, 14 the iron's), so a
+depth is its characters and its palette banks (DGLOOK, 8 KB each, kept in
+attic RAM at $8310000 and put in place as the map is shown). The room
+floors are the same everywhere: the things lying on them have the floor
+under them drawn in the map's palette banks, so they sit on it at every
+depth.
 
 **The map** (`src/view.c`, `src/vmap.s45`). A place is 2 x 2 characters
 (16 x 16 pixels), and the view is 40 x 22 places of a 64 x 48 level. The
@@ -324,15 +349,15 @@ are the tunes to listen to on the PC.
 
 **Memory** (bank 0 is tight). The resident part (video, keys, the UI,
 sound, the tables, the message line) ends near $8200; the overlay
-region starts at $8E00. The code overlays `walk` (explore +
-view), `pack` (the inventory, items, the torch), `aim` (shooting, the
-creatures' tricks), `battle`, `gen` (the dungeon generator, saving, traps
+region starts at $8D00. The code overlays `walk` (explore +
+view), `pack` (the inventory, items, the torch), `aim` (shooting,
+throwing, the creatures' turn and tricks, the way to the stairs), `battle`, `gen` (the dungeon generator, saving, traps
 and secrets, a new player, levels gained), `scenes` (loading and showing
 the close-ups; the chest and the idol) and `front` (the title, settings,
 endings, the start) are kept in
 attic RAM ($8000000-$801FFFF: two 64 KB banks, a file each, DUNGEON.OV1
 and, once the first is full, DUNGEON.OV2) and copied by DMA into one
-region at $8E00 when called. A call
+region at $8D00 when called. A call
 from one overlay into another brings the caller back on return, but not
 the caller's text in the meantime; so what takes text from any overlay
 (the message line `msg`, the log, `video_text`) is resident. The map's

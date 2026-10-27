@@ -19,9 +19,8 @@
 #define KEEP_KINDS 1024
 #define KEEP_SEEN  (KEEP_KINDS + MAP_N)
 #define KEEP_END   (KEEP_SEEN + MAP_N)
-#define VERSION    4
+#define VERSION    5
 
-extern unsigned char lit_x0[MAX_LIT], lit_y0[MAX_LIT], lit_x1[MAX_LIT], lit_y1[MAX_LIT], lit_on[MAX_LIT];
 extern unsigned char vault_x0, vault_y0, vault_x1, vault_y1;
 
 static unsigned int at;

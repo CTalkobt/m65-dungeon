@@ -588,6 +588,44 @@ ART = {
         "................",
     ],
 }
+ART["food"] = [
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "..........kk....",
+    ".....kkkkkwwk...",
+    "....kMmmmkwk....",
+    "...kMmmmmMk.....",
+    "...kmmMmmMk.....",
+    "...kMmmmMMk.....",
+    "....kMMMMk......",
+    ".....kkkk.......",
+    "................",
+    "................",
+]
+# burning oil spilt on the floor: low flames over a dark pool
+ART["flames"] = [
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "........Z.......",
+    "...Z...ZoZ..Z...",
+    "..ZoZ.ZoZo.ZoZ..",
+    "..oZoZoZZoZoZo..",
+    ".ZoZZoZZZZoZZoZ.",
+    ".oZZZZoZZZZoZZo.",
+    "..hhZZZZZZZZhh..",
+    "..hhhhhhhhhhhh..",
+    "...hhhhhhhhhh...",
+    "................",
+    "................",
+]
+ART["oil"] = [r.replace('r', 'Y').replace('R', 'd').replace('n', 'b') for r in ART["potion"]]
 ART["idol_spent"] = [r.replace('z', 'T') for r in ART["idol"]]
 ART["draught"] = [r.replace('r', 'u').replace('R', 'U') for r in ART["potion"]]
 ART["fountain_dry"] = [r.replace('u', 'h').replace('U', 'h').replace('w', 'F') for r in ART["fountain"]]
@@ -612,6 +650,7 @@ ART["brazier_cold"] = ["." * 16 if 1 <= y <= 4 else
 ART["player_dark"] = [r[:10] + r[10:].replace('y', 'h').replace('o', 'k') if y < 5 else r
                       for y, r in enumerate(ART["player"])]
 _fire("brazier", range(1, 6), range(16), "Zo")
+_fire("flames", range(5, 12), range(16), "Zo")
 _fire("player", range(1, 5), range(10, 16), "yo")
 
 
@@ -985,7 +1024,7 @@ def terrain_kinds(style=0):
 
 SPRITES = ("chest", "chest_open", "idol", "idol_spent", "potion", "gold", "bones", "brazier",
            "brazier_cold", "scroll", "key", "draught", "rags", "sticks", "fur", "candle", "flint", "firestick",
-           "arrows", "shot", "merchant", "fountain", "fountain_dry", "shelf", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich")
+           "arrows", "shot", "merchant", "fountain", "fountain_dry", "shelf", "oil", "food", "flames", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich")
 
 
 def sprite_kinds(base, base_nib, pal_map):
@@ -1024,6 +1063,8 @@ def sprite_kinds(base, base_nib, pal_map):
             v.append(None)
         if name == "brazier":
             v = [v[0]] * 4 + [None]                     # it lights itself
+        elif name == "flames":
+            v = [v[0]] * 4 + [(img * mask[..., None], np.full((T, T), -1))]   # (and is seen from the dark)
         elif name in ("aim", "missile"):
             v = [v[4]] * 5                              # only what glows, over anything
         elif name == "player":

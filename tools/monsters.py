@@ -466,8 +466,9 @@ def lich(sc, pose):
 ACTIONS = ["NONE", "MELEE", "HEAVY", "GUARD", "POISON", "WEB", "SPIT", "REGEN", "ROAR", "DRAIN",
            "CHILL", "PHASE", "BOLT", "CURSE", "LUNGE", "CLOSE"]
 # flags (the game's MF_*): burns easily, shrugs off frost (2 in 3), hard to
-# flee from, its lunge is venomous, moves every other turn, the last foe
-FLAGS = ["FIREWEAK", "COLDPROOF", "HARDFLEE", "VENOM", "SLOW", "BOSS"]
+# flee from, its lunge is venomous, moves every other turn, the last foe,
+# dead and walking (no hunger: meat thrown to it is not eaten)
+FLAGS = ["FIREWEAK", "COLDPROOF", "HARDFLEE", "VENOM", "SLOW", "BOSS", "UNDEAD"]
 # what it does on the map (the game's MH_*): shoots arrows from afar,
 # snatches fuel or arrows and runs, dissolves what lies in its way
 HABITS = ["ARCHER", "THIEF", "EATER"]
@@ -490,7 +491,7 @@ MONSTERS = [
         "Old bones bound by older hate. Its eyes are embers.", "falls apart in a clatter of bones.",
         hp=18, dice=1, sides=6, plus=2, defense=2, xp=12,
         acts=[("MELEE", 4), ("HEAVY", 3), ("GUARD", 2)], depths={1: 1, 2: 1, 3: 1, 5: 1},
-        habits=("ARCHER",))),
+        flags=("UNDEAD",), habits=("ARCHER",))),
     ("spider", spider, info(
         "cave spider", "rears, fangs dripping", "bites you",
         "Eight green eyes catch your torchlight.", "curls up its legs and is still.",
@@ -513,11 +514,11 @@ MONSTERS = [
         "Cold pours from the hood. Your torch gutters.", "comes apart in the wind.",
         hp=26, dice=1, sides=6, plus=3, defense=3, xp=32,
         acts=[("DRAIN", 4), ("CHILL", 3), ("PHASE", 2)], depths={4: 1, 5: 2},
-        flags=("HARDFLEE",))),
+        flags=("HARDFLEE", "UNDEAD"))),
     ("lich", lich, info(
         "lich", "raises its staff to strike", "smites you",
         "The master of the deep. It has waited a long time.", "crumbles, and its crown rolls away.",
         hp=80, dice=2, sides=6, plus=3, defense=3, xp=120,
         acts=[("BOLT", 4), ("CURSE", 2), ("HEAVY", 2), ("GUARD", 1)], depths={},
-        flags=("COLDPROOF", "HARDFLEE", "BOSS"))),
+        flags=("COLDPROOF", "HARDFLEE", "BOSS", "UNDEAD"))),
 ]

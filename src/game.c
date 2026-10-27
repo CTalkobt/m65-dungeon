@@ -155,13 +155,13 @@ void memory_sweep(void) {
 /* each item's colour in lists and messages */
 const unsigned char item_col[I_COUNT] = {
     C_RED, C_BLUE, C_BONE, C_BONE, C_BONE, C_GOLD, C_ORANGE, C_ORANGE, C_ORANGE, C_ORANGE, C_GREY, C_ORANGE,
-    C_TEXT, C_GREY,
+    C_TEXT, C_GREY, C_ORANGE, C_BLOOD,
 };
 
 /* each thing's tile, lying on the floor */
 const unsigned char item_tile[I_COUNT] = {
     T_POTION, T_DRAUGHT, T_SCROLL, T_SCROLL, T_SCROLL, T_KEY, T_RAGS, T_STICKS, T_FUR, T_CANDLE,
-    T_FLINT, T_FIRESTICK, T_ARROWS, T_SHOT,
+    T_FLINT, T_FIRESTICK, T_ARROWS, T_SHOT, T_OIL, T_FOOD,
 };
 
 unsigned char arrows_spent;
@@ -174,7 +174,8 @@ const char *item_name(unsigned char i, unsigned char n) {
                "scroll of far sight\0scrolls of far sight\0iron key\0iron keys\0"
                "twist of rags\0twists of rags\0bundle of sticks\0bundles of sticks\0"
                "scrap of fur\0scraps of fur\0tallow candle\0tallow candles\0"
-               "flint\0flints\0firestick\0firesticks\0arrow\0arrows\0cartridge\0cartridges", i * 2 + (n != 1));
+               "flint\0flints\0firestick\0firesticks\0arrow\0arrows\0cartridge\0cartridges\0"
+               "flask of oil\0flasks of oil\0strip of dried meat\0strips of dried meat", i * 2 + (n != 1));
 }
 
 /* the short bow, the longbow, the flintlock pistol, the musket: their

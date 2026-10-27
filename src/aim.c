@@ -118,7 +118,7 @@ static unsigned char aim(unsigned char key) {
         buf[0] = 0;
         str_cat(buf, "Aim at ");
         the_mon(buf, &mons[targets[t]]);
-        str_cat(buf, ". RETURN: shoot. RUN/STOP: no.");
+        str_cat(buf, ". RETURN: loose. RUN/STOP: no.");
         msg(buf, C_HILITE);
         for (;;) {
             if ((f & 15) == 0) view_put(mons[targets[t]].x, mons[targets[t]].y, T_AIM);
@@ -135,6 +135,32 @@ static unsigned char aim(unsigned char key) {
         if (k == key || k == K_RIGHT || k == K_DOWN) t = t + 1 < ntargets ? t + 1 : 0;
         else if (k == K_LEFT || k == K_UP) t = t ? t - 1 : ntargets - 1;
     }
+}
+
+/* creature targets[t] hurt d: less life, or its fall (where it stood:
+ * the experience, what it carried, now and then gold) */
+static void wound(unsigned char t, unsigned char d) {
+    struct mon *m = &mons[targets[t]];
+    char buf[48];
+    if (m->hp > d) {
+        m->hp -= d;
+        m->stun = 0;
+        return;
+    }
+    m->hp = 0;
+    buf[0] = 0;
+    str_cat(buf, "The ");
+    str_cat(buf, nth(mon_names, m->kind));
+    str_cat(buf, " falls.");
+    msg(buf, C_HILITE);
+    sfx(SFX_DEATH);
+    pl.kills++;
+    if (gain_xp(mon_xp[m->kind])) {
+        msg("You have grown stronger!", C_GOLD);
+        sfx(SFX_LEVEL);
+    }
+    drop_carry(targets[t]);
+    if (!obj_at(AT(m->x, m->y)) && rng_range(3) == 0) obj_set(AT(m->x, m->y), O_GOLD);
 }
 
 unsigned char shoot(unsigned char gun) {
@@ -208,26 +234,92 @@ unsigned char shoot(unsigned char gun) {
     str_num(buf, d);
     str_cat(buf, ").");
     msg(buf, C_TEXT);
-    if (m->hp > d) {
-        m->hp -= d;
-        m->stun = 0;
-        return 1;
+    wound(t, d);
+    return 1;
+}
+
+/* ---------------------------------------------------------------- throwing */
+
+#define THROW_REACH 5
+#define FLAME_TURNS 12
+
+/* a flask of oil or a strip of meat at a creature in sight: the oil bursts
+ * into fire where it lands (the flames burn a while, and light the room
+ * they are in), and burns it, the more if fire is its bane; the meat is
+ * fallen on by any creature that hungers, and keeps it busy a while */
+unsigned char throw_it(unsigned char i) {
+    unsigned char t, d, k;
+    unsigned int at;
+    struct mon *m;
+    char buf[64];
+    if (i == I_COUNT) {
+        if (pl.items[I_OIL] && pl.items[I_FOOD]) {
+            msg("Throw what? O: a flask of oil. M: meat.", C_HILITE);
+            d = key_wait();
+            i = d == 'o' ? I_OIL : d == 'm' ? I_FOOD : I_COUNT;
+            if (i == I_COUNT) {
+                msg("You think better of it.", C_DIM);
+                return 0;
+            }
+        } else i = pl.items[I_OIL] ? I_OIL : I_FOOD;
     }
-    /* it falls where it stood */
-    m->hp = 0;
+    if (!pl.items[i]) {
+        msg("You have nothing to throw.", C_DIM);
+        return 0;
+    }
+    find_targets(THROW_REACH);
+    if (!ntargets) {
+        msg("Nothing in sight and in reach to throw at.", C_DIM);
+        return 0;
+    }
+    t = aim('x');
+    if (t == 0xFF) {
+        msg("You lower your arm.", C_DIM);
+        return 0;
+    }
+    m = &mons[targets[t]];
+    pl.items[i]--;
+    sfx(SFX_SWING);
+    fly(pl.x, pl.y, m->x, m->y);
     buf[0] = 0;
     str_cat(buf, "The ");
     str_cat(buf, nth(mon_names, m->kind));
-    str_cat(buf, " falls.");
-    msg(buf, C_HILITE);
-    sfx(SFX_DEATH);
-    pl.kills++;
-    if (gain_xp(mon_xp[m->kind])) {
-        msg("You have grown stronger!", C_GOLD);
-        sfx(SFX_LEVEL);
+    if (i == I_FOOD) {
+        if (mon_flags[m->kind] & MF_UNDEAD) {
+            str_cat(buf, " pays the meat no heed.");
+            msg(buf, C_DIM);
+            put_down(m->x, m->y, I_FOOD, 1);
+            return 1;
+        }
+        str_cat(buf, " falls on the meat.");
+        msg(buf, C_TEXT);
+        m->stun = 6 + rng_range(5);
+        if (m->awake == 2) m->awake = 1;         /* (it loses track of the player) */
+        return 1;
     }
-    drop_carry(targets[t]);
-    if (!obj_at(AT(m->x, m->y)) && rng_range(3) == 0) obj_set(AT(m->x, m->y), O_GOLD);
+    /* the oil: fire where it bursts, the room it is in lit a while */
+    sfx(SFX_FIRE);
+    at = AT(m->x, m->y);
+    if (!obj_at(at)) obj_add(at, O_FLAMES, FLAME_TURNS);
+    for (k = 0; k < lit_n; k++)
+        if (!lit_on[k] && m->x >= lit_x0[k] && m->x <= lit_x1[k] && m->y >= lit_y0[k] && m->y <= lit_y1[k]) {
+            lit_on[k] = OIL_LIGHT + 1;
+            break;
+        }
+    m->awake = 2;
+    if (mon_flags[m->kind] & MF_BOSS) {
+        str_cat(buf, " stands in the flames, untouched.");
+        msg(buf, C_PURPLE);
+        return 1;
+    }
+    if (m->hp == FRESH) m->hp = mon_hp[m->kind];
+    d = rng_dice(2, 6) + 2 + pl.aim;             /* (fire: no armour turns it) */
+    if (mon_flags[m->kind] & MF_FIREWEAK) d *= 2;
+    str_cat(buf, mon_flags[m->kind] & MF_FIREWEAK ? " shrieks in the bursting fire (" : " is caught in the bursting fire (");
+    str_num(buf, d);
+    str_cat(buf, ").");
+    msg(buf, C_ORANGE);
+    wound(t, d);
     return 1;
 }
 

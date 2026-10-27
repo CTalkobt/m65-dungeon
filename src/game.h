@@ -38,9 +38,12 @@ void vm_set(unsigned char x, unsigned char y, unsigned char kind);
 #define SOLID(t)   ((t) == TR_ROCK || (t) == TR_DOOR || (t) == TR_LOCKED || (t) == TR_RUBBLE)   /* nothing seen through */
 unsigned char terrain(unsigned char x, unsigned char y);
 
-/* the rooms with a brazier (with their walls): while it burns, the room
- * is lit, seen from afar; a cold one (on 0) is lit by the player's torch */
+/* the rooms (with their walls): one lit (lit_on 1: its brazier burns) is
+ * seen from afar; a dark one (0) only by the player's torch. Burning oil
+ * lights one for a while (2 and more: the turns it has left, plus 1) */
 #define MAX_LIT    14
+#define OIL_LIGHT  30
+extern unsigned char lit_x0[MAX_LIT], lit_y0[MAX_LIT], lit_x1[MAX_LIT], lit_y1[MAX_LIT], lit_on[MAX_LIT];
 unsigned char lit_at(unsigned char x, unsigned char y);
 void lit_add(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1, unsigned char on);
 void lit_light(unsigned char x, unsigned char y);   /* the room round (x, y) lit from now on */
@@ -78,6 +81,7 @@ unsigned char vault_at(unsigned char x, unsigned char y);
 #define O_FOUNTAIN_DRY 24
 #define O_SHELF       25      /* search it, once */
 #define O_SHELF_BARE  26
+#define O_FLAMES      27      /* burning oil (thing_n: the turns it has left) */
 #define BLOCKS(o)     ((o) == O_BRAZIER || ((o) >= O_BRAZIER_COLD && (o) < O_PILE))   /* none walk through */
 #define O_PILE        32      /* O_PILE + I_*: so many (thing_n) of a thing carried, put down */
 #define MAX_OBJ       56
@@ -141,7 +145,9 @@ extern unsigned char nmons;
 #define I_FIRESTICK 11        /* lights the torch, once */
 #define I_ARROWS   12         /* the bow's */
 #define I_SHOT     13         /* the flintlock's: paper cartridges, powder and ball */
-#define I_COUNT    14
+#define I_OIL      14         /* a flask of lamp oil: thrown, it bursts into fire (aim.c) */
+#define I_FOOD     15         /* dried meat: thrown, the hungry fall on it */
+#define I_COUNT    16
 const char *item_name(unsigned char i, unsigned char n);   /* game.c: as for n of them */
 extern const unsigned char item_col[I_COUNT];               /* game.c: its colour in text */
 extern const unsigned char item_tile[I_COUNT];              /* game.c: its tile, put down (T_*) */
@@ -154,13 +160,14 @@ unsigned char fixture(unsigned int i, unsigned char n);   /* fixture.c: a founta
 /* the merchant's wares on this level (WARES of the shop's list, WARE_KINDS
  * kinds), and how many of each are left (game.c; dungeon.c stocks him) */
 #define WARES      6
-#define WARE_KINDS 10
+#define WARE_KINDS 12
 extern unsigned char ware[WARES], ware_left[WARES];
 unsigned char drink(void);
 unsigned char feed_any(void);
 unsigned char light_any(void);
 unsigned char light(unsigned char k);   /* I_FLINT, I_FIRESTICK, I_COUNT: a brazier's coals */
 unsigned char shoot(unsigned char gun); /* the bow (0) or the flintlock (1) at a creature in sight */
+unsigned char throw_it(unsigned char i); /* I_OIL or I_FOOD at a creature in sight; I_COUNT: which is asked */
 void pick_up(unsigned int i, unsigned char n);   /* what lies at i (O_*), as the player walks over it */
 unsigned char foe_shoots(unsigned char k);       /* creature k's arrow at the player: 1 if it killed */
 unsigned char steal(unsigned char k);            /* creature k snatches something: 1 if it did */
@@ -238,6 +245,8 @@ void msg_show(void);                  /* the messages drawn again */
 
 /* explore.c */
 unsigned char explore(unsigned char resume);   /* until DIED, WON or SAVED; resume: a saved game, loaded */
+unsigned char fight(unsigned char i, unsigned char ambush);   /* with creature i: WON / FLED / DIED, the screen back */
+unsigned char creatures_move(void);            /* creatures.c: their turn; 0, or a fight's outcome */
 
 /* travel.c: the way to the stairs (way_find: 0 if they are not known);
  * the step along it from the player's place, dx + 1 | (dy + 1) << 2

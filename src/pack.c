@@ -208,6 +208,9 @@ static unsigned char use(unsigned char k) {
         return shoot(0);
     case I_SHOT:
         return shoot(1);
+    case I_OIL:
+    case I_FOOD:
+        return throw_it(k);
     }
     if (k >= I_FLINT) return light(k);
     return feed(k);
@@ -238,7 +241,7 @@ unsigned char put_down(unsigned char x, unsigned char y, unsigned char item, uns
 #define INV_COL 18
 #define INV_ROW 5
 #define INV_W   44
-#define INV_H   28
+#define INV_H   30
 
 unsigned char inventory(void) {
     unsigned char k, n, sel = 0, has[I_COUNT];
@@ -289,17 +292,17 @@ unsigned char inventory(void) {
     buf[0] = 0;
     str_cat(buf, "Gold    ");
     str_num(buf, pl.gold);
-    video_text(INV_COL + 3, INV_ROW + 24, buf, C_GOLD);
+    video_text(INV_COL + 3, INV_ROW + 26, buf, C_GOLD);
     for (k = 0, n = 0; k < I_COUNT; k++)
         if (pl.items[k]) has[n++] = k;
     if (!n) {
         video_text(INV_COL + 3, INV_ROW + 9, "Nothing else.", C_DIM);
-        video_text(INV_COL + 3, INV_ROW + 26, "Any key: back.", C_DIM);
+        video_text(INV_COL + 3, INV_ROW + 28, "Any key: back.", C_DIM);
         key_wait();
         view_draw();
         return 0;
     }
-    video_text(INV_COL + 3, INV_ROW + 26, "RETURN: use.  D: put down.  I: back.", C_DIM);
+    video_text(INV_COL + 3, INV_ROW + 28, "RETURN: use.  D: put down.  I: back.", C_DIM);
     for (;;) {
         for (k = 0; k < n; k++) {
             buf[0] = k == sel ? '>' : ' ';
