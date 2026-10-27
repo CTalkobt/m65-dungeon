@@ -69,7 +69,8 @@ game builds with its SID effects only.
 
 **Who goes down.** A new descent begins with a choice: the *fighter*
 (life 40, a long sword and studded leather, but no bow), the *hunter* (a
-short bow with 24 arrows, a sure aim, two strips of meat), or the
+short bow with 24 arrows, a sure aim, a Great short sword, two strips of
+meat), or the
 *lamplighter* (a full torch, a flint, two flasks of oil, rags and a keen
 memory, but only 26 life). The ending names who it was.
 
@@ -117,8 +118,9 @@ from them) and its memory.
 **The sanctum.** On the last level the lich waits in the last room, with
 two of its skeletons on guard and bones strewn about. When it notices you
 it speaks, and every creature on the level wakes and hunts. Once in a
-descent, brought to half its life, it calls on its crown: it mends 20 and
-its next blow will be terrible (enraged).
+descent, brought to half its life, it calls on its crown: it mends half of
+the life it has taken from you in that fight, less 3 (1 at the least;
+what a ward or a parry kept from it does not count), and its next blow will be terrible (enraged).
 
 **The end.** Dying shows what did it and where ("Slain by a cave spider,
 in The Bone Galleries."); destroying the lich shows it come apart, then

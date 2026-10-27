@@ -103,7 +103,7 @@ static unsigned char calling_choose(void) {
             video_text(8, 38 + k * 2, nth("Fighter\0Hunter\0Lamplighter", k), k == sel ? C_HILITE : C_TEXT);
             video_text(22, 38 + k * 2,
                        nth("Life 40, a long sword, studded leather. No bow.\0"
-                           "A short bow, 24 arrows, a sure aim, and meat.\0"
+                           "A short bow, 24 arrows, sure aim, a Great sword.\0"
                            "Fuel to spare, a flint, oil, and a keen memory.", k), k == sel ? C_TEXT : C_DIM);
         }
         k = key_wait();
@@ -128,6 +128,8 @@ void calling_take(void) {
     case CALL_HUNTER:                         /* from afar */
         pl.items[I_ARROWS] = 24;
         pl.aim = 1;
+        pl.wq = 2;                            /* a Great short sword, for when it comes to blades */
+        weapon_take(0);
         pl.items[I_FOOD] = 2;
         break;
     default:                                  /* the light: more of it, longer */

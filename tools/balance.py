@@ -53,6 +53,8 @@ class Player:
             w, a = max(w, 1), max(a, 1)
             pots += 1
         self.wdice, self.wsides, self.wplus = W_DICE[w], W_SIDES[w], W_PLUS[w]
+        if calling == "hunter" and w == 0:
+            self.wplus += 1                   # (a Great short sword to begin with)
         self.defence = a + 1
         self.potions = pots
         self.bow = calling == "hunter"
@@ -70,6 +72,7 @@ class Fight:
         self.intent = self.last = A["NONE"]
         self.casting = 0
         self.rite = 0
+        self.dealt = 0
         self.potions_drunk = 0
 
     # ---------------------------------------------------------------- the creature
@@ -107,7 +110,9 @@ class Fight:
             else:
                 d -= self.ward
                 self.ward = 0
-        pl.hp = max(0, pl.hp - d)
+        d = min(d, pl.hp)
+        pl.hp -= d
+        self.dealt += d
         return d
 
     def roll(self):
@@ -270,7 +275,7 @@ class Fight:
                 return 1
             if "BOSS" in m["flags"] and not self.rite and self.mhp <= self.mhp_max // 2:
                 self.rite = 1
-                self.mhp += 20
+                self.mhp += max(1, self.dealt // 2 - 3)
                 self.roar = 1
             if self.poison:
                 self.poison -= 1

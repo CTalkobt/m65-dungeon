@@ -43,6 +43,7 @@ static struct {
 static unsigned char dist, intent, last_intent, mhp_max;
 static unsigned char frozen, staggered, roar, parrying;
 static unsigned char poison, snared, ward, burning, numb, chilled;
+static unsigned char dealt;                  /* what the creature has taken of the player's life (the lich's rite) */
 static unsigned char sel, menu, casting;     /* menu: MENU_*; casting: a spell lands (no guard stops it) */
 #define MENU_ACTS   0
 #define MENU_SPELLS 1
@@ -309,7 +310,9 @@ static unsigned char hurt(unsigned char dmg, unsigned char armour) {
     REG(0xD020) = C_BLOOD;
     video_shake(10);
     REG(0xD020) = 0;
-    pl.hp = pl.hp > dmg ? pl.hp - dmg : 0;
+    dmg = pl.hp > dmg ? dmg : pl.hp;
+    pl.hp -= dmg;
+    dealt = dealt + dmg > 255 ? 255 : dealt + dmg;
     draw_you();
     return pl.hp > 0;
 }
@@ -730,7 +733,7 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
     mhp_max = mt.hp;
     if (m->hp == FRESH) m->hp = mt.hp;
     dist = ambush ? 0 : 1;
-    frozen = staggered = roar = parrying = snared = ward = burning = numb = chilled = 0;
+    frozen = staggered = roar = parrying = snared = ward = burning = numb = chilled = dealt = 0;
     poison = pl.venom ? 3 : 0;                /* (venom from before goes on burning) */
     sel = menu = casting = 0;
     intent = last_intent = A_NONE;
@@ -787,12 +790,13 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
         if (!m->hp) break;
         if ((mt.flags & MF_BOSS) && !pl.rite && m->hp <= mhp_max / 2) {
             /* once in a descent, at half its life: the lich calls on its
-             * crown, mends, and its next blow will be terrible */
+             * crown, mends half of what it has dealt the player less 3 (1
+             * at the least), and its next blow will be terrible */
             pl.rite = 1;
             sfx(SFX_CURSE);
             say("The lich's crown blazes violet. The dark pours into it!", C_PURPLE);
             flash(200, 60, 255, 24);
-            m->hp += 20;
+            m->hp += dealt > 7 ? dealt / 2 - 3 : 1;
             roar = 1;
             draw_foe();
         }
