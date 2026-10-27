@@ -128,6 +128,15 @@ you came to know, and the charm you wore. The five best descents (the won first,
 then the deepest, the highest level, the richest) are kept on the disk
 (`DGFAME`) as the Hall of the Deep: F on the title shows them.
 
+**Balance** (`tools/balance.py [fights] [lean]`). The close-up fight's
+rules, ported to Python and played a few thousand times a creature with a
+sensible player (a potion when low, great blows parried, fire where it
+bites, shots from afar): each creature fought once from full life, at
+each depth and for each calling, and a level's fights in a row with
+wounds and potions carried. What a player has at each depth is a guess
+(PROGRESS; `lean`: slow to level, no better gear). Keep it in step with
+`src/battle.c`.
+
 **Settings** (O on the map, S on the title). The music's and the sounds'
 levels, 1-15, or off (RETURN turns the chosen one off and back on). The
 music's level is the SIDs' volume; the sounds' scales each sample. (`S`
@@ -228,8 +237,8 @@ your blood after: no mending while it lasts, and a pang every third turn
 line). A *vial of antidote* (pale green: found lying about, in chests,
 and sold by the merchant) cures it, in a fight (Item, A) or out of one;
 a healing potion does not. An *ember spider*'s bite sets you alight: 3 a
-round that armour does not turn, until you *retreat* and roll the flames
-out; fire hurts it half as much. A *ghoul*'s grave-cold claws can numb
+round for two rounds, that armour does not turn (or until you *retreat*
+and roll the flames out); fire hurts it half as much. A *ghoul*'s grave-cold claws can numb
 you, and you lose your next action. *Frost* leaves what it froze chilled
 for three rounds after (its blows a third weaker), and a chilled
 creature you flee is slow to follow.

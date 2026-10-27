@@ -408,7 +408,7 @@ static unsigned char creature_acts(void) {
                 say("Venom burns in your veins.", C_GREEN);
             }
         } else if (a == A_BURN) {
-            burning = 3;
+            burning = 2;                 /* (3 rounds was too much: tools/balance.py) */
             sfx(SFX_FIRE);
             say("Fire catches on your clothes!", C_ORANGE);
         } else if (a == A_NUMB && rng_range(2) == 0) {
