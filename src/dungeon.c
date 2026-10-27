@@ -376,7 +376,7 @@ void dungeon_make(void) {
     for (k = 0; k < 5; k++) put(spot(rng_range(nrooms)), O_BONES);
 
     /* fuel for the torch, and now and then something to light it */
-    for (k = 0; k < 3 + rng_range(3); k++) put(spot(rng_range(nrooms)), O_RAGS + rng_range(4));
+    for (k = 0; k < 4 + rng_range(3); k++) put(spot(rng_range(nrooms)), O_RAGS + rng_range(4));
     if (rng_range(2)) put(spot(rng_range(nrooms)), O_FIRESTICK);
     if (rng_range(4) == 0) put(spot(rng_range(nrooms)), O_FLINT);
     /* something to shoot */

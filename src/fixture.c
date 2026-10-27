@@ -16,7 +16,7 @@ unsigned char fixture(unsigned int i, unsigned char n) {
         return 0;
     }
     if (n == O_SHELF_BARE) {
-        msg("Nothing but dust and rotted bindings.", C_DIM);
+        msg("Nothing left on the shelf but dust.", C_DIM);
         return 0;
     }
     r = rng_range(10);
@@ -81,6 +81,10 @@ unsigned char fixture(unsigned int i, unsigned char n) {
                 "'The deep makes you forget. Look, and look again.'\0"
                 "'Oozes eat what they find. Keep your key close.'\0"
                 "'Skeletons shoot from the dark. Close with them.'", rng_range(4)), C_BONE);
-    } else msg("Dust, and rotted bindings.", C_DIM);
+    } else {
+        /* the bindings, at least, will burn */
+        pl.items[I_RAGS]++;
+        msg("Rotted bindings, dry enough to burn: a twist of rags.", C_ORANGE);
+    }
     return 1;
 }
