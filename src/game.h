@@ -191,6 +191,7 @@ unsigned char light_any(void);
 unsigned char light(unsigned char k);   /* I_FLINT, I_FIRESTICK, I_COUNT: a brazier's coals */
 unsigned char shoot(unsigned char gun); /* the bow (0) or the flintlock (1) at a creature in sight */
 unsigned char throw_it(unsigned char i); /* I_OIL or I_FOOD at a creature in sight; I_COUNT: which is asked */
+unsigned char door_shut(void);           /* doors.c: K, a door beside shut or wedged; 1 a turn */
 void pick_up(unsigned int i, unsigned char n);   /* what lies at i (O_*), as the player walks over it */
 unsigned char foe_shoots(unsigned char k);       /* creature k's arrow at the player: 1 if it killed */
 unsigned char steal(unsigned char k);            /* creature k snatches something: 1 if it did */

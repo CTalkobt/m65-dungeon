@@ -51,7 +51,7 @@ OVL2    := $(BUILD)/dungeon.ov2
 # (the third: the __bank tables, the names and the tiles' table, in attic RAM)
 OVL3    := $(BUILD)/dungeon.ov3
 OVL_STORE ?= 0x8000000-0x800FFFF,0x8010000-0x801FFFF
-C_MODS  := main video video_boot load rng game dungeon keep trap view ui explore pack shop fixture aim creatures travel battle detail front settings scene levelmap help cheat sfx audio audio_boot
+C_MODS  := main video video_boot load rng game dungeon keep trap view ui explore pack shop fixture aim creatures doors travel battle detail front settings scene levelmap help cheat sfx audio audio_boot
 OBJS    := $(C_MODS:%=$(BUILD)/%.o45) $(BUILD)/ld.o45 $(BUILD)/assets.o45 $(BUILD)/sfxdata.o45 $(BUILD)/seen.o45 $(BUILD)/vmap.o45
 HEADERS := $(wildcard src/*.h) $(ART)/assets.h $(SFX)/sfxdata.h $(MUSIC)/music.h $(wildcard $(M65)/lib/include/*.h)
 
