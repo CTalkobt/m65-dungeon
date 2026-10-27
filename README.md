@@ -67,6 +67,10 @@ game builds with its SID effects only.
 
 ## Playing
 
+The title shows a hint under its keys, another every eight seconds (twelve
+of them: disarming plates, wedging doors, antidotes, luring hunters over
+plates, charms, fire, the level map).
+
 **Who goes down.** A new descent begins with a choice: the *fighter*
 (life 40, a long sword and studded leather, but no bow), the *hunter* (life
 34, a short bow with 24 arrows, a sure aim, a Great short sword, two

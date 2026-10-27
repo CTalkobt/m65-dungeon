@@ -15,6 +15,8 @@ static unsigned char shown;                   /* the title is on the screen */
 
 /* the title screen, without the prompt (title() adds it) */
 /* the box of words under the picture */
+static void hint_show(void);
+
 static void title_text(void) {
     video_blank(0, 33, 80, 17);
     ui_frame(0, 33, 80, 17);
@@ -23,7 +25,8 @@ static void title_text(void) {
     video_centre(38, "At the bottom the lich who emptied the valley keeps its vigil.", C_TEXT);
     video_centre(40, "Take your torch. Mind the dark. And remember -", C_DIM);
     video_centre(41, "the deep makes you forget.", C_DIM);
-    video_centre(47, "A game for the MEGA65, written in C with cc45", C_DARK);
+    video_centre(48, "A game for the MEGA65, written in C with cc45", C_DARK);
+    hint_show();
 }
 
 void title_show(void) {
@@ -77,6 +80,28 @@ void loading_tick(void) {
 }
 
 static void fame_show(void);
+
+/* a hint under the prompt, the next every 8 seconds (and the next each
+ * time the title comes round) */
+#define HINTS 12
+static unsigned char hint;
+
+static void hint_show(void) {
+    video_blank(1, 46, 78, 1);
+    video_centre(46, nth("Walk into a pressure plate you have found to try to disarm it.\0"
+                         "K shuts a door beside you; K again wedges it with sticks.\0"
+                         "An antidote cures venom. A healing potion does not.\0"
+                         "Parry a crushing blow, and your foe reels.\0"
+                         "A hunting creature does not watch its feet: lure it over a plate.\0"
+                         "Feed the torch (F) before it gutters out.\0"
+                         "A charm is known only once worn. Some are Great, or Rare.\0"
+                         "Fire bites spiders and oozes. An ember spider drinks it in.\0"
+                         "Set alight? Retreat, and roll the flames out.\0"
+                         "Burning oil lights a dark room for a while.\0"
+                         "M: the level as you remember it, and notes to put on it.\0"
+                         "Rest (SPACE) to search the places round you for what hides.", hint), C_DIM);
+    if (++hint == HINTS) hint = 0;
+}
 
 /* the prompt under the words: with Continue when there is a saved descent */
 static unsigned char saved;
@@ -161,6 +186,7 @@ unsigned char title(void) {
         video_frame();
         sfx_update();
         t++;
+        if (t % 400 == 0) hint_show();
         if ((t & 255) == 0) {
             scene_show(1);                    /* now and then the lich stirs */
             v_wash_r = 200;
