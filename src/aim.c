@@ -42,18 +42,17 @@ static void view_unput(void) {
 
 static void view_put(unsigned char x, unsigned char y, unsigned char k) {
     cells_t s, c;
-    unsigned int ch;
     unsigned char q, v = vis_at(x, y);
     view_unput();
     if (x < cam_x || y < cam_y || x >= cam_x + 40 || y >= cam_y + 22) return;
-    ch = tile_char[k][v && v != VIS_SHADOW ? v - 1 : TV_EYES];
-    if (!ch) return;
+    v = (v && v != VIS_SHADOW ? v - 1 : TV_EYES) * 4;
+    if (!tile_char[k][v]) return;
     s = (cells_t)SCREEN_LIN + cell_at(x, y);
     c = (cells_t)COLOR_LIN + cell_at(x, y);
     for (q = 0; q < 4; q++) {
         keep[q] = s[CELL(q)];
         keep[q + 4] = c[CELL(q)];
-        s[CELL(q)] = ch + q;                  /* (a full-colour tile: colour RAM 0) */
+        s[CELL(q)] = tile_char[k][v + q];     /* (a full-colour tile: colour RAM 0) */
         c[CELL(q)] = 0;
     }
     kept_x = x;

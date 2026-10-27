@@ -195,22 +195,24 @@ def build_tiles(out):
     chars = []
     for nib in nibs[0]:
         chars.extend(ncm_tile(nib))
-    seen = {}           # a tile's 4 characters (bytes) -> its first character's index
+    seen = {}           # a quarter's 64 bytes -> its character's index (each kept once, shared)
 
     def add_tile(img, bg):
+        """a tile's 4 quarters' characters"""
         i = idx(img, bg)
-        q = [i[y:y + 8, x:x + 8].astype(np.uint8).tobytes() for y in (0, 8) for x in (0, 8)]
-        key = b"".join(q)
-        if key not in seen:
-            seen[key] = len(chars)
-            chars.extend(q)
-        return seen[key]
+        out = []
+        for q in [i[y:y + 8, x:x + 8].astype(np.uint8).tobytes() for y in (0, 8) for x in (0, 8)]:
+            if q not in seen:
+                seen[q] = len(chars)
+                chars.append(q)
+            out.append(TCHAR0 + seen[q])
+        return out
 
     table = []
     for name, vs in kinds:
         row = []
         for v in vs:
-            row.append(0 if v is None else TCHAR0 + add_tile(np.clip(v[0], 0, 1), v[1]))
+            row.extend([0] * 4 if v is None else add_tile(np.clip(v[0], 0, 1), v[1]))
         table.append((name, row))
     ui_nums = []
     for name, c in ui:
@@ -222,8 +224,9 @@ def build_tiles(out):
     data = head + b"".join(chars)
     assert TILES_LIN + len(data) <= TILES_END, "the tiles overflow bank 4 (%d bytes)" % len(data)
     skip, packed = write(os.path.join(out, "dgtiles.bin"), TILES_LIN, data, 0x50000)
-    print("DGTILES: %d terrain tiles, %d tiles, %d characters, %d bytes free in bank 4; packed %d -> %d"
-          % (len(terrain), len(seen), len(chars), TILES_END - TILES_LIN - len(data), len(data), packed))
+    print("DGTILES: %d terrain tiles, %d full-colour tiles in %d shared quarters, %d characters, "
+          "%d bytes free in bank 4; packed %d -> %d"
+          % (len(terrain), len(table), len(seen), len(chars), TILES_END - TILES_LIN - len(data), len(data), packed))
     # DGLOOK: each depth's own stone, loaded into bank 5 at the start and
     # unpacked into attic RAM (src/explore.c depth_look): its characters of the
     # kinds from LOOK_FIRST on, then its palette banks (128 red, green, blue)
@@ -417,7 +420,8 @@ def main():
             f.write("#define TK_%s %d\n" % (name, i))
         f.write("#define TK_COUNT %d\n#define TCHAR0 0x%04X\n" % (len(terrain), TCHAR0))
         f.write("#define PAL_MAP %d           /* the map's palette banks (8): 128-255 of DGTILES' palette */\n" % PAL_MAP)
-        f.write("\n/* the full-colour tiles (tile_char[kind][variant]: the first of 4 characters, 0 none) */\n")
+        f.write("\n/* the full-colour tiles (tile_char[kind][variant * 4 + quarter]: its characters, each\n"
+                " * quarter's kept once and shared; 0 none) */\n")
         for i, (name, _) in enumerate(table):
             f.write("#define T_%s %d\n" % (name, i))
         f.write("#define T_COUNT %d\n" % nk)
@@ -425,7 +429,7 @@ def main():
         f.write("#define TV_EYES %d\n\n" % tiles.V_EYES)
         f.write("/* (tables kept in attic RAM, out of bank 0: cc45 __bank, loaded at the start) */\n")
         f.write("#define NAMES_BANK 0x%X\n" % NAMES_BANK)
-        f.write("extern __bank(NAMES_BANK) const unsigned int tile_char[%d][%d];\n\n" % (nk, tiles.NV))
+        f.write("extern __bank(NAMES_BANK) const unsigned int tile_char[%d][%d];\n\n" % (nk, tiles.NV * 4))
         f.write("/* the frame and bar characters */\n")
         for name, n in ui_nums:
             f.write("#define UI_%s 0x%04X\n" % (name, n))
@@ -469,7 +473,7 @@ def main():
         f.write("extern const unsigned int scene_skip[%d][2];\n" % len(names))
     with open(os.path.join(out, "assets.c"), "w") as f:
         f.write("/* assets.c — made by tools/gen_art.py */\n#pragma encoding ascii\n#include \"assets.h\"\n\n")
-        f.write("__bank(NAMES_BANK) const unsigned int tile_char[%d][%d] = {\n" % (nk, tiles.NV))
+        f.write("__bank(NAMES_BANK) const unsigned int tile_char[%d][%d] = {\n" % (nk, tiles.NV * 4))
         for name, row in table:
             f.write("    {%s},   /* %s */\n" % (", ".join("0x%04X" % v for v in row), name))
         f.write("};\n\n")
