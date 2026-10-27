@@ -278,8 +278,8 @@ void view_draw(void) {
                 }
                 if (o != 0xFF) {
                     k = ov_v[o] == OV_TORCH ? lv : ov_v[o];
-                    ch = k < TV_EYES + 1 ? TILE_CHAR(ov_k[o], k) : 0;
-                    if (!ch && k < TV_EYES) ch = TILE_CHAR(ov_k[o], k & 2);   /* (a tile with only levels 0 and 2) */
+                    ch = k < TV_EYES + 1 ? tile_char[ov_k[o]][k] : 0;
+                    if (!ch && k < TV_EYES) ch = tile_char[ov_k[o]][k & 2];   /* (a tile with only levels 0 and 2) */
                     if (ch) {
                         row[b] = ch + q;
                         crow[b] = 0;

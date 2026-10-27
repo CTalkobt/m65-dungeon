@@ -46,7 +46,7 @@ static void view_put(unsigned char x, unsigned char y, unsigned char k) {
     unsigned char q, v = vis_at(x, y);
     view_unput();
     if (x < cam_x || y < cam_y || x >= cam_x + 40 || y >= cam_y + 22) return;
-    ch = TILE_CHAR(k, v && v != VIS_SHADOW ? v - 1 : TV_EYES);
+    ch = tile_char[k][v && v != VIS_SHADOW ? v - 1 : TV_EYES];
     if (!ch) return;
     s = (cells_t)SCREEN_LIN + cell_at(x, y);
     c = (cells_t)COLOR_LIN + cell_at(x, y);
