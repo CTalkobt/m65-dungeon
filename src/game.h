@@ -260,6 +260,7 @@ unsigned char creatures_move(void);            /* creatures.c: their turn; 0, or
 extern unsigned char note_kind[MAX_NOTES];
 extern unsigned int note_at[MAX_NOTES];
 void level_map(void);
+void help_screen(void);               /* help.c: every key, over the map */
 
 /* travel.c: the way to the stairs (way_find: 0 if they are not known);
  * the step along it from the player's place, dx + 1 | (dy + 1) << 2

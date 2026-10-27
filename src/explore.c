@@ -74,17 +74,10 @@ static void level_enter(void) {
     str_cat(buf, depth_name(pl.depth));
     str_cat(buf, ".");
     msg(buf, C_GOLD);
-    if (pl.depth == 1) msg("Arrows / WASD move, QEZC diagonally. H for help.", C_DIM);
+    if (pl.depth == 1) msg("Arrows / WASD move, QEZC diagonally. ? for help.", C_DIM);
     if (pl.depth == DEPTHS) msg("A cold voice whispers your name.", C_PURPLE);
     game_save();                     /* (each level begun is kept, while the screen is dark) */
     screen_in();
-}
-
-static void help(void) {
-    msg("Move: arrows, WASD, QEZC diagonally. Space: search.", C_TEXT);
-    msg("Walk into doors, chests, foes. T, G: shoot. X: throw.", C_TEXT);
-    msg("I: pack. P: potion. F: feed, L: light torch. M: map.", C_TEXT);
-    msg("RETURN: to the stairs. O: settings. RUN/STOP: save.", C_TEXT);
 }
 
 static const unsigned char drops[9] = {O_GOLD, O_GOLD, O_GOLD, O_POTION, O_SCROLL, O_DRAUGHT, O_RAGS, O_FUR, O_ARROWS};
@@ -511,7 +504,10 @@ static unsigned char explore_run(unsigned char resume) {
             took = 1;                /* a rest: a search of the places round about */
             search(2);
             break;
-        case 'h': case '?': help(); break;
+        case 'h': case '?':
+            help_screen();
+            view_screen();
+            break;
         case 'p':
             took = drink();
             break;

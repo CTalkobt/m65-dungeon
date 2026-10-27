@@ -78,7 +78,7 @@ memory, but only 26 life). The ending names who it was.
 | F I H W | | | (casting) firebolt, frost, heal, ward |
 | H M F | | | (items) potion, draught, scroll of fire |
 | B G | | | (shooting) the bow, the flintlock |
-| H | | help | |
+| H, ? | | every key, on one screen | |
 | RUN/STOP | | save and stop (S), or give up (Y) | back out of the spells or items |
 | C (on the title) | | continue the saved descent | |
 | F (on the title) | | the Hall of the Deep: the best descents | |
