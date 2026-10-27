@@ -34,6 +34,8 @@ CALLINGS = ("fighter", "hunter", "lamplighter")
 FIGHTS = {d: (6 + 2 * (d - 1)) // 2 for d in range(1, 6)}
 BOLT_DICE = 2     # the lich's violet fire: 2d6 - 2 (1 at the least) more than its blow (battle.c A_BOLT)
 BOLT_PLUS = -2
+ARROW_PHASE = 1   # a shot at a faded wraith: half, not nothing
+LIFE = {"fighter": 40, "hunter": 34, "lamplighter": 30}
 REST = 5          # life mended between fights (a regain a 12 turns, some walking)
 
 
@@ -46,7 +48,7 @@ class Player:
         level, w, a, pots = PROGRESS[depth]
         self.calling = calling
         self.level = level
-        base = {"fighter": 40, "hunter": 30, "lamplighter": 26}[calling]
+        base = LIFE[calling]
         # 4 a level, and one gift in three taken as Hardy (+6)
         self.maxhp = base + 4 * (level - 1) + 6 * ((level - 1) // 3)
         self.maxmp = 12 + 2 * (level - 1)
@@ -234,12 +236,17 @@ class Fight:
             self.firebolt()
             return
         if self.dist > 0:
-            if pl.bow and pl.arrows:
+            # (a shot only where it is worth it: 3 or more on average, after armour)
+            if pl.bow and pl.arrows and 3.5 + (pl.level - 1) // 2 + pl.aim - m["defense"] >= 3:
                 pl.arrows -= 1
                 if random.randrange(100) < (85 if self.dist == 1 else 70) + pl.aim * 5:
                     d = dice(1, 6) + (pl.level - 1) // 2 + pl.aim
                     d = d - m["defense"] if d > m["defense"] else 1
+                    if self.intent == A["PHASE"] and ARROW_PHASE:
+                        self.casting = 1          # (half, into what is fading: battle.c)
+                        d = d // 2 + 1
                     self.wound(d)
+                    self.casting = 0
                 return
             if self.snared:
                 if pl.mp >= 3:

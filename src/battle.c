@@ -554,7 +554,15 @@ static unsigned char player_acts(unsigned char a) {
             sfx(SFX_HIT);
             say(a ? "The ball strikes home!" : "Your arrow strikes!", C_TEXT);
             flash(255, 255, 255, 8);
+            if (intent == A_PHASE) {
+                /* a blade passes through what is fading; a shot catches
+                 * some of it */
+                d = d / 2 + 1;
+                casting = 1;
+                say("It catches the fading shape.", C_DIM);
+            }
             wound(d);
+            casting = 0;
         }
         draw_you();
         return 0;

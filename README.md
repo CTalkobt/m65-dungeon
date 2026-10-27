@@ -68,11 +68,11 @@ game builds with its SID effects only.
 ## Playing
 
 **Who goes down.** A new descent begins with a choice: the *fighter*
-(life 40, a long sword and studded leather, but no bow), the *hunter* (a
-short bow with 24 arrows, a sure aim, a Great short sword, two strips of
-meat), or the
+(life 40, a long sword and studded leather, but no bow), the *hunter* (life
+34, a short bow with 24 arrows, a sure aim, a Great short sword, two
+strips of meat), or the
 *lamplighter* (a full torch, a flint, two flasks of oil, rags and a keen
-memory, but only 26 life). The ending names who it was.
+memory, but only 30 life). The ending names who it was.
 
 | Key | Joystick | Exploring | Fighting |
 |---|---|---|---|
@@ -334,7 +334,8 @@ answer:
 - *Item*: a healing potion, a mana draught, a scroll of fire, or an antidote.
 - *Shoot* (from near or far, not close): the bow or the flintlock, as on
   the map; a hit is likelier near (85 in 100) than far (70). A guard
-  halves it, and it passes through a wraith that has faded.
+  halves it, and a wraith that has faded takes only half of it (a blade
+  passes through).
 
 ## How it works
 

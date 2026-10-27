@@ -126,6 +126,7 @@ void calling_take(void) {
         pl.items[I_POTION]++;
         break;
     case CALL_HUNTER:                         /* from afar */
+        pl.hp = pl.maxhp = 34;
         pl.items[I_ARROWS] = 24;
         pl.aim = 1;
         pl.wq = 2;                            /* a Great short sword, for when it comes to blades */
@@ -133,7 +134,7 @@ void calling_take(void) {
         pl.items[I_FOOD] = 2;
         break;
     default:                                  /* the light: more of it, longer */
-        pl.hp = pl.maxhp = 26;
+        pl.hp = pl.maxhp = 30;
         pl.fuel = TORCH_MAX;
         pl.items[I_FLINT] = 1;
         pl.items[I_OIL] = 2;
