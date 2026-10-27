@@ -41,6 +41,18 @@ merchant a step east, and 100 gold; `TEST=-DTEST_FIXTURE` a fountain east and
 a shelf west; `TEST=-DTEST_RUBBLE` starts beside fallen stones or a crack.
 Other letters in `KEYS` are typed as they are (`KEYS='F__i'` opens the
 inventory).
+`TEST=-DTEST_VENOM` starts with venom in the blood and an antidote;
+`TEST=-DTEST_CHARMS=<0-4>` with one of each charm, wearing the one that
+does that (CH_*).
+
+**The tester's lantern.** Type `lantern` on the title screen (nothing
+shows but a chime), or build with `DEFS=-DCHEAT`; then `@` on the map
+opens a panel: go to any depth, reveal the whole level, know every flask
+and charm, mend (life, mana, torch, venom), 100 gold, a level, change the
+weapon, armour, bow and gun, put a creature of any kind beside you (awake),
+go to the stairs, and set how many of each thing you carry (left, right:
+one less or more; RETURN: ten more). It is an overlay of its own, and
+without the word `@` does nothing.
 `python3 tools/probe.py build/dungeon.d81 <seconds> r m<addr>` boots the disk
 and asks xemu's monitor for the registers and memory.
 

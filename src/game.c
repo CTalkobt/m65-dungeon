@@ -8,6 +8,11 @@ struct player pl;
 unsigned int turn;
 struct mon mons[MAX_MON];
 unsigned char nmons;
+#ifdef CHEAT
+unsigned char cheat_on = 1;
+#else
+unsigned char cheat_on;
+#endif
 
 /* the things lying about: a short list */
 unsigned int thing_at[MAX_OBJ];

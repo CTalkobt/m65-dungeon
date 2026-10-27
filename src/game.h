@@ -295,6 +295,10 @@ extern unsigned char note_kind[MAX_NOTES];
 extern unsigned int note_at[MAX_NOTES];
 void level_map(void);
 void help_screen(void);               /* help.c: every key, over the map */
+/* cheat.c: the tester's panel (@ on the map, once cheat_on: "lantern"
+ * typed on the title); 0, or a depth to go to */
+unsigned char cheat(void);
+extern unsigned char cheat_on;
 
 /* travel.c: the way to the stairs (way_find: 0 if they are not known);
  * the step along it from the player's place, dx + 1 | (dy + 1) << 2

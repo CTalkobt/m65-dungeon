@@ -142,8 +142,11 @@ void calling_take(void) {
 }
 
 /* 0: the player wants to leave; 1: a new descent; 2: the saved one (game_load) */
+/* typed on the title: the tester's panel (cheat.c) from now on */
+static const char cheat_word[] = "lantern";
+
 unsigned char title(void) {
-    unsigned char k, r = 1;
+    unsigned char k, r = 1, w = 0;
     unsigned int t = 0;
     if (!shown) title_show();
     shown = 0;
@@ -165,6 +168,14 @@ unsigned char title(void) {
             scene_show(0);
         }
         k = key_get();
+        if (k) {
+            w = k == cheat_word[w] ? w + 1 : k == cheat_word[0];
+            if (!cheat_word[w]) {
+                cheat_on = 1;
+                sfx(SFX_CHIME);
+                w = 0;
+            }
+        }
         if (k == K_FIRE || k == ' ') {
             k = calling_choose();
             if (k != 0xFF) {

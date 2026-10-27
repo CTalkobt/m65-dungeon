@@ -561,6 +561,17 @@ static unsigned char explore_run(unsigned char resume) {
         case 'k':
             took = door_shut();
             break;
+        case '@':
+            if (!cheat_on) break;
+            k = cheat();
+            if (k) {
+                pl.depth = k;
+                msg_clear();
+                level_enter();
+                continue;
+            }
+            view_screen();
+            break;
         case 'j':
             history_screen();
             view_screen();
