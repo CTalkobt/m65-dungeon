@@ -3,10 +3,11 @@
  *
  * A secret door is a shut door drawn as the wall it hides in (TK_SECRET_*:
  * terrain() calls it rock); found, it is a door. A trap is a hidden thing
- * on the floor (O_TRAP); found or sprung, it is gone and the floor shows
- * its plate (TK_TRAP), harmless. Waiting searches the eight places round
- * the player (search(2)); walking past finds things now and then
- * (search(12)).
+ * on the floor (O_TRAP); found, the floor shows its plate (TK_TRAP), still
+ * armed: walked into, the player tries to disarm it; sprung or disarmed,
+ * it is floor again. A creature hunting the player springs one it steps
+ * on (creatures.c). Waiting searches the eight places round the player
+ * (search(2)); walking past finds things now and then (search(12)).
  */
 #pragma cc45 overlay(gen)
 #pragma cc45 noescape_strings
@@ -53,14 +54,12 @@ unsigned char search(unsigned char odds) {
     return any;
 }
 
-unsigned char trap_spring(void) {
+/* the plate at (x, y) springs on the player: spent, floor again; DIED if
+ * it killed */
+static unsigned char spring(unsigned char x, unsigned char y) {
     unsigned char d, k;
     char buf[48];
-    reveal(pl.x, pl.y);
-    if (rng_range(8) < 2 + pl.wary) {         /* (wary feet: 3, 4, 5 in 8) */
-        msg("A plate shifts underfoot. You step off in time.", C_DIM);
-        return 0;
-    }
+    floor_set(x, y);
     sfx(SFX_TRAP);
     k = rng_range(4);
     if (k == 1 && !pl.lit) k = 0;
@@ -96,6 +95,35 @@ unsigned char trap_spring(void) {
         sfx(SFX_BELL);
         break;
     }
+    return 0;
+}
+
+/* the hidden trap underfoot: found, and sprung unless the player is quick
+ * (then it stays, armed) */
+unsigned char trap_spring(void) {
+    reveal(pl.x, pl.y);
+    if (rng_range(8) < 2 + pl.wary) {         /* (wary feet: 3, 4, 5 in 8) */
+        msg("A plate shifts underfoot. You step off in time.", C_DIM);
+        return 0;
+    }
+    return spring(pl.x, pl.y);
+}
+
+/* a found plate walked into: the player tries to jam it (the hunter best,
+ * wary feet better); a slip, now and then, springs it */
+unsigned char disarm(unsigned char x, unsigned char y) {
+    if (rng_range(12) < 4 + pl.wary * 2 + (pl.calling == CALL_HUNTER) * 3) {
+        floor_set(x, y);
+        msg("You jam the plate's catch. It is harmless now.", C_HILITE);
+        sfx(SFX_CLANG);
+        if (gain_xp(2)) msg("You have grown stronger!", C_GOLD);
+        return 0;
+    }
+    if (rng_range(3) == 0) {
+        msg("Your hand slips!", C_RED);
+        return spring(x, y);
+    }
+    msg("You work at the plate's catch, but it will not yield.", C_DIM);
     return 0;
 }
 

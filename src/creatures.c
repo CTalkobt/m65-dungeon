@@ -55,6 +55,29 @@ static void devour(struct mon *c) {
     msg(buf, C_GREEN);
 }
 
+/* a plate under creature k, hidden or found, sprung (a hunter does not
+ * watch its feet; bats fly over): a dart, and it is floor again */
+static void plate(unsigned char k) {
+    struct mon *c = &mons[k];
+    unsigned int at = AT(c->x, c->y);
+    unsigned char v;
+    char buf[64];
+    if (obj_at(at) == O_TRAP) obj_set(at, O_NONE);
+    else if (vm_kind(c->x, c->y) != TK_TRAP) return;
+    floor_set(c->x, c->y);
+    v = vis_at(c->x, c->y);
+    if (v && v != VIS_SHADOW) {
+        buf[0] = 0;
+        str_cat(buf, "A dart flies from the wall into the ");
+        str_cat(buf, mon_name(c->kind));
+        str_cat(buf, "!");
+        msg(buf, C_HILITE);
+        sfx(SFX_TRAP);
+    } else sfx_far(SFX_TRAP, (signed char)((signed int)c->x - pl.x));
+    c->stun = 2;
+    mon_hurt(k, 4 + rng_range(6) + pl.depth * 2);
+}
+
 /* creature k a step toward dx, dy (round what is in the way): 0, or the
  * outcome of the fight it starts, walking into the player */
 static unsigned char go(unsigned char k, signed char dx, signed char dy) {
@@ -73,6 +96,7 @@ static unsigned char go(unsigned char k, signed char dx, signed char dy) {
     else if (dy && free_for(c, c->x, c->y + dy) && !(c->x == pl.x && c->y + dy == pl.y)) c->y += dy;
     else return 0;
     if (mon_habits[c->kind] & MH_EATER) devour(c);
+    if (c->awake == 2 && !(mon_habits[c->kind] & MH_FLIT)) plate(k);
     return 0;
 }
 

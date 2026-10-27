@@ -70,6 +70,11 @@ unsigned char obj_count(unsigned int at) {
     return 0;
 }
 
+/* a room's floor again where a plate was (as dungeon.c lays it) */
+void floor_set(unsigned char x, unsigned char y) {
+    vm_set(x, y, TK_FLOOR0 + (((x * 7) ^ (y * 13)) & 3));
+}
+
 /* the terrain from the tile kind: TK_ROCK, FLOOR0-3, CORR0-1, WALL0-15,
  * DOOR_H/V, DOOR_OPEN_H/V, STAIRS, DOOR_LOCKED_H/V, SECRET_H/V, TRAP,
  * RUBBLE, CRACK_NS/EW (gen_art.py's order) */
@@ -83,7 +88,7 @@ unsigned char terrain(unsigned char x, unsigned char y) {
     if (k < TK_STAIRS) return TR_OPEN;
     if (k == TK_STAIRS) return TR_STAIRS;
     if (k <= TK_DOOR_LOCKED_V) return TR_LOCKED;
-    if (k == TK_TRAP) return TR_FLOOR;      /* (one found: harmless now) */
+    if (k == TK_TRAP) return TR_FLOOR;      /* (one found: still armed, walked into to disarm) */
     if (k >= TK_RUBBLE) return TR_RUBBLE;
     return TR_ROCK;                         /* a secret door: a wall, till it is found */
 }

@@ -109,6 +109,8 @@ void memory_renew(void);                       /* all remembered as if just seen
 void level_reveal(void);                       /* the walls, doors, stairs remembered; the hidden found */
 unsigned char search(unsigned char odds);      /* the places round the player: each hidden thing 1 in odds */
 unsigned char trap_spring(void);               /* the hidden trap underfoot: DIED if it killed */
+unsigned char disarm(unsigned char x, unsigned char y);   /* a found plate walked into: DIED if it killed */
+void floor_set(unsigned char x, unsigned char y);         /* game.c: a room's floor again (a plate gone) */
 /* this turn, in a window round the player: 0 out of sight, 1-4 lit
  * (bright to dim), 5 in shadow */
 #define VIS_SHADOW 5
@@ -196,6 +198,7 @@ void pick_up(unsigned int i, unsigned char n);   /* what lies at i (O_*), as the
 unsigned char foe_shoots(unsigned char k);       /* creature k's arrow at the player: 1 if it killed */
 unsigned char steal(unsigned char k);            /* creature k snatches something: 1 if it did */
 void drop_carry(unsigned char k);                /* what creature k ran off with, where it lies */
+void mon_hurt(unsigned char k, unsigned char d); /* aim.c: creature k hurt d on the map (its fall: the xp) */
 /* pack.c: n of item put down at (x, y) or beside it; 0 if there is no room */
 unsigned char put_down(unsigned char x, unsigned char y, unsigned char item, unsigned char n);
 

@@ -140,10 +140,11 @@ static unsigned char aim(unsigned char key) {
     }
 }
 
-/* creature targets[t] hurt d: less life, or its fall (where it stood:
+/* creature k hurt d: less life, or its fall (where it stood:
  * the experience, what it carried, now and then gold) */
-static void wound(unsigned char t, unsigned char d) {
-    struct mon *m = &mons[targets[t]];
+void mon_hurt(unsigned char k, unsigned char d) {
+    struct mon *m = &mons[k];
+    if (m->hp == FRESH) m->hp = mon_hp[m->kind];
     char buf[48];
     if (m->hp > d) {
         m->hp -= d;
@@ -162,7 +163,7 @@ static void wound(unsigned char t, unsigned char d) {
         msg("You have grown stronger!", C_GOLD);
         sfx(SFX_LEVEL);
     }
-    drop_carry(targets[t]);
+    drop_carry(k);
     if (!obj_at(AT(m->x, m->y)) && rng_range(3) == 0) obj_set(AT(m->x, m->y), O_GOLD);
 }
 
@@ -227,7 +228,6 @@ unsigned char shoot(unsigned char gun) {
         msg("A cold ward turns it aside. It must be faced.", C_PURPLE);
         return 1;
     }
-    if (m->hp == FRESH) m->hp = mon_hp[m->kind];
     d = rng_dice(r_dice[r], r_sides[r]) + r_plus[r] + (pl.level - 1) / 2 + pl.aim;
     d = d > mon_def[m->kind] ? d - mon_def[m->kind] : 1;
     sfx(SFX_HIT);
@@ -237,7 +237,7 @@ unsigned char shoot(unsigned char gun) {
     str_num(buf, d);
     str_cat(buf, ").");
     msg(buf, C_TEXT);
-    wound(t, d);
+    mon_hurt(targets[t], d);
     return 1;
 }
 
@@ -315,14 +315,13 @@ unsigned char throw_it(unsigned char i) {
         msg(buf, C_PURPLE);
         return 1;
     }
-    if (m->hp == FRESH) m->hp = mon_hp[m->kind];
     d = rng_dice(2, 6) + 2 + pl.aim;             /* (fire: no armour turns it) */
     if (mon_flags[m->kind] & MF_FIREWEAK) d *= 2;
     str_cat(buf, mon_flags[m->kind] & MF_FIREWEAK ? " shrieks in the bursting fire (" : " is caught in the bursting fire (");
     str_num(buf, d);
     str_cat(buf, ").");
     msg(buf, C_ORANGE);
-    wound(t, d);
+    mon_hurt(targets[t], d);
     return 1;
 }
 

@@ -206,6 +206,10 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
         return 0;
     }
     if (n >= O_FOUNTAIN && n <= O_SHELF_BARE) return fixture(i, n);
+    if (vm_kind(x, y) == TK_TRAP) {
+        *out = disarm(x, y);         /* (a found plate: not stepped on) */
+        return 1;
+    }
     if (n == O_BRAZIER_COLD) {
         /* the torch lights it, spending some of itself: the room lit for good */
         if (!pl.lit) msg("A cold brazier, and your torch is out.", C_DIM);
@@ -468,6 +472,15 @@ static unsigned char explore_run(unsigned char resume) {
 #endif
 #ifdef TEST_FUEL
     pl.fuel = TEST_FUEL;             /* (tests: the torch near its end) */
+#endif
+#ifdef TEST_LURE
+    vm_set(pl.x + 2, pl.y, TK_TRAP);  /* (tests: a found plate two east, a hunter beyond) */
+    mons[0].x = pl.x + 4;
+    mons[0].y = pl.y;
+    mons[0].kind = TEST_LURE;
+    mons[0].hp = FRESH;
+    mons[0].awake = 2;
+    mons[0].stun = 0;
 #endif
 #ifdef TEST_CHARMS
     for (k = 0; k < CHARMS; k++) pl.items[I_CHARM + k] = 1;   /* (tests: one of each charm, */

@@ -41,7 +41,7 @@ merchant a step east, and 100 gold; `TEST=-DTEST_FIXTURE` a fountain east and
 a shelf west; `TEST=-DTEST_RUBBLE` starts beside fallen stones or a crack.
 Other letters in `KEYS` are typed as they are (`KEYS='F__i'` opens the
 inventory).
-`TEST=-DTEST_VENOM` starts with venom in the blood and an antidote;
+`TEST=-DTEST_LURE=<kind>` puts a found plate two east and a hunting creature beyond it; `TEST=-DTEST_VENOM` starts with venom in the blood and an antidote;
 `TEST=-DTEST_CHARMS=<0-4>` with one of each charm, wearing the one that
 does that (CH_*).
 
@@ -134,7 +134,15 @@ level, or clangs a bell that wakes everything; one time in four you step
 off it in time. Resting searches the eight places round you (each hidden
 thing one time in two), and walking past now and then finds one; a
 scroll of far sight (or the idol's gift) finds them all. A trap found
-stays as a plate in the floor, harmless, and is remembered.
+shows as a plate in the floor, still armed (one you stepped off stays
+armed too). Walk into it to try to disarm it: 4 in 12, 2 more for each
+step of wary feet and 3 more for the hunter (it gives 2 experience);
+fail, and one time in three your hand slips and it springs. Travelling
+to the stairs goes round found plates. A creature hunting you does not
+watch its feet: any plate it steps on, hidden or found, fires a dart into
+it (4-9, and 2 more each level down) and leaves it stunned a moment, so
+a plate between you and a hunter is worth keeping (bats fly over). A
+plate sprung or disarmed is floor again.
 
 **The creatures on the map.** Skeletons shoot arrows from two to six
 places off along a clear line (the arrows can be picked up where they

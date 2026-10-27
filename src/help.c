@@ -24,7 +24,7 @@ static const char __noescape lines[] =
     "Q E Z C, 7 9 1 3\0move diagonally\0"
     "SPACE, 5, .\0rest a turn, searching round about\0"
     "RETURN\0go down the stairs; off them, walk to them\0"
-    "(walk into)\0open doors and chests, use fountains, fight foes\0"
+    "(walk into)\0open doors, chests; fountains; foes; disarm plates\0"
     "T / G\0shoot the bow / fire the flintlock (RETURN: loose)\0"
     "X\0throw a flask of oil or meat (O / M)\0"
     "I\0what you carry: RETURN uses it, D puts it down\0"
