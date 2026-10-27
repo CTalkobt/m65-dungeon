@@ -270,7 +270,7 @@ static unsigned char fame_add(unsigned char won) {
 
 /* "a cave spider", "an ooze", "the lich" */
 static void a_mon(char *buf, unsigned char kind) {
-    const char *n = nth(mon_names, kind);
+    const char *n = mon_name(kind);
     if (mon_flags[kind] & MF_BOSS) str_cat(buf, "the ");
     else str_cat(buf, *n == 'a' || *n == 'e' || *n == 'i' || *n == 'o' || *n == 'u' ? "an " : "a ");
     str_cat(buf, n);

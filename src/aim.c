@@ -46,7 +46,7 @@ static void view_put(unsigned char x, unsigned char y, unsigned char k) {
     unsigned char q, v = vis_at(x, y);
     view_unput();
     if (x < cam_x || y < cam_y || x >= cam_x + 40 || y >= cam_y + 22) return;
-    ch = tile_char[k][v && v != VIS_SHADOW ? v - 1 : TV_EYES];
+    ch = TILE_CHAR(k, v && v != VIS_SHADOW ? v - 1 : TV_EYES);
     if (!ch) return;
     s = (cells_t)SCREEN_LIN + cell_at(x, y);
     c = (cells_t)COLOR_LIN + cell_at(x, y);
@@ -88,7 +88,7 @@ static void find_targets(unsigned char reach) {
 /* "the giant rat" and the rest in buf */
 static void the_mon(char *buf, struct mon *m) {
     str_cat(buf, "the ");
-    str_cat(buf, nth(mon_names, m->kind));
+    str_cat(buf, mon_name(m->kind));
 }
 
 /* the shot's flight from the player to (tx, ty), a place a frame or two */
@@ -153,7 +153,7 @@ static void wound(unsigned char t, unsigned char d) {
     m->hp = 0;
     buf[0] = 0;
     str_cat(buf, "The ");
-    str_cat(buf, nth(mon_names, m->kind));
+    str_cat(buf, mon_name(m->kind));
     str_cat(buf, " falls.");
     msg(buf, C_HILITE);
     sfx(SFX_DEATH);
@@ -286,7 +286,7 @@ unsigned char throw_it(unsigned char i) {
     fly(pl.x, pl.y, m->x, m->y);
     buf[0] = 0;
     str_cat(buf, "The ");
-    str_cat(buf, nth(mon_names, m->kind));
+    str_cat(buf, mon_name(m->kind));
     if (i == I_FOOD) {
         if (mon_flags[m->kind] & MF_UNDEAD) {
             str_cat(buf, " pays the meat no heed.");
@@ -340,7 +340,7 @@ unsigned char foe_shoots(unsigned char k) {
     buf[0] = 0;
     if (seen) {
         str_cat(buf, "The ");
-        str_cat(buf, nth(mon_names, m->kind));
+        str_cat(buf, mon_name(m->kind));
         str_cat(buf, "'s arrow ");
     } else str_cat(buf, "An arrow from the dark ");
     if (rng_range(100) >= 75 - d * 5) {
@@ -381,7 +381,7 @@ unsigned char steal(unsigned char k) {
     m->carry = i + 1;
     buf[0] = 0;
     str_cat(buf, "The ");
-    str_cat(buf, nth(mon_names, m->kind));
+    str_cat(buf, mon_name(m->kind));
     str_cat(buf, " snatches a");
     str_cat(buf, i == I_ARROWS ? "n " : " ");
     str_cat(buf, item_name(i, 1));

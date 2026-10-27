@@ -169,22 +169,28 @@ unsigned char ware[WARES], ware_left[WARES];
 
 /* the things one carries, one and many; a flask by its colour until it
  * is known, then by what it does */
+/* (the names are kept in attic RAM: NAMES_BANK; far_nth copies one out) */
+static __bank(NAMES_BANK) const char item_names[] =
+    "healing potion\0healing potions\0mana draught\0mana draughts\0"
+    "scroll of fire\0scrolls of fire\0scroll of recall\0scrolls of recall\0"
+    "scroll of far sight\0scrolls of far sight\0iron key\0iron keys\0"
+    "twist of rags\0twists of rags\0bundle of sticks\0bundles of sticks\0"
+    "scrap of fur\0scraps of fur\0tallow candle\0tallow candles\0"
+    "flint\0flints\0firestick\0firesticks\0arrow\0arrows\0cartridge\0cartridges\0"
+    "flask of oil\0flasks of oil\0strip of dried meat\0strips of dried meat";
+static __bank(NAMES_BANK) const char flask_names[] =
+    "cloudy green flask\0cloudy green flasks\0smoky grey flask\0smoky grey flasks\0"
+    "violet flask\0violet flasks\0amber flask\0amber flasks\0"
+    "flask of dark-sight\0flasks of dark-sight\0flask of clear memory\0flasks of clear memory\0"
+    "flask of vigour\0flasks of vigour\0flask of poison\0flasks of poison";
+
 const char *item_name(unsigned char i, unsigned char n) {
     if (i >= I_FLASK) {
         i -= I_FLASK;
         if (pl.known & (1 << i)) i = FLASKS + pl.flask[i];
-        return nth("cloudy green flask\0cloudy green flasks\0smoky grey flask\0smoky grey flasks\0"
-                   "violet flask\0violet flasks\0amber flask\0amber flasks\0"
-                   "flask of dark-sight\0flasks of dark-sight\0flask of clear memory\0flasks of clear memory\0"
-                   "flask of vigour\0flasks of vigour\0flask of poison\0flasks of poison", i * 2 + (n != 1));
+        return far_nth(flask_names, i * 2 + (n != 1));
     }
-    return nth("healing potion\0healing potions\0mana draught\0mana draughts\0"
-               "scroll of fire\0scrolls of fire\0scroll of recall\0scrolls of recall\0"
-               "scroll of far sight\0scrolls of far sight\0iron key\0iron keys\0"
-               "twist of rags\0twists of rags\0bundle of sticks\0bundles of sticks\0"
-               "scrap of fur\0scraps of fur\0tallow candle\0tallow candles\0"
-               "flint\0flints\0firestick\0firesticks\0arrow\0arrows\0cartridge\0cartridges\0"
-               "flask of oil\0flasks of oil\0strip of dried meat\0strips of dried meat", i * 2 + (n != 1));
+    return far_nth(item_names, i * 2 + (n != 1));
 }
 
 /* the short bow, the longbow, the flintlock pistol, the musket: their
@@ -194,8 +200,13 @@ const unsigned char r_sides[4] = {6, 8, 6, 6};
 const unsigned char r_plus[4] = {0, 2, 2, 4};
 const unsigned char r_reach[4] = {6, 9, 5, 8};
 
+static __bank(NAMES_BANK) const char gear_names[] =
+    "short bow\0longbow\0flintlock pistol\0flintlock musket\0"
+    "short sword\0long sword\0war axe\0rune blade\0dragonbone sword\0"
+    "leather jerkin\0studded leather\0mail shirt\0plate\0rune plate";
+
 const char *ranged_name(unsigned char gun, unsigned char w) {
-    return nth("short bow\0longbow\0flintlock pistol\0flintlock musket", gun * 2 + w - 1);
+    return far_nth(gear_names, gun * 2 + w - 1);
 }
 
 /* the weapons: dice, sides, plus */
@@ -204,11 +215,11 @@ static const unsigned char w_sides[WEAPONS] = {8, 8, 10, 10, 10};
 static const unsigned char w_plus[WEAPONS] = {0, 2, 4, 6, 8};
 
 const char *weapon_name(unsigned char w) {
-    return nth("short sword\0long sword\0war axe\0rune blade\0dragonbone sword", w);
+    return far_nth(gear_names, 4 + w);
 }
 
 const char *armour_name(unsigned char a) {
-    return nth("leather jerkin\0studded leather\0mail shirt\0plate\0rune plate", a);
+    return far_nth(gear_names, 4 + WEAPONS + a);
 }
 
 void weapon_take(unsigned char w) {
@@ -224,6 +235,13 @@ void armour_take(unsigned char a) {
 }
 
 /* each level's name (resident: the title's overlay names it too) */
+static __bank(NAMES_BANK) const char depth_names[] =
+    "\0The Sunken Cellars\0The Weeping Halls\0The Bone Galleries\0The Web-Choked Deep\0The Lich's Sanctum";
+
 const char *depth_name(unsigned char depth) {
-    return nth("\0The Sunken Cellars\0The Weeping Halls\0The Bone Galleries\0The Web-Choked Deep\0The Lich's Sanctum", depth);
+    return far_nth(depth_names, depth);
+}
+
+const char *mon_name(unsigned char kind) {
+    return far_nth(mon_names, kind);
 }

@@ -34,6 +34,7 @@ from stage import W, H  # noqa: E402
 
 PAL_BYTES = 768
 LOOK_LIN = 0x8310000           # DGLOOK unpacks here (attic RAM: src/hw.h)
+NAMES_BANK = 0x834             # tile_char, mon_names (and game.c's names): attic RAM $8340000
 TILES_LIN = 0x40000
 SCENE_A = 0x50000
 SCENE_A_END = 0x5E000          # the screen is above
@@ -416,13 +417,16 @@ def main():
             f.write("#define TK_%s %d\n" % (name, i))
         f.write("#define TK_COUNT %d\n#define TCHAR0 0x%04X\n" % (len(terrain), TCHAR0))
         f.write("#define PAL_MAP %d           /* the map's palette banks (8): 128-255 of DGTILES' palette */\n" % PAL_MAP)
-        f.write("\n/* the full-colour tiles (tile_char[kind][variant]: the first of 4 characters, 0 none) */\n")
+        f.write("\n/* the full-colour tiles (TILE_CHAR(kind, variant): the first of 4 characters, 0 none) */\n")
         for i, (name, _) in enumerate(table):
             f.write("#define T_%s %d\n" % (name, i))
         f.write("#define T_COUNT %d\n" % nk)
         f.write("#define PAL_FIRE %d          /* the fire's palette entries: 4 from here */\n" % FIRE0)
         f.write("#define TV_EYES %d\n\n" % tiles.V_EYES)
-        f.write("extern const unsigned int tile_char[%d][%d];\n\n" % (nk, tiles.NV))
+        f.write("/* (tables kept in attic RAM, out of bank 0: cc45 __bank, loaded at the start) */\n")
+        f.write("#define NAMES_BANK 0x%X\n" % NAMES_BANK)
+        f.write("extern __bank(NAMES_BANK) const unsigned int tile_char[%d];   /* kind * TV_N + variant */\n" % (nk * tiles.NV))
+        f.write("#define TV_N %d\n#define TILE_CHAR(k, v) tile_char[(unsigned int)(k) * TV_N + (v)]\n\n" % tiles.NV)
         f.write("/* the frame and bar characters */\n")
         for name, n in ui_nums:
             f.write("#define UI_%s 0x%04X\n" % (name, n))
@@ -450,7 +454,7 @@ def main():
         f.write("extern const unsigned char mon_tile[M_KINDS], mon_scene[M_KINDS], mon_flags[M_KINDS];\n")
         f.write("/* for a shot on the map (the rest is in the close-up): life, armour, experience, names (nth) */\n")
         f.write("extern const unsigned char mon_hp[M_KINDS], mon_def[M_KINDS], mon_xp[M_KINDS], mon_habits[M_KINDS];\n")
-        f.write("extern const char mon_names[];\n")
+        f.write("extern __bank(NAMES_BANK) const char mon_names[];\n")
         f.write("extern const unsigned char level_mons[%d][SPAWN];\n" % DEPTHS)
         f.write("extern const char *const scene_file[%d];\n" % len(names))
         f.write("/* a creature fought in another's close-up: the file of its header (0: its own) */\n")
@@ -466,9 +470,9 @@ def main():
         f.write("extern const unsigned int scene_skip[%d][2];\n" % len(names))
     with open(os.path.join(out, "assets.c"), "w") as f:
         f.write("/* assets.c — made by tools/gen_art.py */\n#pragma encoding ascii\n#include \"assets.h\"\n\n")
-        f.write("const unsigned int tile_char[%d][%d] = {\n" % (nk, tiles.NV))
+        f.write("__bank(NAMES_BANK) const unsigned int tile_char[%d] = {\n" % (nk * tiles.NV))
         for name, row in table:
-            f.write("    {%s},   /* %s */\n" % (", ".join("0x%04X" % v for v in row), name))
+            f.write("    %s,   /* %s */\n" % (", ".join("0x%04X" % v for v in row), name))
         f.write("};\n\n")
         f.write("const char *const scene_file[%d] = {%s};\n"
                 % (len(names), ", ".join('"DG%s"' % n.upper() for n in names)))
@@ -486,7 +490,7 @@ def main():
         f.write("const unsigned char mon_habits[M_KINDS] = {%s};\n"
                 % ", ".join("0x%02X" % sum(1 << monsters.HABITS.index(h) for h in m[2]["habits"])
                             for m in monsters.MONSTERS))
-        f.write("const char mon_names[] = \"%s\";\n" % "\\0".join(m[2]["name"] for m in monsters.MONSTERS))
+        f.write("__bank(NAMES_BANK) const char mon_names[] = \"%s\";\n" % "\\0".join(m[2]["name"] for m in monsters.MONSTERS))
         f.write("const unsigned char level_mons[%d][SPAWN] = {%s};\n"
                 % (DEPTHS, ", ".join("{%s}" % ", ".join(str(k) for k in row) for row in spawns())))
         f.write("const unsigned int scene_skip[%d][2] = {%s};\n"

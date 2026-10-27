@@ -44,7 +44,7 @@ static void devour(struct mon *c) {
     if (!o || o == VIS_SHADOW) return;
     buf[0] = 0;
     str_cat(buf, "The ");
-    str_cat(buf, nth(mon_names, c->kind));
+    str_cat(buf, mon_name(c->kind));
     str_cat(buf, " engulfs what lay there.");
     msg(buf, C_GREEN);
 }

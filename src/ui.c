@@ -110,6 +110,19 @@ const char *nth(const char *list, unsigned char n) {
     return list;
 }
 
+/* the nth (0, 1, ...) of a far table of strings (one after another, each
+ * ending in its NUL: names kept out of bank 0), copied out: valid until the
+ * next call (each caller str_cats it at once) */
+static char far_buf[32];
+
+const char *far_nth(const char __far *list, unsigned char n) {
+    char *d = far_buf;
+    while (n--)
+        while (*list++) {}
+    while ((*d++ = *list++) != 0) {}
+    return far_buf;
+}
+
 void str_num(char *d, unsigned int v) {
     char buf[6];
     unsigned char i = 5;

@@ -319,6 +319,8 @@ void ui_wrap(unsigned char col, unsigned char row, unsigned char w, const char *
 void ui_stats(unsigned char col, unsigned char row);
 void str_cat(char *d, const char *s);
 const char *nth(const char *list, unsigned char n);   /* the nth of "a\0b\0c" */
+const char *far_nth(const char __far *list, unsigned char n);   /* the same of a far table: copied out */
+const char *mon_name(unsigned char kind);   /* game.c: "giant rat" (copied out: far_nth) */
 void str_num(char *d, unsigned int v);
 /* a short message to the log in the battle's and the views' text area */
 void log_init(unsigned char col, unsigned char row, unsigned char w, unsigned char h);
