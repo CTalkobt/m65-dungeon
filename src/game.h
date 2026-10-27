@@ -82,6 +82,7 @@ unsigned char vault_at(unsigned char x, unsigned char y);
 #define O_SHELF       25      /* search it, once */
 #define O_SHELF_BARE  26
 #define O_FLAMES      27      /* burning oil (thing_n: the turns it has left) */
+#define O_WEDGE       28      /* sticks wedged under a shut door: none open it (explore.c door_shut) */
 #define BLOCKS(o)     ((o) == O_BRAZIER || ((o) >= O_BRAZIER_COLD && (o) < O_PILE))   /* none walk through */
 #define O_PILE        32      /* O_PILE + I_*: so many (thing_n) of a thing carried, put down */
 #define MAX_OBJ       56

@@ -74,6 +74,7 @@ memory, but only 26 life). The ending names who it was.
 | T / G | | shoot the bow / fire the flintlock (again: the next target, RETURN: shoot) | |
 | X | | throw a flask of oil or meat (O / M when you carry both) | |
 | M | | the level as you remember it; a cursor, RETURN puts a note (! $ * ?) | |
+| K | | shut a door beside you; if it is shut, wedge it with a bundle of sticks | |
 | J | | the last 36 messages, to read again | |
 | S P C A R I T | | | strike, parry, cast, advance, retreat, item, shoot |
 | F I H W | | | (casting) firebolt, frost, heal, ward |
@@ -162,6 +163,13 @@ bookshelf. One gives dark-sight (120 turns of seeing what is in shadow,
 dimly, torch or no torch), one clears your memory (what you see fades
 slowly, for the level), one is vigour (3 more life, for good), and one
 is poison. Once known, a flask goes by its name.
+
+**Doors.** Creatures open shut doors (it takes them a move), but a shut
+door breaks their line of sight: K shuts an open door beside you. K again
+wedges it with a bundle of sticks, and then nothing opens it, though a
+creature hunting you may batter its way through (1 in 8 each try, and you
+hear the wood splinter). Walk into a wedged door to kick the wedge free
+and take the sticks back.
 
 **Venom, fire and worse.** A venomous bite (rats, cave spiders) burns 2
 a round for three rounds of the fight, and what is left of it goes on in

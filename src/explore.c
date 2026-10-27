@@ -129,6 +129,38 @@ static void door_open(unsigned char x, unsigned char y) {
 }
 
 
+/* K: a door beside the player shut (nothing in its way), or, already
+ * shut, wedged with a bundle of sticks; 1 if that took the turn */
+static unsigned char door_shut(void) {
+    unsigned char k, x, y, t, w;
+    for (w = 0; w < 2; w++)
+        for (k = 0; k < 9; k++) {
+            x = pl.x + (signed char)(k % 3) - 1;
+            y = pl.y + (signed char)(k / 3) - 1;
+            t = terrain(x, y);
+            if (k == 4 || obj_at(AT(x, y)) || mon_at(x, y)) continue;   /* (not where one stands) */
+            if (!w && t == TR_OPEN) {
+                vm_set(x, y, vm_kind(x, y) - TK_DOOR_OPEN_H + TK_DOOR_H);
+                sfx(SFX_DOOR);
+                msg("You push the door shut.", C_DIM);
+                return 1;
+            }
+            if (w && t == TR_DOOR) {
+                if (!pl.items[I_STICKS]) {
+                    msg("You have no sticks to wedge the door with.", C_DIM);
+                    return 0;
+                }
+                pl.items[I_STICKS]--;
+                obj_set(AT(x, y), O_WEDGE);
+                sfx(SFX_HEAVY);
+                msg("You wedge the door shut with a bundle of sticks.", C_TEXT);
+                return 1;
+            }
+        }
+    msg("There is no door beside you to shut.", C_DIM);
+    return 0;
+}
+
 /* a turn's burning, and the warnings */
 static void torch_burn(void) {
     if (!pl.lit) return;
@@ -183,6 +215,11 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
         return 1;
     }
     if (t == TR_DOOR) {
+        if (obj_at(i) == O_WEDGE) {
+            obj_set(i, O_NONE);
+            pl.items[I_STICKS]++;
+            msg("You kick the wedge free and take up the sticks.", C_DIM);
+        }
         door_open(x, y);
         sfx(SFX_DOOR);
         msg("The latch clicks, and the door swings open.", C_DIM);
@@ -514,6 +551,9 @@ static unsigned char explore_run(unsigned char resume) {
         case 'h': case '?':
             help_screen();
             view_screen();
+            break;
+        case 'k':
+            took = door_shut();
             break;
         case 'j':
             history_screen();
