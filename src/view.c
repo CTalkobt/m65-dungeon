@@ -160,7 +160,8 @@ static unsigned char torch(signed int dxq, signed int dyq, unsigned char b) {
 }
 
 /* what is put over the terrain this turn, in the window: the player, the
- * creatures, the things (the first at a place wins); the full-colour
+ * creatures, the things, the notes (the first at a place wins; the notes
+ * only while there is room left: never all of the rest are in view); the full-colour
  * tile, and its variant (OV_TORCH: as the torch lights each quarter) */
 #define MAX_OV   (1 + MAX_MON + MAX_OBJ)
 #define OV_TORCH 0xFF
@@ -179,7 +180,7 @@ static const unsigned char obj_tile[28] = {
 };
 
 static void ov_add(unsigned char x, unsigned char y, unsigned char k, unsigned char v) {
-    if (x < cam_x || y < cam_y || x >= cam_x + VIEW_W || y >= cam_y + VIEW_H) return;
+    if (x < cam_x || y < cam_y || x >= cam_x + VIEW_W || y >= cam_y + VIEW_H || ov_n == MAX_OV) return;
     ov_x[ov_n] = x - cam_x;
     ov_y[ov_n] = y - cam_y;
     ov_k[ov_n] = k;
@@ -207,6 +208,14 @@ static void ov_gather(void) {
             ov_add(x, y, thing_kind[k] >= O_PILE ? item_tile[thing_kind[k] - O_PILE] : obj_tile[thing_kind[k]], OV_TORCH);
         else if (v && (thing_kind[k] == O_MERCHANT || thing_kind[k] == O_FLAMES))
             ov_add(x, y, obj_tile[thing_kind[k]], TV_EYES);   /* (his lantern, the fire: seen in the dark) */
+    }
+    /* the player's notes: seen however dark (levelmap.c) */
+    for (k = 0; k < MAX_NOTES; k++) {
+        if (!note_kind[k]) continue;
+        x = (unsigned char)(note_at[k] % MAP_W);
+        y = (unsigned char)(note_at[k] / MAP_W);
+        v = vis_at(x, y);
+        ov_add(x, y, T_NOTE1 - 1 + note_kind[k], v && v != VIS_SHADOW ? OV_TORCH : TV_EYES);
     }
 }
 

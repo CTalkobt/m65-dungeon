@@ -19,7 +19,7 @@
 #define KEEP_KINDS 1024
 #define KEEP_SEEN  (KEEP_KINDS + MAP_N)
 #define KEEP_END   (KEEP_SEEN + MAP_N)
-#define VERSION    5
+#define VERSION    6
 
 extern unsigned char vault_x0, vault_y0, vault_x1, vault_y1;
 
@@ -67,6 +67,8 @@ static unsigned char parts(void) {
     part(&rng_state, sizeof rng_state);
     part(&vol_music, 1);
     part(&vol_sfx, 1);
+    part(note_kind, MAX_NOTES);
+    part(note_at, sizeof note_at);
     return 1;
 }
 

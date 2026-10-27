@@ -248,6 +248,14 @@ unsigned char explore(unsigned char resume);   /* until DIED, WON or SAVED; resu
 unsigned char fight(unsigned char i, unsigned char ambush);   /* with creature i: WON / FLED / DIED, the screen back */
 unsigned char creatures_move(void);            /* creatures.c: their turn; 0, or a fight's outcome */
 
+/* levelmap.c: the level as remembered, and the player's notes on it (a
+ * kind 1-NOTE_KINDS: danger, treasure, the way, a question; 0 none) */
+#define MAX_NOTES  16
+#define NOTE_KINDS 4
+extern unsigned char note_kind[MAX_NOTES];
+extern unsigned int note_at[MAX_NOTES];
+void level_map(void);
+
 /* travel.c: the way to the stairs (way_find: 0 if they are not known);
  * the step along it from the player's place, dx + 1 | (dy + 1) << 2
  * (0xFF: none, the player off the way) */

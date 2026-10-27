@@ -236,6 +236,7 @@ void dungeon_make(void) {
     }
     dma_fill_far(SEEN_LIN, MAP_N, 0);
     obj_clear();
+    for (k = 0; k < MAX_NOTES; k++) note_kind[k] = 0;
     nmons = 0;
     nrooms = 0;
     lit_n = 0;

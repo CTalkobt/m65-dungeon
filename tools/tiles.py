@@ -647,6 +647,19 @@ ART["bats"] = [
 # the ghoul and the ember spider: the skeleton and the spider recoloured
 ART["ghoul"] = [r.replace('b', 't').replace('w', 'T').replace('e', 'z') for r in ART["skeleton"]]
 ART["ember"] = [r.replace('F', 'R').replace('f', 'd').replace('z', 'Z').replace('r', 'e') for r in ART["spider"]]
+# the notes the player puts on the map (levelmap.c): a mark that shines,
+# seen however dark it is: danger, treasure, the way, a question
+def _note(sym, col):
+    rows = ["." * 16 for _ in range(16)]
+    for y, r in enumerate(sym):
+        rows[3 + y] = "...." + r.replace("#", col).replace(" ", ".").ljust(8, ".") + "...."
+    return rows
+
+
+ART["note1"] = _note(["   ##", "   ##", "   ##", "   ##", "   ##", "   ##", "", "   ##", "   ##"], "e")
+ART["note2"] = _note(["   #", "  ####", " # #", "  ###", "   # #", " ####", "   #"], "Z")
+ART["note3"] = _note(["#    #", " #  #", "  ##", "  ##", " #  #", "#    #"], "c")
+ART["note4"] = _note([" ####", "#    #", "    #", "   #", "  ##", "", "  ##"], "v")
 ART["oil"] = [r.replace('r', 'Y').replace('R', 'd').replace('n', 'b') for r in ART["potion"]]
 ART["idol_spent"] = [r.replace('z', 'T') for r in ART["idol"]]
 ART["draught"] = [r.replace('r', 'u').replace('R', 'U') for r in ART["potion"]]
@@ -1046,7 +1059,8 @@ def terrain_kinds(style=0):
 
 SPRITES = ("chest", "chest_open", "idol", "idol_spent", "potion", "gold", "bones", "brazier",
            "brazier_cold", "scroll", "key", "draught", "rags", "sticks", "fur", "candle", "flint", "firestick",
-           "arrows", "shot", "merchant", "fountain", "fountain_dry", "shelf", "oil", "food", "flames", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats", "ghoul", "ember")
+           "arrows", "shot", "merchant", "fountain", "fountain_dry", "shelf", "oil", "food", "flames", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats", "ghoul", "ember",
+           "note1", "note2", "note3", "note4")
 
 
 def sprite_kinds(base, base_nib, pal_map):
@@ -1076,7 +1090,7 @@ def sprite_kinds(base, base_nib, pal_map):
             return b
         v = [(lit(comp, l, glow), bg(l)) for l in range(4)]
         creature = name in ("rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats", "ghoul", "ember",
-                            "aim", "missile",
+                            "aim", "missile", "note1", "note2", "note3", "note4",
                             "merchant")     # (his lantern seen in the dark)
         if creature and glow.any():
             eyes = np.zeros((T, T, 3), np.float32)
@@ -1155,4 +1169,52 @@ def ui_chars():
             c[1, :] *= 0.5
             c[6, :] *= 0.5
             out.append(("%s%d" % (name, k), c))
+    # the level map (levelmap.c): a place a character
+    stone = np.array([0.46, 0.41, 0.36], np.float32)
+    wood = np.array([0.5, 0.32, 0.17], np.float32)
+    flo = blank() + stone * 0.42
+    flo[0, :] *= 0.6
+    flo[:, 0] *= 0.6
+    out.append(("MAP_FLOOR", flo))
+    cor = blank() + stone * 0.28
+    cor[2, 5] = cor[5, 2] = stone * 0.5
+    out.append(("MAP_CORR", cor))
+    wal = blank() + stone * 0.9
+    wal[0, :] = stone * 1.3
+    wal[7, :] = stone * 0.5
+    wal[3, :] *= 0.75
+    wal[0:3, 4] *= 0.75
+    wal[4:7, 1] *= 0.75
+    out.append(("MAP_WALL", wal))
+    door = blank() + wood
+    door[:, 0] = door[:, 7] = stone * 0.9
+    door[3:5, 5] = np.array([0.8, 0.7, 0.3], np.float32)
+    out.append(("MAP_DOOR", door))
+    opn = flo.copy()
+    opn[:, 0:2] = wood
+    out.append(("MAP_OPEN", opn))
+    lck = door.copy()
+    lck[2:6, 2:6] = np.array([0.78, 0.62, 0.25], np.float32)
+    lck[3:5, 3:5] = 0.05
+    out.append(("MAP_LOCKED", lck))
+    st = flo.copy()
+    for k in range(4):
+        st[1:7, 1 + k * 2] = stone * (1.4 - k * 0.3)
+    out.append(("MAP_STAIRS", st))
+    trp = flo.copy()
+    trp[1, 1:7] = trp[6, 1:7] = trp[1:7, 1] = trp[1:7, 6] = np.array([0.8, 0.2, 0.15], np.float32)
+    out.append(("MAP_TRAP", trp))
+    rub = cor.copy()
+    for (y, x) in ((1, 1), (1, 2), (2, 1), (4, 4), (4, 5), (5, 4), (5, 5), (2, 5), (5, 1)):
+        rub[y, x] = stone * 0.95
+    out.append(("MAP_RUBBLE", rub))
+    me = flo.copy()
+    me[1:7, 2:6] = np.array([1.0, 0.95, 0.7], np.float32)
+    me[1, 2] = me[1, 5] = me[6, 2] = me[6, 5] = stone * 0.42
+    me[2:5, 3:5] = np.array([1.0, 0.6, 0.2], np.float32)
+    out.append(("MAP_PLAYER", me))
+    cur = blank()
+    gold = np.array([1.0, 0.85, 0.3], np.float32)
+    cur[0, :] = cur[7, :] = cur[:, 0] = cur[:, 7] = gold
+    out.append(("MAP_CURSOR", cur))
     return out

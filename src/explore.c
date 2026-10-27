@@ -83,7 +83,7 @@ static void level_enter(void) {
 static void help(void) {
     msg("Move: arrows, WASD, QEZC diagonally. Space: search.", C_TEXT);
     msg("Walk into doors, chests, foes. T, G: shoot. X: throw.", C_TEXT);
-    msg("I: inventory. P: potion. F: feed torch. L: light it.", C_TEXT);
+    msg("I: pack. P: potion. F: feed, L: light torch. M: map.", C_TEXT);
     msg("RETURN: to the stairs. O: settings. RUN/STOP: save.", C_TEXT);
 }
 
@@ -529,6 +529,10 @@ static unsigned char explore_run(unsigned char resume) {
             break;
         case 'x':
             took = throw_it(I_COUNT);
+            break;
+        case 'm':
+            level_map();
+            view_screen();
             break;
         case 'o':
             settings(18, 14);

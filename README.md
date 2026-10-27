@@ -67,6 +67,7 @@ game builds with its SID effects only.
 | O (S on the title) | | settings: music and sound levels | |
 | T / G | | shoot the bow / fire the flintlock (again: the next target, RETURN: shoot) | |
 | X | | throw a flask of oil or meat (O / M when you carry both) | |
+| M | | the level as you remember it; a cursor, RETURN puts a note (! $ * ?) | |
 | S P C A R I T | | | strike, parry, cast, advance, retreat, item, shoot |
 | F I H W | | | (casting) firebolt, frost, heal, ward |
 | H M F | | | (items) potion, draught, scroll of fire |
@@ -154,6 +155,13 @@ flames burn there for 12 turns, barring the way, and light a dark room
 they are in for 30. *Dried meat* is fallen on by any creature that
 hungers (not the dead that walk): it stays put a while and loses track of
 you. The merchant sells both; they lie about and turn up in chests.
+
+**The level map** (M). The whole level, a place a character: what you
+remember (as on the view: places seen and not yet forgotten), the stairs,
+doors, traps found, and you. Move the cursor and press RETURN to put a
+note on a place (! danger, $ treasure, * the way, ? a question; again: the
+next kind, then off). Notes stay however your memory fades and are shown
+on the view, even in the dark; 16 a level, kept with the save.
 
 **Travel** (RETURN off the stairs). Once you have seen the stairs down,
 you walk to them over the places you remember, a step a turn, until
