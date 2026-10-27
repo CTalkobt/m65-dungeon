@@ -54,6 +54,13 @@ int main(void) {
         return 1;
     }
     unpack(TILES_LIN + TILES_SKIP);
+    /* each depth's stone into attic RAM (through bank 5, free till now) */
+    if (!load_file("DGLOOK", 5)) {
+        rom_print("dglook missing: run dungeon from its disk\r");
+        return 1;
+    }
+    unpack(SCENE_LIN + LOOK_SKIP);
+    dma_copy_far(LOOK_LIN, SCENE_LIN, (unsigned int)(LOOK_SIZE * DEPTHS));
     /* the close-ups' shared backdrop into the C64 ROM's space */
     if (!load_file("DGBACK", 5)) {
         rom_print("dgback missing: run dungeon from its disk\r");

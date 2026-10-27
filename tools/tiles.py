@@ -665,38 +665,142 @@ def floor(seed):
     return img
 
 
-def corridor(seed):
-    """rough-hewn rock, darker, gravel"""
+def corridor(seed, style=0):
+    """rough-hewn rock, darker: each depth's own (style 0-4: gravel, wet
+    stone with puddles, dust and bone chips, cracked rock and webs, dark
+    polished slabs)"""
     g = fbm(_xs * 0.4 + seed * 13, _ys * 0.4, 4, seed + 40)
-    pebble = fbm(_xs * 1.3 + seed, _ys * 1.3, 2, seed + 41) > 0.72
     base = np.array([0.36, 0.33, 0.3], np.float32)
+    if style == 1:
+        g = fbm(_xs * 0.25 + seed * 13, _ys * 0.25, 3, seed + 42)
+        img = base * (0.72 + g * 0.36)[..., None]
+        pool = fbm(_xs * 0.3 + seed * 7, _ys * 0.3, 2, seed + 43) > 0.6
+        img[pool] *= 0.55
+        rim = pool & ~np.roll(pool, 1, axis=0)
+        img[rim] *= 1.9                                  # the puddles' near rims catch the light
+        return img
+    if style == 2:
+        img = base * 1.08 * (0.84 + g * 0.26)[..., None]
+        rng = np.random.RandomState(seed + 80)
+        for _ in range(3):
+            x, y = rng.randint(1, 15), rng.randint(1, 15)
+            img[y, x] = base * 2.0
+            img[y, min(15, x + 1)] = base * 1.6
+            img[min(15, y + 1), x] *= 0.5
+        return img
+    if style == 3:
+        g = fbm(_xs * 0.6 + seed * 13, _ys * 0.6, 4, seed + 44)
+        img = base * (0.6 + g * 0.7)[..., None]
+        rng = np.random.RandomState(seed + 90)
+        x, y = rng.randint(3, 13), 0
+        for _ in range(16):
+            img[y, x] *= 0.4
+            x = min(15, max(0, x + rng.randint(-1, 2)))
+            y += 1
+            if y > 15:
+                break
+        if seed == 1:                                    # cobwebs in a corner
+            for k in range(7):
+                img[k, 0 if k < 1 else k - 1] = base * 1.7
+                img[0, k * 2 % 16] = base * 1.5
+            for k in range(1, 6):
+                img[k, 6 - k] = base * 1.5
+        return img
+    if style == 4:
+        slab = ((_xs // 8) + (_ys // 8) * 2 + seed) % 3
+        img = base * 0.8 * (0.85 + slab * 0.08 + g * 0.15)[..., None]
+        joint = (_xs % 8 == 0) | (_ys % 8 == 0)
+        img[joint] *= 0.45
+        sheen = ((_xs - _ys) % 16 == 5) & ~joint
+        img[sheen] *= 1.35
+        return img
+    pebble = fbm(_xs * 1.3 + seed, _ys * 1.3, 2, seed + 41) > 0.72
     img = base * (0.7 + g * 0.5)[..., None]
     img[pebble] *= 1.35
     return img
 
 
-def rock_top():
-    """the top of the rock a wall is cut in: dark, rough"""
+def rock_top(style=0):
+    """the top of the rock a wall is cut in: dark, rough; each depth's own"""
+    if style == 1:      # wet: smoother, streaked
+        g = fbm(_xs * 0.22, _ys * 0.22, 3, 62) * 0.7 + fbm(_xs * 1.1, _ys * 0.12, 2, 63) * 0.3
+        return np.array([0.2, 0.18, 0.17], np.float32) * (0.6 + g * 0.6)[..., None]
+    if style == 2:      # chalk: paler, fine-grained
+        g = fbm(_xs * 0.5, _ys * 0.5, 3, 64)
+        return np.array([0.25, 0.23, 0.21], np.float32) * (0.7 + g * 0.45)[..., None]
+    if style == 3:      # raw rock: coarse, broken
+        g = fbm(_xs * 0.5, _ys * 0.5, 5, 65)
+        return np.array([0.19, 0.17, 0.16], np.float32) * (0.4 + g * 1.0)[..., None]
+    if style == 4:      # basalt: the columns' tops, six-sided cells
+        g = fbm(_xs * 0.3, _ys * 0.3, 3, 66)
+        img = np.array([0.15, 0.135, 0.13], np.float32) * (0.75 + g * 0.5)[..., None]
+        row = _ys // 4
+        cell = ((_xs + (row % 2) * 2) % 4 == 0) | (_ys % 4 == 0)
+        img[cell] *= 0.5
+        return img
     g = fbm(_xs * 0.3, _ys * 0.3, 4, 60)
     return np.array([0.2, 0.18, 0.17], np.float32) * (0.6 + g * 0.7)[..., None]
 
 
-def wall(mask):
+def _face(x, y, y0, style):
+    """the colour of a wall's face at (x, y), y0 its top row"""
+    stone = np.array([0.62, 0.55, 0.48], np.float32)
+    r = y - y0
+    shade = 1.1 - r * 0.05
+    if style == 1:      # big wet ashlar blocks, damp running down
+        course = 0 if r < 4 else 1
+        joint = r == 3 or (x + course * 4 + 2) % 8 == 0
+        v = 0.5 + 0.12 * float(fbm(np.float32(x * 0.3), np.float32(y * 0.3 + course), 2, 67))
+        c = stone * v * shade * (0.45 if joint else 1.0)
+        if (x * 7 + 3) % 5 == 0:
+            c = c * (1.0 - r * 0.06)                     # a damp streak
+        return c
+    if style == 2:      # an ossuary: the ends of bones set in the wall
+        course = r // 3
+        v = 0.5 + 0.15 * float(fbm(np.float32(x * 0.5), np.float32(y * 0.5), 2, 68))
+        c = stone * v * shade
+        if r % 3 == 2:
+            return c * 0.4
+        bx = (x + course * 2) % 4
+        if bx in (1, 2):
+            c = stone * (1.15 if r % 3 == 0 else 0.95)   # a bone's end
+            if bx == 2 and r % 3 == 1:
+                c = c * 0.45
+        return c
+    if style == 3:      # raw rock, split here and there
+        v = 0.36 + 0.36 * float(fbm(np.float32(x * 0.6), np.float32(y * 0.6), 3, 69))
+        c = stone * v * shade
+        if (x * 3 + r * 5) % 11 == 0 or (x + r * 2) % 13 == 0:
+            c = c * 0.45
+        return c
+    if style == 4:      # basalt columns
+        col = x // 3
+        v = 0.36 + 0.06 * ((col * 5) % 4) + 0.06 * float(fbm(np.float32(x), np.float32(y * 0.4), 2, 70))
+        c = stone * v * (1.15 - r * 0.07)
+        if x % 3 == 0:
+            c = c * 0.4
+        elif x % 3 == 1 and (col * 3 + r) % 5 == 0:
+            c = c * 1.4                                  # a glassy glint
+        return c
+    course = r // 3
+    joint = (x + course * 4 + 1) % 8 == 0 or r % 3 == 2
+    v = 0.5 + 0.18 * float(fbm(np.float32(x * 0.5), np.float32(y * 0.5 + course), 2, 61))
+    return stone * v * shade * (0.45 if joint else 1.0)
+
+
+def wall(mask, style=0):
     """mask: floor to the N 1, E 2, S 4, W 8. The rock's top, and where
-    floor is to the south the wall's face: courses of blocks, lit. Its
-    edges: the lines that catch the light on the sides toward the floor"""
-    img = rock_top()
+    floor is to the south the wall's face (each depth's own stone: style
+    0-4), lit. Its edges: the lines that catch the light on the sides
+    toward the floor"""
+    img = rock_top(style)
     edge = np.zeros((T, T), bool)
     face = 7
     if mask & 4:
         y0 = T - face
         for y in range(y0, T):
-            course = (y - y0) // 3
             for x in range(T):
-                joint = (x + course * 4 + 1) % 8 == 0 or (y - y0) % 3 == 2
-                v = 0.5 + 0.18 * float(fbm(np.float32(x * 0.5), np.float32(y * 0.5 + course), 2, 61))
-                c = np.array([0.62, 0.55, 0.48], np.float32) * v * (1.1 - (y - y0) * 0.05)
-                img[y, x] = c * (0.45 if joint else 1.0)
+                img[y, x] = _face(x, y, y0, style)
         img[y0, :] = img[y0, :] * 1.35          # the top edge catches the light
         img[y0 - 1, :] *= 0.6
         edge[y0:y0 + 2, :] = True
@@ -722,19 +826,23 @@ def door(vertical, open_, locked=False):
     door swung back, when open)"""
     img = floor(5)
     edge = np.zeros((T, T), bool)
+    mat = np.zeros((T, T), bool)
     if open_:
         if vertical:
             img[:, 0:3] = np.array([0.42, 0.27, 0.14], np.float32)
             img[:, 3] *= 0.4
             edge[:, 0:2] = True
+            mat[:, 0:3] = True
         else:
             img[0:3, :] = np.array([0.42, 0.27, 0.14], np.float32)
             img[3, :] *= 0.4
             edge[0:2, :] = True
-        return img, edge
+            mat[0:3, :] = True
+        return img, edge, mat
     wood = np.array([0.5, 0.32, 0.17], np.float32)
     g = fbm(_xs * (0.2 if vertical else 1.0), _ys * (1.0 if vertical else 0.2), 3, 70)
     img = wood * (0.75 + g * 0.5)[..., None]
+    mat[:] = True
     if vertical:
         for x in (4, 8, 12):
             img[:, x] *= 0.55
@@ -758,7 +866,7 @@ def door(vertical, open_, locked=False):
         edge[5:11, 5:11] = True
     img[0, :] *= 0.4
     img[:, 0] *= 0.4
-    return img, edge
+    return img, edge, mat
 
 
 def trap():
@@ -772,9 +880,9 @@ def trap():
     return img, edge
 
 
-def rubble():
+def rubble(style=0):
     """a corridor choked with fallen stones (their outlines edges)"""
-    img = corridor(1)
+    img = corridor(1, style)
     edge = np.zeros((T, T), bool)
     for cx, cy, r in ((4, 5, 3.6), (11, 4, 3.0), (8, 11, 4.2), (13, 12, 2.4), (3, 12, 2.6)):
         d = np.sqrt((_xs - cx) ** 2 + (_ys - cy) ** 2)
@@ -785,9 +893,9 @@ def rubble():
     return img, edge
 
 
-def crack(mask):
+def crack(mask, style=0):
     """a wall between two ways, cracked through: it can be broken"""
-    img, edge = wall(mask)
+    img, edge = wall(mask, style)
     x = 8
     for y in range(T):
         x = min(12, max(4, x + ((y * 5) % 3) - 1))
@@ -824,30 +932,54 @@ def lit(img, level, glow=None):
     return out
 
 
-def terrain_kinds():
-    """[(name, image, edge pixels)] in the order of the C enum (TK_*): the
-    map's 16-colour tiles, unlit (the palette banks light them)"""
+STYLES = 5             # each depth its own stone (DEPTHS)
+# each depth's stone in the palette (gen_art.py map_palette): a tint, how
+# much of the colour is kept (0 grey), and a brightness. Brown sandstone,
+# green-grey with moss and damp, pale chalk and bone, rust and umber, violet
+# black basalt
+LOOKS = [((1.0, 1.0, 1.0), 1.0, 1.0),
+         ((0.86, 1.03, 0.93), 0.85, 0.92),
+         ((1.04, 1.0, 0.9), 0.3, 1.32),
+         ((1.14, 0.86, 0.72), 1.15, 0.86),
+         ((0.92, 0.84, 1.08), 0.45, 0.74)]
+
+
+def look(rgb, style):
+    """a stone colour (n x 3, 0..1) as depth style shows it"""
+    tint, sat, bright = LOOKS[style]
+    lum = rgb.mean(axis=-1, keepdims=True)
+    return (lum + (rgb - lum) * sat) * np.array(tint, np.float32) * bright
+
+
+def terrain_kinds(style=0):
+    """[(name, image, edge pixels, material pixels)] in the order of the C
+    enum (TK_*): the map's 16-colour tiles, unlit (the palette banks light
+    them), in a depth's stone (style). The material (wood, iron, brass) is
+    not stone: each depth shows it the same"""
     none = np.zeros((T, T), bool)
-    out = [("ROCK", np.zeros((T, T, 3), np.float32), none)]
+
+    def st(img_edge):
+        return img_edge + (none,)
+    out = [("ROCK", np.zeros((T, T, 3), np.float32), none, none)]
     for k in range(4):
-        out.append(("FLOOR%d" % k, floor(k + 1), none))
+        out.append(("FLOOR%d" % k, floor(k + 1), none, none))
     for k in range(2):
-        out.append(("CORR%d" % k, corridor(k), none))
+        out.append(("CORR%d" % k, corridor(k, style), none, none))
     for m in range(16):
-        out.append(("WALL%d" % m,) + wall(m))
+        out.append(("WALL%d" % m,) + st(wall(m, style)))
     for name, v, o in (("DOOR_H", 0, 0), ("DOOR_V", 1, 0), ("DOOR_OPEN_H", 0, 1), ("DOOR_OPEN_V", 1, 1)):
         out.append((name,) + door(v, o))
-    out.append(("STAIRS",) + stairs())
+    out.append(("STAIRS",) + st(stairs()))
     for name, v in (("DOOR_LOCKED_H", 0), ("DOOR_LOCKED_V", 1)):
         out.append((name,) + door(v, 0, True))
     # secret doors: exactly the wall they hide in (a door across a corridor
     # running north-south has floor north and south of it: WALL5; else WALL10)
-    out.append(("SECRET_H",) + wall(5))
-    out.append(("SECRET_V",) + wall(10))
-    out.append(("TRAP",) + trap())
-    out.append(("RUBBLE",) + rubble())
-    out.append(("CRACK_NS",) + crack(5))
-    out.append(("CRACK_EW",) + crack(10))
+    out.append(("SECRET_H",) + st(wall(5, style)))
+    out.append(("SECRET_V",) + st(wall(10, style)))
+    out.append(("TRAP",) + st(trap()))
+    out.append(("RUBBLE",) + st(rubble(style)))
+    out.append(("CRACK_NS",) + st(crack(5, style)))
+    out.append(("CRACK_EW",) + st(crack(10, style)))
     return out
 
 
@@ -856,10 +988,14 @@ SPRITES = ("chest", "chest_open", "idol", "idol_spent", "potion", "gold", "bones
            "arrows", "shot", "merchant", "fountain", "fountain_dry", "shelf", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich")
 
 
-def sprite_kinds(base):
-    """[(name, [variant images or None] * NV)] in the order of the C enum
-    (T_*): the things, the creatures and the player, full colour, each on
-    base (the floor as the map shows it, so they sit on it)"""
+def sprite_kinds(base, base_nib, pal_map):
+    """[(name, [variant or None] * NV)] in the order of the C enum (T_*):
+    the things, the creatures and the player, full colour, each on base
+    (the floor as the map shows it, so they sit on it). A variant is its
+    image and, for each pixel of that floor, the palette entry the map
+    shows the floor's colour number (base_nib) in at that light: the map's
+    bank (pal_map + level * 16), so the floor round a thing is the depth's
+    as the map's is (-1: the thing's own pixel)"""
     out = []
     for name in SPRITES:
         img, mask, glow = sprite(name)
@@ -867,18 +1003,27 @@ def sprite_kinds(base):
         # a soft shadow under it, down and to the right
         sh = np.zeros((T, T), bool)
         sh[1:, 1:] = mask[:-1, :-1]
-        comp = np.where((sh & ~mask)[..., None], comp * 0.55, comp)
-        v = [lit(comp, l, glow) for l in range(4)]
+        sh &= ~mask
+        comp = np.where(sh[..., None], comp * 0.55, comp)
+
+        def bg(level):
+            b = np.where(mask, -1, pal_map + level * 16 + base_nib)
+            if level < 3:
+                b[sh] = pal_map + (level + 1) * 16 + base_nib[sh]   # (the shadow: the next level down)
+            else:
+                b[sh] = -1
+            return b
+        v = [(lit(comp, l, glow), bg(l)) for l in range(4)]
         creature = name in ("rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "aim", "missile",
                             "merchant")     # (his lantern seen in the dark)
         if creature and glow.any():
             eyes = np.zeros((T, T, 3), np.float32)
             eyes[glow] = img[glow] * 0.8
-            v.append(eyes)
+            v.append((eyes, np.full((T, T), -1)))
         else:
             v.append(None)
         if name == "brazier":
-            v = [lit(comp, 0, glow)] * 4 + [None]      # it lights itself
+            v = [v[0]] * 4 + [None]                     # it lights itself
         elif name in ("aim", "missile"):
             v = [v[4]] * 5                              # only what glows, over anything
         elif name == "player":

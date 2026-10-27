@@ -17,7 +17,8 @@
  * Attic RAM: $8000000 the code overlays, $8070000 the tunes, $8080000 the
  * sounds, $8100000 the close-ups seen (128 KB each), $8300000 the level's
  * map: the terrain as characters, 128 x 96 (game.h vm_*), copied a row at a
- * time to the screen (view.c).
+ * time to the screen (view.c); $8310000 each depth's stone (DGLOOK: its
+ * characters and palette banks, put in place as the level is shown).
  */
 #pragma once
 
@@ -31,6 +32,7 @@
 #define SCENE_LIN  0x0050000UL
 #define SCREEN_LIN 0x005E000UL
 #define MUSIC_LIN  0x8070000UL       /* DGMUSIC, the tunes: attic RAM (tune_play_far) */
+#define LOOK_LIN   0x8310000UL       /* DGLOOK, each depth's stone: attic RAM (explore.c) */
 
 /* a file's palette: 256 red, 256 green, 256 blue (plain 8-bit values) */
 #define PAL_BYTES  768

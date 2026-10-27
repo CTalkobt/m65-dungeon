@@ -45,7 +45,9 @@ SPAWN = 8                      # level_mons: the creatures a level draws from, 8
 FIRE0 = 120                    # the tiles' fire: 4 palette entries the program turns round
 FIRE_RAMP = [(150, 30, 4), (235, 100, 14), (255, 190, 50), (255, 240, 160)]
 PAL_MAP = 128                  # the map's palette banks: 8 + bank (gen_art map_palette)
-MAP_GENERAL, MAP_EDGE = 11, 3  # a terrain tile's colour numbers: 1-11 the stone, 12-14 its edges
+MAP_GENERAL, MAP_EDGE = 11, 3  # a terrain tile's colour numbers: 1-11 the stone and the material, 12-14 the edges
+MAP_STONE = 7                  # 1-7 of them the stone
+LOOK_FIRST = 5                 # the kinds from TK_CORR0 on are each depth's own (DGLOOK): the floors are not
 TCHAR0 = 0x1010                # the terrain's first character ($40400): src/vmap.s45 knows it
 TILES_END = 0x50000            # the tiles have bank 4 (the level's map is in attic RAM)
 BACK1 = 0x2A000                # the backdrop's characters: in the C64 BASIC's space
@@ -89,47 +91,72 @@ def ncm_tile(nib):
     return out
 
 
-def map_palette(terrain):
-    """the map's 16-colour tiles' colours (MAP_GENERAL for the stone, the
-    wood, the iron; MAP_EDGE for the edges), the tiles as colour numbers
-    (1-14; 0 black), and the palette banks (8 x 16 entries: 128-255)"""
-    gen = np.concatenate([img[~edge] for name, img, edge in terrain if name != "ROCK"])
-    edg = np.concatenate([img[edge] for name, img, edge in terrain if name != "ROCK"])
-    gpal, _ = quantize(to8(np.clip(gen, 0, 1))[None], MAP_GENERAL, dither=False)
-    epal, _ = quantize(to8(np.clip(edg, 0, 1))[None], MAP_EDGE, dither=False)
+def map_palette(looks):
+    """the map's 16-colour tiles in every depth's look (looks[d]: tiles.py
+    terrain_kinds(d)): their colour numbers and each depth's palette banks
+    (8 x 16 entries: 128-255). The numbers mean the same at every depth -
+    1-MAP_STONE the stone, then the material (wood, iron, brass), 12-13
+    the stone's edges, 14 the material's - so a depth's look is its tiles
+    with its stone's colours recoloured (tiles.look), the material's kept.
+    The floors are the same at every depth (the things on them have them
+    under them: sprite_kinds), only their colours differ."""
+    every = [t for terrain in looks for t in terrain if t[0] != "ROCK"]
+
+    def pick(sel, n):
+        px = np.concatenate([img[sel(edge, mat)] for name, img, edge, mat in every])
+        pal, _ = quantize(to8(np.clip(px, 0, 1))[None], n, dither=False)
+        return pal
+    spal = pick(lambda e, m: ~e & ~m, MAP_STONE)
+    mpal = pick(lambda e, m: ~e & m, MAP_GENERAL - MAP_STONE)
+    sepal = pick(lambda e, m: e & ~m, MAP_EDGE - 1)
+    mepal = pick(lambda e, m: e & m, 1)
     nibs = []
-    for name, img, edge in terrain:
-        if name == "ROCK":
-            nibs.append(np.zeros(img.shape[:2], np.int32))
-            continue
-        i8 = to8(np.clip(img, 0, 1))
-        g = remap(i8, gpal, dither=False) + 1
-        e = remap(i8, epal, dither=False) + 1 + MAP_GENERAL
-        nibs.append(np.where(edge, e, g))
-    cols = np.zeros((15, 3), np.float32)               # colour number -> RGB (0..1)
-    cols[1:1 + len(gpal)] = gpal / 255.0
-    cols[1 + MAP_GENERAL:1 + MAP_GENERAL + len(epal)] = epal / 255.0
-    banks = np.zeros((128, 3), np.float32)
-    for lv in range(4):                                 # MAP_LIT + lv: the torch's levels
-        banks[lv * 16 + 1:lv * 16 + 15] = cols[1:] * tiles.LEVELS[lv] * np.array(tiles.TINTS[lv], np.float32)
-    for m in range(3):                                  # MAP_MEM + m: remembered, only the edges
-        b = (4 + m) * 16
-        banks[b + 1 + MAP_GENERAL:b + 15] = tiles.MEM_COL * tiles.MEMS[m]
-    return cols, nibs, to8(np.clip(banks, 0, 1))      # (bank 7, MAP_DARK: all black)
+    for terrain in looks:
+        nd = []
+        for name, img, edge, mat in terrain:
+            if name == "ROCK":
+                nd.append(np.zeros(img.shape[:2], np.int32))
+                continue
+            i8 = to8(np.clip(img, 0, 1))
+            gen = np.where(mat, remap(i8, mpal, dither=False) + 1 + MAP_STONE, remap(i8, spal, dither=False) + 1)
+            edg = np.where(mat, MAP_GENERAL + MAP_EDGE, remap(i8, sepal, dither=False) + 1 + MAP_GENERAL)
+            nd.append(np.where(edge, edg, gen))
+        nibs.append(nd)
+    ref = np.zeros((15, 3), np.float32)               # colour number -> RGB (0..1)
+    ref[1:1 + len(spal)] = spal / 255.0
+    ref[1 + MAP_STONE:1 + MAP_STONE + len(mpal)] = mpal / 255.0
+    ref[1 + MAP_GENERAL:1 + MAP_GENERAL + len(sepal)] = sepal / 255.0
+    ref[MAP_GENERAL + MAP_EDGE] = mepal[0] / 255.0
+    stone = np.zeros(15, bool)
+    stone[1:1 + MAP_STONE] = stone[1 + MAP_GENERAL:MAP_GENERAL + MAP_EDGE] = True
+    cols, banks = [], []
+    for d in range(len(looks)):
+        c = ref.copy()
+        c[stone] = tiles.look(ref[stone], d)
+        b = np.zeros((128, 3), np.float32)
+        for lv in range(4):                             # MAP_LIT + lv: the torch's levels
+            b[lv * 16 + 1:lv * 16 + 15] = c[1:] * tiles.LEVELS[lv] * np.array(tiles.TINTS[lv], np.float32)
+        for m in range(3):                              # MAP_MEM + m: remembered, only the edges
+            o = (4 + m) * 16
+            b[o + 1 + MAP_GENERAL:o + 15] = tiles.MEM_COL * tiles.MEMS[m]
+        cols.append(c)
+        banks.append(to8(np.clip(b, 0, 1)))           # (bank 7, MAP_DARK: all black)
+    return cols, nibs, banks
 
 
 def build_tiles(out):
     """the tiles and frame characters; the map's palette banks; the C tables"""
-    terrain = tiles.terrain_kinds()
-    cols, nibs, banks = map_palette(terrain)
-    floor_seen = cols[nibs[1]]                          # FLOOR0 as the map shows it, under the sprites
-    kinds = tiles.sprite_kinds(floor_seen)
+    looks = [tiles.terrain_kinds(d) for d in range(tiles.STYLES)]
+    terrain = looks[0]
+    cols, nibs, banks = map_palette(looks)
+    floor_seen = cols[0][nibs[0][1]]                    # FLOOR0 as the map shows it, under the sprites
+    kinds = tiles.sprite_kinds(floor_seen, nibs[0][1], PAL_MAP)
     ui = tiles.ui_chars()
-    imgs = []
+    imgs = []           # (only the things' own pixels: the floor under them is the map's)
     for name, vs in kinds:
         for v in vs:
             if v is not None:
-                imgs.append(np.clip(v, 0, 1))
+                imgs.append(np.clip(v[0], 0, 1)[v[1] < 0][None])
     uimgs = [np.clip(c, 0, 1) for n, c in ui]
     bimgs = [np.clip(c, 0, 1) for c in backdrop.chars()]
 
@@ -151,21 +178,22 @@ def build_tiles(out):
     full[16:16 + len(pal)] = pal
     for k, rgb in enumerate(FIRE_RAMP):
         full[FIRE0 + k] = rgb
-    full[PAL_MAP:] = banks
+    full[PAL_MAP:] = banks[0]
 
-    def idx(img):
+    def idx(img, bg=None):
         f = fire_slots(img)
         i = remap(to8(unfired(img)), pal, dither=False) + 16
-        return np.where(f >= 0, FIRE0 + f, i)
+        i = np.where(f >= 0, FIRE0 + f, i)
+        return i if bg is None else np.where(bg >= 0, bg, i)
 
     # the terrain's characters first, at TCHAR0: TCHAR0 + kind * 4 + quarter
     chars = []
-    for nib in nibs:
+    for nib in nibs[0]:
         chars.extend(ncm_tile(nib))
     seen = {}           # a tile's 4 characters (bytes) -> its first character's index
 
-    def add_tile(img):
-        i = idx(img)
+    def add_tile(img, bg):
+        i = idx(img, bg)
         q = [i[y:y + 8, x:x + 8].astype(np.uint8).tobytes() for y in (0, 8) for x in (0, 8)]
         key = b"".join(q)
         if key not in seen:
@@ -177,7 +205,7 @@ def build_tiles(out):
     for name, vs in kinds:
         row = []
         for v in vs:
-            row.append(0 if v is None else TCHAR0 + add_tile(np.clip(v, 0, 1)))
+            row.append(0 if v is None else TCHAR0 + add_tile(np.clip(v[0], 0, 1), v[1]))
         table.append((name, row))
     ui_nums = []
     for name, c in ui:
@@ -191,9 +219,19 @@ def build_tiles(out):
     skip, packed = write(os.path.join(out, "dgtiles.bin"), TILES_LIN, data, 0x50000)
     print("DGTILES: %d terrain tiles, %d tiles, %d characters, %d bytes free in bank 4; packed %d -> %d"
           % (len(terrain), len(seen), len(chars), TILES_END - TILES_LIN - len(data), len(data), packed))
+    # DGLOOK: each depth's own stone, unpacked into bank 5 at the start and
+    # kept in attic RAM (src/explore.c depth_look): its characters of the
+    # kinds from LOOK_FIRST on, then its palette banks (128 red, green, blue)
+    look = b""
+    for d in range(tiles.STYLES):
+        for nib in nibs[d][LOOK_FIRST:]:
+            look += b"".join(ncm_tile(nib))
+        look += bytes(banks[d][:, 0]) + bytes(banks[d][:, 1]) + bytes(banks[d][:, 2])
+    look_skip, look_packed = write(os.path.join(out, "dglook.bin"), SCENE_A, look, SCENE_A_END)
+    print("DGLOOK: %d depths, %d bytes each, packed %d" % (tiles.STYLES, len(look) // tiles.STYLES, look_packed))
     back = [idx(c).astype(np.uint8) for c in bimgs]
-    tk = [name for name, _, _ in terrain]
-    return table, tk, ui_nums, skip, back, full
+    tk = [t[0] for t in terrain]
+    return table, tk, ui_nums, (skip, look_skip, len(look) // tiles.STYLES), back, full
 
 
 def back_char(i):
@@ -314,9 +352,9 @@ def main():
     out = sys.argv[1]
     pv = os.path.join(out, "preview")
     os.makedirs(pv, exist_ok=True)
-    table, terrain, ui_nums, tiles_skip, back, tile_pal = build_tiles(out)
+    table, terrain, ui_nums, (tiles_skip, look_skip, look_size), back, tile_pal = build_tiles(out)
     back_stream2, back_img, back_nums = build_backdrop(out, back)
-    files = [("dgtiles.bin", "DGTILES"), ("dgback.bin", "DGBACK")]
+    files = [("dgtiles.bin", "DGTILES"), ("dglook.bin", "DGLOOK"), ("dgback.bin", "DGBACK")]
     names = list(scenes.SCENES)
     skips = []
     for name in names:
@@ -374,6 +412,10 @@ def main():
         f.write("extern const char *const scene_file[%d];\n" % len(names))
         f.write("/* where the packed files load: from where they unpack to */\n")
         f.write("#define TILES_SKIP 0x%04X\n" % tiles_skip)
+        f.write("/* DGLOOK (into bank 5): each depth's stone, LOOK_SIZE bytes: the characters\n"
+                " * of the kinds from TK_CORR0 on, then the map's palette banks */\n")
+        f.write("#define LOOK_SKIP 0x%04X\n#define LOOK_SIZE %d\n" % (look_skip, look_size))
+        assert terrain[LOOK_FIRST] == "CORR0"
         f.write("/* DGBACK (into bank 5): two packed streams, the second this far in */\n")
         f.write("#define BACK_STREAM2 0x%04X\n" % back_stream2)
         f.write("extern const unsigned int scene_skip[%d][2];\n" % len(names))

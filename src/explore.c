@@ -13,6 +13,7 @@
 #pragma cc45 overlay(walk)
 #pragma cc45 noescape_strings
 #include <audio_tune.h>
+#include <dma.h>
 #include "hw.h"
 #include "assets.h"
 #include "music.h"
@@ -39,7 +40,21 @@ static void music_off(void) {
     tune_stop();
 }
 
+/* the depth's own stone (DGLOOK, in attic RAM): its characters over the
+ * terrain's from TK_CORR0 on, its palette banks over the map's */
+static unsigned char looked;
+
+static void depth_look(void) {
+    unsigned long at = LOOK_LIN + (unsigned long)(pl.depth - 1) * LOOK_SIZE;
+    unsigned char k;
+    looked = pl.depth;
+    dma_copy_far((unsigned long)(TCHAR0 + TK_CORR0 * 4) * 64, at, LOOK_SIZE - 384);
+    at += LOOK_SIZE - 384;
+    for (k = 0; k < 3; k++, at += 128) dma_copy_far(TILES_LIN + PAL_MAP + k * 256, at, 128);
+}
+
 static void screen_in(void) {
+    if (looked != pl.depth) depth_look();
     video_pal_load(TILES_LIN, PAL_MAP, 128);  /* the map's palette banks (a close-up had them) */
     v_map = 1;
     v_flicker = 1;
@@ -428,7 +443,12 @@ static unsigned char explore_run(unsigned char resume) {
     if (resume) {
         msg("You take up your descent again.", C_GOLD);
         screen_in();
-    } else level_enter();
+    } else {
+#ifdef TEST_DEPTH
+        pl.depth = TEST_DEPTH;       /* (tests: begin that deep) */
+#endif
+        level_enter();
+    }
 #ifdef TEST_ITEMS
     for (k = 0; k < I_COUNT; k++) pl.items[k] = 2;    /* (tests: two of everything) */
 #endif
