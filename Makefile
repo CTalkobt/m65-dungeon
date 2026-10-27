@@ -146,7 +146,8 @@ $(BUILD)/assets.o45: $(ART_STAMP) | $(BUILD)
 
 # a build that plays the keys KEYS (with TEST: more -D options, e.g.
 # TEST=-DTEST_FIGHT=4 a fight with an orc at once, TEST=-DTEST_VIEW=1 a chest) (ui.c: U D L R the cursor keys, F
-# RETURN, X RUN/STOP, _ a pause), then a screenshot: build/shot.png
+# RETURN, X RUN/STOP, _ a pause; a new descent is FF: the title, then the
+# calling), then a screenshot: build/shot.png
 shot:
 	rm -f build/shot/*.o45
 	$(MAKE) BUILD=build/shot DEFS='$(DEFS) $(TEST) -DSCRIPT=\"$(KEYS)\"' disk

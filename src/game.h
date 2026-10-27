@@ -206,7 +206,12 @@ struct player {
     unsigned char keen, steady, aim, wary;   /* the gifts chosen, 0-3 each (GIFT_MAX) */
     unsigned int kills;       /* creatures slain */
     unsigned char cause;      /* what ended the descent (CAUSE_*) */
+    unsigned char calling;    /* who went down (front.c: CALL_*) */
 };
+#define CALL_FIGHTER 0
+#define CALL_HUNTER  1
+#define CALL_LAMP    2
+#define CALLINGS     3
 #define CAUSE_QUIT  1         /* given up */
 #define CAUSE_DART  2         /* a trap's dart */
 #define CAUSE_SLAIN 16        /* + the creature's kind: in a fight */
@@ -352,6 +357,7 @@ void audio_update(void);              /* once a frame */
 void title_show(void);                /* the title, before the sounds load */
 void loading_tick(void);              /* now and then while they do */
 unsigned char title(void);            /* 0: the player wants to leave */
+void calling_take(void);              /* after player_new: the calling chosen on the title */
 void ending(unsigned char how);
 
 /* game.c */

@@ -55,6 +55,12 @@ game builds with its SID effects only.
 
 ## Playing
 
+**Who goes down.** A new descent begins with a choice: the *fighter*
+(life 40, a long sword and studded leather, but no bow), the *hunter* (a
+short bow with 24 arrows, a sure aim, two strips of meat), or the
+*lamplighter* (a full torch, a flint, two flasks of oil, rags and a keen
+memory, but only 26 life). The ending names who it was.
+
 | Key | Joystick | Exploring | Fighting |
 |---|---|---|---|
 | cursor keys, W A S D | directions | move | up / down: choose |

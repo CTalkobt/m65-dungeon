@@ -19,7 +19,7 @@
 #define KEEP_KINDS 1024
 #define KEEP_SEEN  (KEEP_KINDS + MAP_N)
 #define KEEP_END   (KEEP_SEEN + MAP_N)
-#define VERSION    6
+#define VERSION    7
 
 extern unsigned char vault_x0, vault_y0, vault_x1, vault_y1;
 

@@ -87,6 +87,60 @@ static void prompt(void) {
                            : "RETURN: begin    S: settings    F: the fallen    RUN/STOP: leave", C_HILITE);
 }
 
+/* ---------------------------------------------------------------- who goes down */
+
+static unsigned char chosen;
+
+/* the calling, on the title's lower panel: up, down, RETURN; 0xFF: back */
+static unsigned char calling_choose(void) {
+    unsigned char k, sel = chosen;
+    video_blank(1, 34, 78, 15);
+    video_centre(35, "Who goes down?", C_GOLD);
+    video_centre(45, "Up, down: choose.   RETURN: begin.   RUN/STOP: back.", C_DIM);
+    for (;;) {
+        for (k = 0; k < CALLINGS; k++) {
+            video_text(6, 38 + k * 2, k == sel ? ">" : " ", C_HILITE);
+            video_text(8, 38 + k * 2, nth("Fighter\0Hunter\0Lamplighter", k), k == sel ? C_HILITE : C_TEXT);
+            video_text(22, 38 + k * 2,
+                       nth("Life 40, a long sword, studded leather. No bow.\0"
+                           "A short bow, 24 arrows, a sure aim, and meat.\0"
+                           "Fuel to spare, a flint, oil, and a keen memory.", k), k == sel ? C_TEXT : C_DIM);
+        }
+        k = key_wait();
+        if (k == K_UP) sel = sel ? sel - 1 : CALLINGS - 1;
+        else if (k == K_DOWN) sel = sel + 1 < CALLINGS ? sel + 1 : 0;
+        else if (k == K_FIRE || k == ' ') return sel;
+        else if (k == K_STOP) return 0xFF;
+    }
+}
+
+void calling_take(void) {
+    pl.calling = chosen;
+    switch (chosen) {
+    case CALL_FIGHTER:                        /* the front of the fight */
+        pl.hp = pl.maxhp = 40;
+        weapon_take(1);
+        armour_take(1);
+        pl.bow = 0;
+        pl.items[I_ARROWS] = 0;
+        pl.items[I_POTION]++;
+        break;
+    case CALL_HUNTER:                         /* from afar */
+        pl.items[I_ARROWS] = 24;
+        pl.aim = 1;
+        pl.items[I_FOOD] = 2;
+        break;
+    default:                                  /* the light: more of it, longer */
+        pl.hp = pl.maxhp = 26;
+        pl.fuel = TORCH_MAX;
+        pl.items[I_FLINT] = 1;
+        pl.items[I_OIL] = 2;
+        pl.items[I_RAGS] = 2;
+        pl.keen = 1;
+        break;
+    }
+}
+
 /* 0: the player wants to leave; 1: a new descent; 2: the saved one (game_load) */
 unsigned char title(void) {
     unsigned char k, r = 1;
@@ -111,7 +165,15 @@ unsigned char title(void) {
             scene_show(0);
         }
         k = key_get();
-        if (k == K_FIRE || k == ' ') break;
+        if (k == K_FIRE || k == ' ') {
+            k = calling_choose();
+            if (k != 0xFF) {
+                chosen = k;
+                break;
+            }
+            title_text();
+            prompt();
+        }
         if (k == 'c' && saved) {
             r = 2;
             break;
@@ -326,7 +388,8 @@ void ending(unsigned char how) {
     }
     /* the tally */
     buf[0] = 0;
-    str_cat(buf, "Depth ");
+    str_cat(buf, nth("The fighter.\0The hunter.\0The lamplighter.", pl.calling));
+    str_cat(buf, "   Depth ");
     str_num(buf, pl.depth);
     str_cat(buf, "   Level ");
     str_num(buf, pl.level);

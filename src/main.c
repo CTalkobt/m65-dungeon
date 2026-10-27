@@ -85,7 +85,10 @@ int main(void) {
     while ((r = title()) != 0) {
         if (r == 2) {
             if (!game_load()) continue;  /* (Continue: the saved descent) */
-        } else player_new();
+        } else {
+            player_new();
+            calling_take();
+        }
         msg_clear();
         r = explore(r == 2);
         if (r != SAVED) ending(r);
