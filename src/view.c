@@ -162,8 +162,9 @@ static unsigned char torch(signed int dxq, signed int dyq, unsigned char b) {
 /* what is put over the terrain this turn, in the window: the player, the
  * creatures, the things, the notes (the first at a place wins; the notes
  * only while there is room left: never all of the rest are in view); the full-colour
- * tile, and its variant (OV_TORCH: as the torch lights each quarter) */
-#define MAX_OV   (1 + MAX_MON + MAX_OBJ)
+ * tile, and its variant (OV_TORCH: as the torch lights each quarter). 81:
+ * as many as the scratch has room for, more than a view ever shows */
+#define MAX_OV   81
 #define OV_TORCH 0xFF
 static unsigned char ov_n;
 #define ov_x   (scratch + COLS * 8)

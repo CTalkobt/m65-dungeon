@@ -482,6 +482,11 @@ static unsigned char explore_run(unsigned char resume) {
     mons[0].awake = 2;
     mons[0].stun = 0;
 #endif
+#ifdef TEST_OBJS
+    for (k = r = 0; k < MAX_OBJ; k++) r += thing_kind[k] != O_NONE;   /* (tests: the things' list, how full) */
+    video_num(60, 0, r, C_RED);
+    key_wait();
+#endif
 #ifdef TEST_CHARMS
     for (k = 0; k < CHARMS; k++) pl.items[I_CHARM + k] = 1;   /* (tests: one of each charm, */
     pl.worn = 1;                                              /* and one worn: CH_* TEST_CHARMS) */

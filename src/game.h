@@ -85,7 +85,7 @@ unsigned char vault_at(unsigned char x, unsigned char y);
 #define O_WEDGE       28      /* sticks wedged under a shut door: none open it (explore.c door_shut) */
 #define BLOCKS(o)     ((o) == O_BRAZIER || ((o) >= O_BRAZIER_COLD && (o) < O_PILE))   /* none walk through */
 #define O_PILE        32      /* O_PILE + I_*: so many (thing_n) of a thing carried, put down */
-#define MAX_OBJ       56
+#define MAX_OBJ       96      /* (a deep level starts with 45-56 things; room for the rest) */
 extern unsigned int thing_at[MAX_OBJ];       /* where (AT) */
 extern unsigned char thing_kind[MAX_OBJ];    /* O_NONE: a free entry */
 extern unsigned char thing_n[MAX_OBJ];       /* a pile's count */
