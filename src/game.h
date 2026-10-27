@@ -239,6 +239,12 @@ void msg_show(void);                  /* the messages drawn again */
 /* explore.c */
 unsigned char explore(unsigned char resume);   /* until DIED, WON or SAVED; resume: a saved game, loaded */
 
+/* travel.c: the way to the stairs (way_find: 0 if they are not known);
+ * the step along it from the player's place, dx + 1 | (dy + 1) << 2
+ * (0xFF: none, the player off the way) */
+unsigned char way_find(void);
+unsigned char way_next(void);
+
 /* keep.c: the game on the disk (DGSAVE) */
 #define SAVED  4              /* explore: the player saved and stopped */
 unsigned char game_save(void);        /* 1 if it was written */

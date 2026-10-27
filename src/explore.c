@@ -84,7 +84,7 @@ static void help(void) {
     msg("Move: arrows, WASD, QEZC diagonally. Space: search.", C_TEXT);
     msg("Walk into doors, chests, idols, foes. T, G: shoot.", C_TEXT);
     msg("I: inventory. P: potion. F: feed torch. L: light it.", C_TEXT);
-    msg("RETURN: stairs. O: settings. RUN/STOP: save or quit.", C_TEXT);
+    msg("RETURN: to the stairs. O: settings. RUN/STOP: save.", C_TEXT);
 }
 
 static const unsigned char drops[9] = {O_GOLD, O_GOLD, O_GOLD, O_POTION, O_SCROLL, O_DRAUGHT, O_RAGS, O_FUR, O_ARROWS};
@@ -427,6 +427,61 @@ static void test_beside(unsigned char a, unsigned char b) {
 }
 #endif
 
+/* ---------------------------------------------------------------- travel */
+
+/* a creature in sight (eyes in the dark too) */
+static unsigned char foe_seen(void) {
+    unsigned char k;
+    for (k = 0; k < nmons; k++)
+        if (mons[k].hp && vis_at(mons[k].x, mons[k].y)) return 1;
+    return 0;
+}
+
+static unsigned char turn_pass(void);
+static unsigned char step(signed char dx, signed char dy, unsigned char *out);
+
+/* to the stairs: DIED or WON if a step ended that way, else 0 */
+static unsigned char travel(void) {
+    unsigned char k, hp, lit, r = 0;
+    if (!way_find()) {
+        msg("You have not found the stairs down.", C_DIM);
+        return 0;
+    }
+    if (way_next() == 0xFF) {
+        msg("You cannot recall a way to the stairs from here.", C_DIM);
+        return 0;
+    }
+    if (foe_seen()) {
+        msg("Not with something watching you.", C_RED);
+        return 0;
+    }
+    msg("You make for the stairs. A key stops you.", C_DIM);
+    for (;;) {
+        k = way_next();
+        if (k == 0xFF) break;
+        hp = pl.hp;
+        lit = pl.lit;
+        if (!step((signed char)((k & 3) - 1), (signed char)((k >> 2) - 1), &r)) break;
+        if (r == DIED || r == WON) return r;
+        r = turn_pass();
+        if (r == DIED || r == WON) return r;
+        view_draw();
+        view_hud();
+        if (terrain(pl.x, pl.y) == TR_STAIRS) {
+            msg("Stairs wind down into the dark. RETURN to descend.", C_GOLD);
+            break;
+        }
+        if (foe_seen()) {
+            msg("You stop. Something is near.", C_RED);
+            break;
+        }
+        if (pl.hp < hp || pl.lit != lit || pl.ups) break;
+        video_frames(3);
+        if (key_get()) break;
+    }
+    return 0;
+}
+
 static unsigned char explore_run(unsigned char resume);
 
 unsigned char explore(unsigned char resume) {
@@ -493,6 +548,10 @@ static unsigned char explore_run(unsigned char resume) {
 #endif
 #ifdef TEST_UPS
     pl.ups = TEST_UPS;               /* (tests: gifts to choose) */
+#endif
+#ifdef TEST_TRAVEL
+    for (r = 0; r < MAP_H; r++)      /* (tests: the whole level remembered) */
+        for (k = 0; k < MAP_W; k++) seen_set(AT(k, r), epoch());
 #endif
 #ifdef TEST_TRAP
     obj_set(AT(pl.x + 1, pl.y), O_TRAP);   /* (tests: a hidden trap one step east) */
@@ -575,8 +634,9 @@ static unsigned char explore_run(unsigned char resume) {
                 level_enter();
                 continue;
             }
-            msg("There are no stairs here.", C_DIM);
-            break;
+            r = travel();                /* (not on them: the way to them) */
+            if (r == DIED || r == WON) return r;
+            continue;
         case K_STOP:
             msg("S: save and stop. Y: give up. Another key: go on.", C_RED);
             k = key_wait();
@@ -595,14 +655,19 @@ static unsigned char explore_run(unsigned char resume) {
         if (dx || dy) took = step(dx, dy, &r);
         if (r == DIED || r == WON) return r;
         if (!took) continue;
-        turn++;
-        if (!turn) turn = 1;
-        if (turn % 12 == 0 && pl.hp < pl.maxhp) pl.hp++;
-        if (turn % 18 == 0 && pl.mp < pl.maxmp) pl.mp++;
-        if (turn % 64 == 0) memory_sweep();
-        torch_burn();
-        view_fov();
-        r = creatures_move();
+        r = turn_pass();
         if (r == DIED || r == WON) return r;
     }
+}
+
+/* the rest of a turn taken: the player's mending, the torch, the creatures */
+static unsigned char turn_pass(void) {
+    turn++;
+    if (!turn) turn = 1;
+    if (turn % 12 == 0 && pl.hp < pl.maxhp) pl.hp++;
+    if (turn % 18 == 0 && pl.mp < pl.maxmp) pl.mp++;
+    if (turn % 64 == 0) memory_sweep();
+    torch_burn();
+    view_fov();
+    return creatures_move();
 }
