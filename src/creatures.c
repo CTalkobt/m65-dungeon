@@ -131,6 +131,14 @@ unsigned char creatures_move(void) {
         if (!c->awake) {
             if (sees && d <= 6 && rng_range(3) == 0) {
                 c->awake = 2;
+                if (mon_flags[c->kind] & MF_BOSS) {
+                    /* the lich: its words, and its dead rise with it */
+                    msg("The lich lifts its head. \"At last. Come, little light.\"", C_PURPLE);
+                    msg("Around it, the bones of the dead begin to rise.", C_RED);
+                    sfx(SFX_CURSE);
+                    for (y = 0; y < nmons; y++) mons[y].awake = 2;
+                    continue;
+                }
                 if (vis_at(c->x, c->y) != VIS_SHADOW) msg("Something stirs.", C_ORANGE);
                 sfx(SFX_STIR);
             }

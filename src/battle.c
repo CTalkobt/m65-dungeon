@@ -785,6 +785,17 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
         }
         last_intent = intent;
         if (!m->hp) break;
+        if ((mt.flags & MF_BOSS) && !pl.rite && m->hp <= mhp_max / 2) {
+            /* once in a descent, at half its life: the lich calls on its
+             * crown, mends, and its next blow will be terrible */
+            pl.rite = 1;
+            sfx(SFX_CURSE);
+            say("The lich's crown blazes violet. The dark pours into it!", C_PURPLE);
+            flash(200, 60, 255, 24);
+            m->hp += 20;
+            roar = 1;
+            draw_foe();
+        }
         if (poison) {
             poison--;
             sfx(SFX_POISON);

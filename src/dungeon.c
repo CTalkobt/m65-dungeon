@@ -305,8 +305,12 @@ void dungeon_make(void) {
     if (pl.depth < DEPTHS) {
         vm_set(rx[last] + rw[last] / 2, ry[last] + rh[last] / 2, TK_STAIRS);
     } else {
+        /* the lich's sanctum: it, two of its dead on guard, bones strewn
+         * about (creatures.c wakes them all when it stirs) */
         add_mon(M_BOSS, AT(rx[last] + rw[last] / 2, ry[last] + rh[last] / 2));
-        mons[nmons - 1].awake = 0;
+        for (r = 0; r < 2; r++) add_mon(M_SKELETON, spot(last));
+        for (r = nmons - 3; r < nmons; r++) mons[r].awake = 0;
+        for (r = 0; r < 6; r++) put(spot(last), O_BONES);
     }
 
     /* braziers: some rooms are lit (always the first and the last); in

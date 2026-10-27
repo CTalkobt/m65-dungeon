@@ -56,7 +56,8 @@ static void summon(void) {
     c->stun = c->carry = 0;
 }
 
-/* the player on the stairs */
+/* the player on the stairs; on the last level, in the lich's sanctum, a
+ * few places west of it */
 static void to_stairs(void) {
     unsigned char x, y;
     for (y = 0; y < MAP_H; y++)
@@ -66,6 +67,14 @@ static void to_stairs(void) {
                 pl.y = y;
                 return;
             }
+    for (y = 0; y < nmons; y++)
+        if (mon_flags[mons[y].kind] & MF_BOSS)
+            for (x = 4; x; x--)
+                if (terrain(mons[y].x - x, mons[y].y) == TR_FLOOR && !mon_at(mons[y].x - x, mons[y].y)) {
+                    pl.x = mons[y].x - x;
+                    pl.y = mons[y].y;
+                    return;
+                }
 }
 
 static void draw_row(unsigned char r, unsigned char row, unsigned char on) {
@@ -80,7 +89,7 @@ static void draw_row(unsigned char r, unsigned char row, unsigned char on) {
         str_cat(buf, item_name(r, 2));
     } else {
         str_cat(buf, nth("Depth\0Reveal the level\0Know every flask and charm\0Mend: life, mana, torch, venom\0"
-                         "100 gold\0A level\0Weapon\0Armour\0Bow\0Gun\0Creature\0To the stairs", r));
+                         "100 gold\0A level\0Weapon\0Armour\0Bow\0Gun\0Creature\0To the stairs (the lich)", r));
         str_cat(buf, "  ");
         switch (r) {
         case 0: v = depth; break;

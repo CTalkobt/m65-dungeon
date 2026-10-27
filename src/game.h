@@ -241,6 +241,7 @@ struct player {
     unsigned char charm[CHARMS];    /* each charm's effect (CH_*) */
     unsigned char cknown;     /* the charms known (bit = look) */
     unsigned char worn, wfx;  /* the charm worn: its look + 1, its effect + 1; 0 none */
+    unsigned char rite;       /* 1 once the lich has called on its crown (battle.c) */
 };
 #define CALL_FIGHTER 0
 #define CALL_HUNTER  1

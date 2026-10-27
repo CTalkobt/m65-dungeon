@@ -504,6 +504,9 @@ static unsigned char explore_run(unsigned char resume) {
     /* (tests: a fight with that kind of creature at once) */
     mons[0].kind = TEST_FIGHT;
     mons[0].hp = FRESH;
+#ifdef TEST_HP
+    mons[0].hp = TEST_HP;            /* (tests: the creature already wounded) */
+#endif
     r = fight(0, 0);
     if (r == DIED || r == WON) return r;
 #endif

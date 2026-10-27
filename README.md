@@ -41,7 +41,7 @@ merchant a step east, and 100 gold; `TEST=-DTEST_FIXTURE` a fountain east and
 a shelf west; `TEST=-DTEST_RUBBLE` starts beside fallen stones or a crack.
 Other letters in `KEYS` are typed as they are (`KEYS='F__i'` opens the
 inventory).
-`TEST=-DTEST_LURE=<kind>` puts a found plate two east and a hunting creature beyond it; `TEST=-DTEST_VENOM` starts with venom in the blood and an antidote;
+`TEST=-DTEST_HP=<n>` (with TEST_FIGHT) starts the creature with n life; `TEST=-DTEST_LURE=<kind>` puts a found plate two east and a hunting creature beyond it; `TEST=-DTEST_VENOM` starts with venom in the blood and an antidote;
 `TEST=-DTEST_CHARMS=<0-4>` with one of each charm, wearing the one that
 does that (CH_*).
 
@@ -50,7 +50,7 @@ shows but a chime), or build with `DEFS=-DCHEAT`; then `@` on the map
 opens a panel: go to any depth, reveal the whole level, know every flask
 and charm, mend (life, mana, torch, venom), 100 gold, a level, change the
 weapon, armour, bow and gun, put a creature of any kind beside you (awake),
-go to the stairs, and set how many of each thing you carry (left, right:
+go to the stairs (on the last level, into the lich's sanctum), and set how many of each thing you carry (left, right:
 one less or more; RETURN: ten more). It is an overlay of its own, and
 without the word `@` does nothing.
 `python3 tools/probe.py build/dungeon.d81 <seconds> r m<addr>` boots the disk
@@ -114,10 +114,17 @@ ends it. On the disk it is the player, the creatures, what lies about,
 each place's terrain tile (a byte; the map's characters are drawn again
 from them) and its memory.
 
+**The sanctum.** On the last level the lich waits in the last room, with
+two of its skeletons on guard and bones strewn about. When it notices you
+it speaks, and every creature on the level wakes and hunts. Once in a
+descent, brought to half its life, it calls on its crown: it mends 20 and
+its next blow will be terrible (enraged).
+
 **The end.** Dying shows what did it and where ("Slain by a cave spider,
 in The Bone Galleries."); destroying the lich shows it come apart, then
 its hoard. Either way the tally follows: depth, level, turns, gold,
-creatures slain, the gifts taken. The five best descents (the won first,
+creatures slain, the gifts taken, how many of the flasks and the charms
+you came to know, and the charm you wore. The five best descents (the won first,
 then the deepest, the highest level, the richest) are kept on the disk
 (`DGFAME`) as the Hall of the Deep: F on the title shows them.
 

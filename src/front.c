@@ -340,7 +340,7 @@ static void fame_show(void) {
 /* the end: fallen, or the lich destroyed; then the tally, and the hall */
 void ending(unsigned char how) {
     char buf[80];
-    unsigned char k;
+    unsigned char k, g;
     game_unsave();                            /* the descent is over */
     video_fade(0);
     v_flicker = 0;
@@ -411,7 +411,7 @@ void ending(unsigned char how) {
     video_centre(41, buf, C_BONE);
     buf[0] = 0;
     for (k = 0; k < 4; k++) {
-        unsigned char g = k == 0 ? pl.keen : k == 1 ? pl.steady : k == 2 ? pl.aim : pl.wary;
+        g = k == 0 ? pl.keen : k == 1 ? pl.steady : k == 2 ? pl.aim : pl.wary;
         if (!g) continue;
         str_cat(buf, buf[0] ? ", " : "Gifts: ");
         str_cat(buf, nth("keen memory\0steady torch\0sure aim\0wary feet", k));
@@ -421,6 +421,21 @@ void ending(unsigned char how) {
         }
     }
     if (buf[0]) video_centre(42, buf, C_DIM);
+    /* what was learned of the flasks and the charms, and the one worn */
+    buf[0] = 0;
+    str_cat(buf, "Known: ");
+    for (g = k = 0; k < FLASKS; k++) g += (pl.known >> k) & 1;
+    str_num(buf, g);
+    str_cat(buf, " of 4 flasks, ");
+    for (g = k = 0; k < CHARMS; k++) g += (pl.cknown >> k) & 1;
+    str_num(buf, g);
+    str_cat(buf, " of 5 charms.");
+    if (pl.worn) {
+        str_cat(buf, "  Wore a ");
+        str_cat(buf, item_name(I_CHARM + pl.worn - 1, 1));
+        str_cat(buf, ".");
+    }
+    video_centre(43, buf, C_DIM);
     video_fade(16);
     sfx(how == WON ? SFX_VICTORY : SFX_DEFEAT);
     k = fame_add(how == WON);

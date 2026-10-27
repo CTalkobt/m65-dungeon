@@ -157,7 +157,7 @@ void player_new(void) {
     shuffle(pl.flask, FLASKS);
     shuffle(pl.charm, CHARMS);
     pl.known = pl.cknown = pl.worn = pl.wfx = 0;
-    pl.sight = pl.venom = 0;
+    pl.sight = pl.venom = pl.rite = 0;
     turn = 1;
 }
 
