@@ -299,7 +299,6 @@ unsigned char battle(unsigned char m, unsigned char ambush);
 void chest_view(unsigned int at);
 void idol_view(unsigned int at);
 unsigned char scene_load(unsigned char s);
-void unpack(unsigned long src);       /* a packed file (tools/pack.py) where it says */
 void scene_show(unsigned char frame);
 void scene_forget(void);              /* bank 5's close-up changed: the next load is anew */
 void scene_frame(void);

@@ -349,12 +349,17 @@ area are never used. At the start the program makes that space writable
 again (`romram_protect`). After the game, `GO64` will not work until the
 machine is reset.
 
-**Packing** (`tools/pack.py`, `unpack` in `src/scene.c`). Every art file
-is packed with a byte-oriented LZ (literal runs, fills, and copies from 1
-or 2 bytes back that never overlap what they write). Each file loads near
-the end of the area it unpacks to, at an offset the packer works out so
-that the writing never overtakes the reading, and unpacks in place, a DMA
-job per token. The art is about 500 KB on the disk instead of 700 KB unpacked.
+**Packing** (`tools/pack.py`; cc45's `unpack()`, `<unpack.h>`). Every art
+file is packed in pack45's format 1, a byte-oriented LZ (literal runs,
+fills, and copies from 1 or 2 bytes back that never overlap what they
+write), which the library's `unpack()` undoes with a DMA job per token.
+`pack.py` chooses the tokens by an optimal parse (pack45 is greedy): a few
+per cent smaller, the same format. Each file loads near the end of the
+area it unpacks to, at an offset worked out so that the writing never
+overtakes the reading, and unpacks in place; DGLOOK loads into bank 5 and
+unpacks straight into attic RAM. The art is about 500 KB on the disk
+instead of 700 KB unpacked. The overlay files are packed by ln45
+(`--pack-overlays`): 80 KB of code in 48 KB on the disk.
 
 **Sound** (`tools/gen_sfx.py`, `src/audio.c`). 28 sounds, 22 s at 12 kHz:
 cut, resampled, normalised, and coded in blocks of 16 samples (a predictor
@@ -389,8 +394,8 @@ and secrets, a new player, levels gained), `scenes` (loading and showing
 the close-ups; the chest and the idol) and `front` (the title, settings,
 endings, the start) are kept in
 attic RAM ($8000000-$801FFFF: two 64 KB banks, a file each, DUNGEON.OV1
-and, once the first is full, DUNGEON.OV2) and copied by DMA into one
-region at $8D00 when called. A call
+and, once the first is full, DUNGEON.OV2; packed, unpacked at the start)
+and copied by DMA into one region at $8B00 when called. A call
 from one overlay into another brings the caller back on return, but not
 the caller's text in the meantime; so what takes text from any overlay
 (the message line `msg`, the log, `video_text`) is resident. The map's

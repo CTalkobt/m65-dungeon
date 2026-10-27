@@ -5,9 +5,10 @@
  * rest of the characters). A frame is shown by copying its map, a row at a
  * time, into the screen's cells (rows 1-30, columns 12-67).
  *
- * The files are packed (tools/pack.py): each loads near the end of the
- * area it unpacks to and unpacks in place, by DMA: a copy of the bytes as
- * they are, a fill, or a copy of what is unpacked already.
+ * The files are packed (tools/pack.py, pack45's format): each loads near
+ * the end of the area it unpacks to and unpacks in place (the library's
+ * unpack(), by DMA: a copy of the bytes as they are, a fill, or a copy of
+ * what is unpacked already).
  *
  * Once unpacked, a close-up is kept in attic RAM (128 KB each from
  * CACHE_LIN; the code overlays are below, at $8000000): the next time it
@@ -18,6 +19,7 @@
  */
 #pragma cc45 overlay(scenes)
 #include <dma.h>
+#include <unpack.h>
 #include "hw.h"
 #include "assets.h"
 #include "video.h"
@@ -34,42 +36,6 @@
 static unsigned int cached;              /* a bit a close-up */
 
 static unsigned char loaded = 0xFF;
-
-/* the packed stream at src unpacked to where it says */
-void unpack(unsigned long src) {
-    unsigned char h[3], t, n;
-    unsigned int off;
-    unsigned long dst;
-    dma_copy_far((unsigned long)(unsigned int)h, src, 3);
-    dst = h[0] | (unsigned long)h[1] << 8 | (unsigned long)h[2] << 16;
-    src += 3;
-    for (;;) {
-        dma_copy_far((unsigned long)(unsigned int)h, src, 3);
-        t = h[0];
-        n = t & 0x3F;
-        if (t < 0x40) {                       /* bytes as they are */
-            n++;
-            dma_copy_far(dst, src + 1, n);
-            src += 1 + n;
-        } else if (t < 0x80) {                /* one byte, n + 3 times */
-            n += 3;
-            dma_fill_far(dst, n, h[1]);
-            src += 2;
-        } else {                              /* a copy from off back */
-            if (t < 0xC0) {
-                off = h[1] + 1;
-                src += 2;
-            } else {
-                off = h[1] | (unsigned int)h[2] << 8;
-                if (!off) return;
-                src += 3;
-            }
-            n += 3;
-            dma_copy_far(dst, dst - off, n);
-        }
-        dst += n;
-    }
-}
 
 unsigned char scene_load(unsigned char s) {
     char name[16];

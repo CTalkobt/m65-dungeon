@@ -113,7 +113,7 @@ $(BUILD)/ld.o45: src/load.s45 | $(BUILD)
 
 $(TARGET) $(OVL) &: $(OBJS) $(STDLIB)
 	rm -f $(OVL2)
-	$(LN45) -basic --overlay-store=$(OVL_STORE) -M $(BUILD)/dungeon.map -o $(TARGET) $(OBJS) $(STDLIB)
+	$(LN45) -basic --pack-overlays --overlay-store=$(OVL_STORE) -M $(BUILD)/dungeon.map -o $(TARGET) $(OBJS) $(STDLIB)
 
 $(STDLIB):
 	$(MAKE) -C $(M65) lib

@@ -33,6 +33,7 @@ from pack import pack, unpack_in_place  # noqa: E402
 from stage import W, H  # noqa: E402
 
 PAL_BYTES = 768
+LOOK_LIN = 0x8310000           # DGLOOK unpacks here (attic RAM: src/hw.h)
 TILES_LIN = 0x40000
 SCENE_A = 0x50000
 SCENE_A_END = 0x5E000          # the screen is above
@@ -62,13 +63,16 @@ def pal_bytes(pal):
     return bytes(pal[:, 0]) + bytes(pal[:, 1]) + bytes(pal[:, 2])
 
 
-def write(path, dest, data, limit):
+def write(path, dest, data, limit, load=None):
     """data packed (pack.py) to unpack at dest, the file loading where it
-    can be unpacked in place; the stream must end below limit. The offset
-    it loads at from dest (the program needs it)."""
+    can be unpacked in place (or at load: elsewhere, e.g. for attic RAM);
+    the stream must end below limit. The offset it loads at from dest (the
+    program needs it)."""
     stream, skip = pack(data, dest)
     assert unpack_in_place(stream, skip, len(data)) == bytes(data), path
-    at = dest + skip
+    at = dest + skip if load is None else load
+    if load is not None:
+        skip = 0
     assert at + len(stream) <= limit, "%s: %X past %X" % (path, at + len(stream), limit)
     with open(path, "wb") as f:
         f.write(bytes([at & 0xFF, (at >> 8) & 0xFF]) + stream)
@@ -219,15 +223,15 @@ def build_tiles(out):
     skip, packed = write(os.path.join(out, "dgtiles.bin"), TILES_LIN, data, 0x50000)
     print("DGTILES: %d terrain tiles, %d tiles, %d characters, %d bytes free in bank 4; packed %d -> %d"
           % (len(terrain), len(seen), len(chars), TILES_END - TILES_LIN - len(data), len(data), packed))
-    # DGLOOK: each depth's own stone, unpacked into bank 5 at the start and
-    # kept in attic RAM (src/explore.c depth_look): its characters of the
+    # DGLOOK: each depth's own stone, loaded into bank 5 at the start and
+    # unpacked into attic RAM (src/explore.c depth_look): its characters of the
     # kinds from LOOK_FIRST on, then its palette banks (128 red, green, blue)
     look = b""
     for d in range(tiles.STYLES):
         for nib in nibs[d][LOOK_FIRST:]:
             look += b"".join(ncm_tile(nib))
         look += bytes(banks[d][:, 0]) + bytes(banks[d][:, 1]) + bytes(banks[d][:, 2])
-    look_skip, look_packed = write(os.path.join(out, "dglook.bin"), SCENE_A, look, SCENE_A_END)
+    look_skip, look_packed = write(os.path.join(out, "dglook.bin"), LOOK_LIN, look, SCENE_A_END, load=SCENE_A)
     print("DGLOOK: %d depths, %d bytes each, packed %d" % (tiles.STYLES, len(look) // tiles.STYLES, look_packed))
     back = [idx(c).astype(np.uint8) for c in bimgs]
     tk = [t[0] for t in terrain]
@@ -453,9 +457,9 @@ def main():
         f.write("extern const char *const mon_hdr_file[M_KINDS];\n")
         f.write("/* where the packed files load: from where they unpack to */\n")
         f.write("#define TILES_SKIP 0x%04X\n" % tiles_skip)
-        f.write("/* DGLOOK (into bank 5): each depth's stone, LOOK_SIZE bytes: the characters\n"
-                " * of the kinds from TK_CORR0 on, then the map's palette banks */\n")
-        f.write("#define LOOK_SKIP 0x%04X\n#define LOOK_SIZE %d\n" % (look_skip, look_size))
+        f.write("/* DGLOOK (loaded into bank 5, unpacked to LOOK_LIN): each depth's stone, LOOK_SIZE\n"
+                " * bytes: the characters of the kinds from TK_CORR0 on, then the map's palette banks */\n")
+        f.write("#define LOOK_SIZE %d\n" % look_size)
         assert terrain[LOOK_FIRST] == "CORR0"
         f.write("/* DGBACK (into bank 5): two packed streams, the second this far in */\n")
         f.write("#define BACK_STREAM2 0x%04X\n" % back_stream2)

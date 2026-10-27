@@ -1,8 +1,10 @@
-"""pack.py — the art files' packing: a byte-oriented LZ the program unpacks
-in place with DMA (src/scene.c unpack)
+"""pack.py — the art files' packing: cc45's pack45 format 1, which the
+library's unpack() (<unpack.h>) unpacks with DMA, in place. (pack45 parses
+greedily; this parse is optimal, a few per cent smaller, same format.)
 
 A packed stream:
-  3 bytes   where it unpacks to (a chip RAM address, low byte first)
+  1 byte    the format (1)
+  4 bytes   where it unpacks to (a 28-bit address, low byte first)
   then tokens, n = (t & $3F):
   $00-$3F   n + 1 bytes follow as they are
   $40-$7F   n + 3 bytes of the one byte that follows (a DMA fill)
@@ -21,6 +23,7 @@ MIN_RUN = 3
 MAX_RUN = 0x3F + MIN_RUN
 MAX_LIT = 0x40
 WINDOW = 0xFFFF
+FORMAT = 1          # pack45's
 CHAIN = 96          # candidates looked at for each position (more: little gained)
 
 
@@ -97,7 +100,7 @@ def pack(data, dest):
                 best, how = c, (L, far_off[i])
         A[i] = best
         choice[i] = how
-    out = bytearray([dest & 0xFF, (dest >> 8) & 0xFF, (dest >> 16) & 0xFF])
+    out = bytearray([FORMAT, dest & 0xFF, (dest >> 8) & 0xFF, (dest >> 16) & 0xFF, (dest >> 24) & 0xFF])
     marks = []
     i = 0
     while i < n:
@@ -135,7 +138,8 @@ def unpack_in_place(stream, skip, size):
     the result (an assertion fails if the writing overtakes the reading)"""
     mem = bytearray(max(size, skip + len(stream)) + 256)
     mem[skip:skip + len(stream)] = stream
-    r = skip + 3
+    assert mem[skip] == FORMAT
+    r = skip + 5
     w = 0
     while True:
         t = mem[r]
