@@ -6,6 +6,7 @@
 unsigned char scratch[SCRATCH_SIZE];
 struct player pl;
 unsigned int turn;
+unsigned int dog_warned;
 struct mon mons[MAX_MON];
 unsigned char nmons;
 #ifdef CHEAT

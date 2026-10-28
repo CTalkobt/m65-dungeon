@@ -198,6 +198,7 @@ unsigned char door_shut(void);           /* doors.c: K, a door beside shut or we
  * beside the player (a new level); DOG_AT: it is there */
 void dog_move(void);
 unsigned char dog_place(void);
+extern unsigned int dog_warned;          /* where it last growled (AT): once a thing */
 #define DOG_MAX    (10 + pl.level * 2)
 #define DOG_AT(x, y) (pl.dog_hp && (x) == pl.dog_x && (y) == pl.dog_y)
 void pick_up(unsigned int i, unsigned char n);   /* what lies at i (O_*), as the player walks over it */

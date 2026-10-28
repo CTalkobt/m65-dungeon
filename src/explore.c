@@ -498,6 +498,17 @@ static unsigned char explore_run(unsigned char resume) {
     pl.dog_hp = TEST_DOG;              /* (tests: the dog nearly done; 0: away, back in 3 turns) */
     if (!pl.dog_hp) pl.dog_down = 3;
 #endif
+#ifdef TEST_SNIFF
+#if TEST_SNIFF == 1
+    mons[0].x = pl.x + 3;              /* (tests: the dog's nose: a mimic, still a chest, */
+    mons[0].y = pl.y;
+    mons[0].kind = M_MIMIC;
+    mons[0].hp = FRESH;
+    mons[0].awake = 0;
+#else
+    obj_set(AT(pl.x + 2, pl.y), O_TRAP);   /* or a hidden plate) */
+#endif
+#endif
 #ifdef TEST_GEAR
     pl.wq = pl.aq = 3;                 /* (tests: Superior dragonbone and rune plate) */
     weapon_take(WEAPONS - 1);

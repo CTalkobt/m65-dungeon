@@ -4,7 +4,10 @@
  * creatures' turn: creatures.c calls dog_move first). It opens no doors;
  * the player walking into it trades places (explore.c); creatures cannot
  * walk through it (creatures.c free_for); in a close-up fight it worries
- * at the foe it was beside (battle.c). */
+ * at the foe it was beside (battle.c). Its nose: it runs at a mimic still
+ * a chest as at any creature, but growls at it (the once) and leaves it be;
+ * and now and then it sniffs out a hidden plate near the player (sniff:
+ * found, as the player's search finds one). */
 #pragma cc45 overlay(aim)
 #pragma cc45 noescape_strings
 #include "hw.h"
@@ -59,6 +62,23 @@ static unsigned char apart(unsigned char x0, unsigned char y0, unsigned char x1,
     return dx > dy ? dx : dy;
 }
 
+/* a hidden plate where the player is going (two places each way, in
+ * sight), found by the dog's nose ranging round (1 in 6 a turn) */
+static void sniff(void) {
+    unsigned char x, y, x0 = pl.x - 2, y0 = pl.y - 2;
+    for (y = y0; y != (unsigned char)(y0 + 5); y++)
+        for (x = x0; x != (unsigned char)(x0 + 5); x++) {
+            if (x >= MAP_W || y >= MAP_H || !vis_at(x, y)) continue;
+            if (obj_at(AT(x, y)) == O_TRAP && !rng_range(6)) {
+                obj_set(AT(x, y), O_NONE);
+                vm_set(x, y, TK_TRAP);
+                msg("Your dog sniffs at the floor, and growls: a plate!", C_HILITE);
+                sfx(SFX_BARK);
+                return;
+            }
+        }
+}
+
 void dog_move(void) {
     unsigned char k, t = 0xFF, d, best = 9;
     struct mon *c;
@@ -76,6 +96,7 @@ void dog_move(void) {
     for (k = 0; k < nmons; k++) {
         c = &mons[k];
         if (!c->hp || (mon_flags[c->kind] & MF_BOSS)) continue;
+        if (!c->awake && (mon_habits[c->kind] & MH_MIMIC) && dog_warned == AT(c->x, c->y)) continue;
         d = vis_at(c->x, c->y);
         if (!d || d == VIS_SHADOW) continue;
         d = apart(c->x, c->y, pl.dog_x, pl.dog_y);
@@ -85,7 +106,9 @@ void dog_move(void) {
         }
     }
     if (t == 0xFF) {
-        /* nothing to chase: keep close (and catch up when left far behind) */
+        /* nothing to chase: keep close (and catch up when left far behind),
+         * nose down */
+        sniff();
         d = apart(pl.x, pl.y, pl.dog_x, pl.dog_y);
         if (d > 10) dog_place();
         else if (d > 2) dog_step(toward(pl.dog_x, pl.x), toward(pl.dog_y, pl.y));
@@ -95,6 +118,13 @@ void dog_move(void) {
     if (best > 1) {
         if (best == 9) return;
         dog_step(toward(pl.dog_x, c->x), toward(pl.dog_y, c->y));
+        return;
+    }
+    if (!c->awake && (mon_habits[c->kind] & MH_MIMIC)) {
+        /* a chest that smells wrong: growled at, the once, and left be */
+        dog_warned = AT(c->x, c->y);
+        msg("Your dog growls at the chest, hackles up.", C_HILITE);
+        sfx(SFX_BARK);
         return;
     }
     /* beside it: a bite, and now and then it bites back */
