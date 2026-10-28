@@ -399,18 +399,35 @@ def blocks(idx):
     return b.astype(np.uint8)
 
 
-def shrink_charset(frames, palette, budget):
+def texture(rgb):
+    """(n, 192) characters' colours: how busy each is, the mean step between
+    neighbouring pixels (a smooth ramp little, a noisy texture much)"""
+    c = rgb.reshape(-1, 8, 8, 3)
+    return (np.abs(np.diff(c, axis=1)).mean(axis=(1, 2, 3)) + np.abs(np.diff(c, axis=2)).mean(axis=(1, 2, 3))) / 2
+
+
+def shrink_charset(frames, palette, budget, tol=0, busy=14):
     """frames: lists of characters (n, 64) as palette indices. The unique
     characters, merged (the nearest in colour first) until there are at
-    most budget; the maps from each frame's cells to them."""
+    most budget, and while any two differ by at most tol (the RMS of their
+    colours, 0-255); the maps from each frame's cells to them. Colours are
+    compared with the dark end stretched (a square root below 64, steeper:
+    one step there counts for more), so a shadow's texture is not merged
+    away into black first; from 64 up a step counts as itself. A character
+    is let go only as near as it is busy (texture: below busy, tol shrinks
+    with it): in noise a small change hides, on a smooth ramp it shows as a
+    seam at the character's edge."""
     allc = np.concatenate(frames)
     uniq, inv = np.unique(allc, axis=0, return_inverse=True)
     inv = inv.reshape(-1)
     n = len(uniq)
-    if n > budget:
+    near = tol * tol * 192                                         # (d: the sum of 192 squares)
+    if n > budget or tol:
         pal = palette.astype(np.float32)
+        pal = np.where(pal < 64, 255 * np.sqrt(pal / 255), pal + 255 * np.sqrt(64 / 255) - 64)
         rgb = pal[uniq.astype(np.int32)].reshape(n, -1)            # (n, 192)
         uses = np.bincount(inv, minlength=n).astype(np.float32)
+        near = near * np.minimum(1, texture(rgb) / busy) ** 2        # (each its own)
         sq = (rgb * rgb).sum(1)
         d = sq[:, None] + sq[None, :] - 2 * rgb @ rgb.T
         np.fill_diagonal(d, np.inf)
@@ -419,10 +436,14 @@ def shrink_charset(frames, palette, budget):
         nn = d.argmin(1)
         nd = d[np.arange(n), nn]
         left = n
-        while left > budget:
+        while True:
             cost = nd * uses
             cost[~alive] = np.inf
+            if left <= budget:
+                cost[nd > near] = np.inf                           # (within budget: the near only)
             i = int(cost.argmin())
+            if cost[i] == np.inf:
+                break
             j = int(nn[i])
             alive[i] = False
             left -= 1

@@ -455,8 +455,13 @@ changes have characters of their own, and in them the backdrop's pixels
 keep the backdrop's colours, so there is no seam. Their palette is 119
 colours for what the creature changes plus an 8-colour glow ramp, with
 ordered (Bayer) dithering; the backdrop shares the map tiles' palette.
-Most close-ups need under 1257 characters and are kept whole; past that,
-characters are merged (the pair whose merging costs least first).
+Characters nearly alike are merged (the pair whose merging costs least
+first): those within MERGE_TOL (tools/gen_art.py, 5: the RMS of their
+colours, 0-255) always, and more past 1257 characters (only the spider).
+Colours are compared with the dark end stretched, so a shadow's brick is
+not merged away into black, and a character's tolerance shrinks with how
+smooth it is, so a smooth body shows no seams; 8 would save some 125
+blocks more, with faint seams on the ooze. (5 saved 80 blocks.)
 
 A close-up is two files, DG<NAME>A in bank 5 (palette, header, both
 frames' maps, 778 characters) and DG<NAME>B in bank 1 (the rest), loaded

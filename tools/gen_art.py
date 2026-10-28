@@ -56,6 +56,7 @@ BACK1 = 0x2A000                # the backdrop's characters: in the C64 BASIC's s
 BACK2 = 0x2E000                #   and the C64 KERNAL's (8 KB each)
 BACK_HALF = 128
 SCENE_CHARS = 1641             # a close-up's characters at most (bank 5 and bank 1 hold fewer)
+MERGE_TOL = float(os.environ.get("MERGE_TOL", 5))   # close-up characters this near (RMS colour, 0-255, the dark end stretched) merged
 SW, SH = W // 8, H // 8
 
 
@@ -334,7 +335,7 @@ def build_scene(out, name, pv, back_img, back_nums, tile_pal):
     assert hdr_end % 64 == 0
     na = (SCENE_A_END - SCENE_A - hdr_end) // 64
     nb = (SCENE_B_END - SCENE_B) // 64 - 1          # (room for the packed file's last bytes)
-    uniq, maps = shrink_charset(blks, comb, min(na + nb, SCENE_CHARS))
+    uniq, maps = shrink_charset(blks, comb, min(na + nb, SCENE_CHARS), MERGE_TOL)
     nums = np.where(np.arange(len(uniq)) < na,
                     (SCENE_A + hdr_end) // 64 + np.arange(len(uniq)),
                     SCENE_B // 64 + np.arange(len(uniq)) - na)
