@@ -473,6 +473,23 @@ static unsigned char explore_run(unsigned char resume) {
 #ifdef TEST_FUEL
     pl.fuel = TEST_FUEL;             /* (tests: the torch near its end) */
 #endif
+#ifdef TEST_BATTER
+    for (r = 0; r < MAP_H; r++)          /* (tests: a wall two east, a wedged door in it, a hunter beyond) */
+        if (terrain(pl.x + 2, r) == TR_FLOOR) vm_set(pl.x + 2, r, TK_WALL0 + 5);
+    vm_set(pl.x + 2, pl.y, TK_DOOR_V);
+    obj_set(AT(pl.x + 2, pl.y), O_WEDGE);
+    mons[0].x = pl.x + 3;
+    mons[0].y = pl.y;
+    mons[0].kind = TEST_BATTER;
+    mons[0].hp = FRESH;
+    mons[0].awake = 2;
+    mons[0].stun = 0;
+#endif
+#ifdef TEST_GEAR
+    pl.wq = pl.aq = 3;                 /* (tests: Superior dragonbone and rune plate) */
+    weapon_take(WEAPONS - 1);
+    armour_take(ARMOURS - 1);
+#endif
 #ifdef TEST_LURE
     vm_set(pl.x + 2, pl.y, TK_TRAP);  /* (tests: a found plate two east, a hunter beyond) */
     mons[0].x = pl.x + 4;

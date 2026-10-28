@@ -1,0 +1,4169 @@
+    .org $2000
+    .weak __sp_base
+    __sp_base = $0101
+    .extern __bp_rom
+    .extern __bp_prog
+    .weak __static_chain
+    .weak __zp_scratch
+    .weak __zp_scratch2
+    .weak __zp_scratch3
+    .weak __zp_scratch4
+    .weak cc45.zeroPageStart
+    __static_chain = $06
+    __zp_scratch = $08
+    __zp_scratch2 = $0A
+    __zp_scratch3 = $0C
+    __zp_scratch4 = $0E
+    cc45.zeroPageStart = $08
+    .weak cc45.mode_zp
+    cc45.mode_zp = 1
+    .weak cc45.icallinfo
+    cc45.icallinfo = 1
+
+    .extern _tile_char
+    .extern _mon_names
+    .extern _scratch
+    .extern _pl
+    .extern ___dma_copy_far
+    .extern _input_joy
+    .extern _input_key
+    .extern _sfx_update
+    .extern _video_blank
+    .extern _video_cells
+    .extern _video_frame
+    .extern _video_text
+
+    .global _hist_n
+    .global _hist_at
+    .global _hist_col
+    .global _scripted__ui
+    .global _key_get
+    .global _key_wait
+    .global _a_an
+    .global _str_cat
+    .global _nth
+    .global _far_nth
+    .global _str_num
+    .global _ui_hline
+    .global _ui_frame
+    .global _ui_bar
+    .global _ui_wrap
+    .global _ui_stats
+    .global _log_init
+    .global _log_line__ui
+    .global _log_add
+    .global _msg_show
+    .global _msg
+    .global _msg_clear
+
+    .segment "data"
+    .byte 0
+__fa_tile_char:
+    .dword _tile_char
+__fa_mon_names:
+    .dword _mon_names
+
+    .segment "bss"
+_joy_last:
+    .res 1
+_joy_hold:
+    .res 1
+    .segment "data"
+_script:
+    .word __str_0
+_script_wait:
+    .byte 120
+
+    .segment "bss"
+_far_buf:
+    .res 32
+_line:
+    .res 160
+_log_c:
+    .res 1
+_log_r:
+    .res 1
+_log_w:
+    .res 1
+_log_h:
+    .res 1
+_log_cols:
+    .res 12
+_msgs:
+    .res 216
+_msg_col:
+    .res 4
+_hist_n:
+    .res 1
+_hist_at:
+    .res 1
+_hist_col:
+    .res 36
+
+    .dbg_var "static - joy_last char sym:_joy_last"
+    .dbg_var "static - joy_hold char sym:_joy_hold"
+    .dbg_var "static - script *char sym:_script"
+    .dbg_var "static - script_wait char sym:_script_wait"
+    .dbg_var "static - far_buf [32]char sym:_far_buf"
+    .dbg_var "static - line [80]u16 sym:_line"
+    .dbg_var "static - log_c char sym:_log_c"
+    .dbg_var "static - log_r char sym:_log_r"
+    .dbg_var "static - log_w char sym:_log_w"
+    .dbg_var "static - log_h char sym:_log_h"
+    .dbg_var "static - log_cols [12]char sym:_log_cols"
+    .dbg_var "static - msgs [4][54]char sym:_msgs"
+    .dbg_var "static - msg_col [4]char sym:_msg_col"
+    .dbg_var "global - hist_n char sym:_hist_n"
+    .dbg_var "global - hist_at char sym:_hist_at"
+    .dbg_var "global - hist_col [36]char sym:_hist_col"
+    .segment "code"
+
+; function _scripted__ui
+; SAC zero-alloc leaf: no storage overhead
+    .weak cc45.fsig._scripted__ui.s
+    cc45.fsig._scripted__ui.s = 1
+    proc _scripted__ui
+; Phase 51: zero-alloc leaf (all parameters constant)
+    .global _scripted__ui__sac
+_scripted__ui__sac:
+    .var cc45.fp = 0
+    .var cc45.retnz = 1
+    .var cc45.retx = 1
+    .loc "src/ui.c", 23
+    .var @_l_c = $30
+
+@entry:
+    .loc "src/ui.c", 25
+    lda _script
+    ldx _script+1
+    sta $32
+    stx $33
+    ldy #0
+    lda ($32),y
+    sta $34
+    bne @if_end3
+; @if_then1 (reached by falling through only)
+    lda #0
+    bra @__return
+@if_end3:
+    .loc "src/ui.c", 26
+    lda _script_wait
+    ldx #0
+    sta $32
+    ora #0
+    bne @if_then4
+    bra @if_end6
+@if_then4:
+    .loc "src/ui.c", 27
+    dec _script_wait
+    .loc "src/ui.c", 28
+    lda #255
+    bra @__return
+@if_end6:
+    .loc "src/ui.c", 30
+    lda _script
+    ldx _script+1
+    sta $34
+    stx $35
+    lda $34
+    clc
+    adc #1
+    sta $32
+    lda $35
+    adc #0
+    sta $33
+    lda $32
+    ldx $33
+    sta _script
+    stx _script+1
+    ldy #0
+    lda ($34),y
+    sta $32
+    sta $30
+    .loc "src/ui.c", 31
+    lda #6
+    sta _script_wait
+    .loc "src/ui.c", 32
+    lda $30
+    cmp #85
+    beq @case8
+; @case_skip15 (reached by falling through only)
+    lda $30
+    cmp #68
+    beq @case9
+; @case_skip16 (reached by falling through only)
+    lda $30
+    cmp #76
+    beq @case10
+; @case_skip17 (reached by falling through only)
+    lda $30
+    cmp #82
+    beq @case11
+; @case_skip18 (reached by falling through only)
+    lda $30
+    cmp #70
+    beq @case12
+; @case_skip19 (reached by falling through only)
+    lda $30
+    cmp #88
+    beq @case13
+; @case_skip20 (reached by falling through only)
+    lda $30
+    cmp #95
+    beq @case14
+    bra @switch_end7
+@case8:
+    .loc "src/ui.c", 33
+    lda #1
+    bra @__return
+@case9:
+    .loc "src/ui.c", 34
+    lda #2
+    bra @__return
+@case10:
+    .loc "src/ui.c", 35
+    lda #3
+    bra @__return
+@case11:
+    .loc "src/ui.c", 36
+    lda #4
+    bra @__return
+@case12:
+    .loc "src/ui.c", 37
+    lda #5
+    bra @__return
+@case13:
+    .loc "src/ui.c", 38
+    lda #6
+    bra @__return
+@case14:
+    .loc "src/ui.c", 39
+    lda #60
+    sta _script_wait
+    lda #255
+    bra @__return
+@switch_end7:
+    .loc "src/ui.c", 41
+    lda $30
+@__return:
+    rts
+    .func_flags zp_call, static_alloc, zeroalloc, leaf
+    .reg_clobbers A, X, Y
+    .flag_clobbers C, N, Z, V
+    .frame_size 0
+    endproc
+    .dbg_var "local _scripted__ui c char zp:$30"
+
+; function _key_get
+    .global cc45.zc._key_get__local_0
+    cc45.zc._key_get__local_0 = 5121
+    .global cc45.zc._key_get__local_1
+    cc45.zc._key_get__local_1 = 2305
+    .global cc45.zc._key_get__local_2
+    cc45.zc._key_get__local_2 = 1025
+; SAC storage: 2 bytes (in BSS)
+    .segment "bss"
+    .res 1
+    .global _key_get__ar
+_key_get__ar:
+_key_get__local_4:
+_key_get__local_5:
+_key_get__local_6:
+_key_get__local_9:
+_key_get__local_10:
+_key_get__local_11:
+_key_get__local_13:
+_key_get__local_14:
+_key_get__local_15:
+_key_get__local_17:
+_key_get__local_18:
+_key_get__local_19:
+_key_get__local_21:
+_key_get__local_22:
+_key_get__local_23:
+_key_get__local_24:
+_key_get__local_26:
+_key_get__local_27:
+_key_get__local_28:
+_key_get__local_30:
+_key_get__local_31:
+_key_get__local_32:
+_key_get__local_34:
+_key_get__local_42:
+_key_get__local_44:
+_key_get__local_45:
+_key_get__local_48:
+_key_get__local_49:
+_key_get__local_51:
+_key_get__local_53:
+_key_get__local_54:
+_key_get__local_55:
+_key_get__local_56:
+_key_get__local_59:
+_key_get__local_60:
+_key_get__local_61:
+_key_get__local_62:
+_key_get__local_65:
+_key_get__local_66:
+_key_get__local_67:
+_key_get__local_68:
+_key_get__local_71:
+_key_get__local_72:
+_key_get__local_73:
+_key_get__local_74:
+_key_get__local_77:
+_key_get__local_78:
+_key_get__local_79:
+_key_get__local_80:
+_key_get__local_86:
+_key_get__local_87:
+_key_get__local_90:
+_key_get__local_91:
+_key_get__local_92:
+_key_get__local_96:
+_key_get__local_97:
+_key_get__local_98:
+    .res 2
+    .res 1
+    .global cc45.sacsize._key_get
+    cc45.sacsize._key_get = 3
+    .segment "code"
+    .weak cc45.fsig._key_get.s
+    cc45.fsig._key_get.s = 1
+    .extern _key_get__zar
+    .global cc45.zarsize._key_get
+    cc45.zarsize._key_get = 3
+    proc _key_get
+    .zar $80, 3
+; Phase 51: zero-alloc leaf (all parameters constant)
+    .global _key_get__sac
+_key_get__sac:
+    .var cc45.fp = 0
+    .var cc45.retnz = 1
+    .var cc45.retx = 1
+    .loc "src/ui.c", 45
+    .var @_l_d = $82
+    .var @_l_j = $81
+    .var @_l_k = $80
+
+@entry:
+    .loc "src/ui.c", 48
+    jsr _scripted__ui
+    sta $80
+    .loc "src/ui.c", 49
+    cmp #255
+    beq @if_then22
+    bra @if_end24
+@if_then22:
+    lda #0
+    bra @__return
+@if_end24:
+    .loc "src/ui.c", 50
+    lda $80
+    bne @if_then25
+    bra @if_end27
+@if_then25:
+    lda $80
+    bra @__return
+@if_end27:
+    .loc "src/ui.c", 52
+    jsr _input_key
+    sta $80
+    .loc "src/ui.c", 53
+    ora #0
+    bne @if_then28
+    bra @if_end30
+@if_then28:
+    .loc "src/ui.c", 54
+    lda $80
+    cmp #65
+    bcs @and_rhs34
+    bra @if_end33
+@and_rhs34:
+    lda $80
+    cmp #90
+    bcc @if_then31
+    beq @if_then31
+    bra @if_end33
+@if_then31:
+    lda $80
+    clc
+    adc #32
+    sta $30
+    bra @__return
+@if_end33:
+    .loc "src/ui.c", 55
+    lda $80
+    cmp #193
+    bcs @and_rhs38
+    bra @if_end37
+@and_rhs38:
+    lda $80
+    cmp #218
+    bcc @if_then35
+    beq @if_then35
+    bra @if_end37
+@if_then35:
+    lda $80
+    sec
+    sbc #96
+    sta $30
+    bra @__return
+@if_end37:
+    .loc "src/ui.c", 56
+    lda $80
+    cmp #145
+    beq @case40
+; @case_skip47 (reached by falling through only)
+    lda $80
+    cmp #17
+    beq @case41
+; @case_skip48 (reached by falling through only)
+    lda $80
+    cmp #157
+    beq @case42
+; @case_skip49 (reached by falling through only)
+    lda $80
+    cmp #29
+    beq @case43
+; @case_skip50 (reached by falling through only)
+    lda $80
+    cmp #13
+    beq @case44
+; @case_skip51 (reached by falling through only)
+    lda $80
+    cmp #3
+    beq @case45
+; @case_skip52 (reached by falling through only)
+    lda $80
+    cmp #27
+    beq @case46
+    bra @switch_end39
+@case40:
+    .loc "src/ui.c", 57
+    lda #1
+    bra @__return
+@case41:
+    .loc "src/ui.c", 58
+    lda #2
+    bra @__return
+@case42:
+    .loc "src/ui.c", 59
+    lda #3
+    bra @__return
+@case43:
+    .loc "src/ui.c", 60
+    lda #4
+    bra @__return
+@case44:
+    .loc "src/ui.c", 61
+    lda #5
+    bra @__return
+@case45:
+@case46:
+    .loc "src/ui.c", 63
+    lda #6
+    bra @__return
+@switch_end39:
+    .loc "src/ui.c", 65
+    lda $80
+    bra @__return
+@if_end30:
+    .loc "src/ui.c", 67
+    lda #1
+    sta $10
+    jsr _input_joy
+    sta _key_get__local_44
+    lda #2
+    sta $10
+    jsr _input_joy
+    sta $32
+    ora _key_get__local_44
+    sta $30
+    sta $81
+    .loc "src/ui.c", 68
+    bne @if_end56
+; @if_then54 (reached by falling through only)
+    .loc "src/ui.c", 69
+    lda #0
+    sta _joy_last
+    .loc "src/ui.c", 70
+    lda #0
+    bra @__return
+@if_end56:
+    .loc "src/ui.c", 72
+    lda $81
+    and #16
+    sta $30
+    bne @tern_then57
+    bra @tern_else58
+@tern_then57:
+    lda #5
+    ldx #0
+    sta $30
+    stx $31
+    sta $32
+    stx $33
+    bra @tern_end59
+@tern_else58:
+    lda $81
+    and #1
+    sta $30
+    bne @tern_then60
+    bra @tern_else61
+@tern_then60:
+    lda #1
+    ldx #0
+    sta $30
+    stx $31
+    sta $34
+    stx $35
+    bra @tern_end62
+@tern_else61:
+    lda $81
+    and #2
+    sta $30
+    bne @tern_then63
+    bra @tern_else64
+@tern_then63:
+    lda #2
+    ldx #0
+    sta $30
+    stx $31
+    sta $36
+    stx $37
+    bra @tern_end65
+@tern_else64:
+    lda $81
+    and #4
+    sta $30
+    bne @tern_then66
+    bra @tern_else67
+@tern_then66:
+    lda #3
+    ldx #0
+    sta $30
+    stx $31
+    sta $38
+    stx $39
+    bra @tern_end68
+@tern_else67:
+    lda $81
+    and #8
+    sta $30
+    bne @tern_then69
+    bra @tern_else70
+@tern_then69:
+    lda #4
+    ldx #0
+    sta $30
+    stx $31
+    sta $3A
+    stx $3B
+    bra @tern_end71
+@tern_else70:
+    lda #0
+    sta $30
+    sta $31
+    ldx $31
+    sta $3A
+    stx $3B
+@tern_end71:
+    lda $3A
+    ldx $3B
+    sta $38
+    stx $39
+@tern_end68:
+    lda $38
+    ldx $39
+    sta $36
+    stx $37
+@tern_end65:
+    lda $36
+    ldx $37
+    sta $34
+    stx $35
+@tern_end62:
+    lda $34
+    ldx $35
+    sta $32
+    stx $33
+@tern_end59:
+    lda $32
+    ldx $33
+    sta $82
+    .loc "src/ui.c", 73
+    lda $81
+    cmp _joy_last
+    bne @if_then72
+    bra @if_end74
+@if_then72:
+    .loc "src/ui.c", 74
+    lda $81
+    sta _joy_last
+    .loc "src/ui.c", 75
+    lda #18
+    sta _joy_hold
+    .loc "src/ui.c", 76
+    lda $82
+    bra @__return
+@if_end74:
+    .loc "src/ui.c", 78
+    lda $82
+    cmp #5
+    beq @if_then75
+    bra @if_end77
+@if_then75:
+    lda #0
+    bra @__return
+@if_end77:
+    .loc "src/ui.c", 79
+    lda _joy_hold
+    dec a
+    sta $30
+    lda $30
+    sta _joy_hold
+    lda $30
+    cmp #0
+    beq @if_then78
+    bra @if_end80
+@if_then78:
+    .loc "src/ui.c", 80
+    lda #7
+    sta _joy_hold
+    .loc "src/ui.c", 81
+    lda $82
+    bra @__return
+@if_end80:
+    .loc "src/ui.c", 83
+    lda #0
+@__return:
+    rts
+    .func_flags zp_call, static_alloc
+    .reg_clobbers A, X, Y, Z
+    .flag_clobbers C, N, Z, V
+    .frame_size 2
+    endproc
+    .dbg_var "local _key_get k char sym:_key_get__zar+0"
+    .dbg_var "local _key_get j char sym:_key_get__zar+1"
+    .dbg_var "local _key_get d char sym:_key_get__zar+2"
+
+; function _key_wait
+    .global cc45.zc._key_wait__local_0
+    cc45.zc._key_wait__local_0 = 769
+; SAC storage: 0 bytes (in BSS)
+    .segment "bss"
+    .global _key_wait__ar
+_key_wait__ar:
+    .segment "code"
+    .weak cc45.fsig._key_wait.s
+    cc45.fsig._key_wait.s = 1
+    .extern _key_wait__zar
+    .global cc45.zarsize._key_wait
+    cc45.zarsize._key_wait = 1
+    proc _key_wait
+    .zar $80, 1
+; Phase 51: zero-alloc leaf (all parameters constant)
+    .global _key_wait__sac
+_key_wait__sac:
+    .var cc45.fp = 0
+    .var cc45.retnz = 1
+    .var cc45.retx = 1
+    .loc "src/ui.c", 86
+    .var @_l_k = $80
+
+@entry:
+@for_body82:
+    .loc "src/ui.c", 89
+    jsr _video_frame
+    .loc "src/ui.c", 90
+    jsr _sfx_update
+    .loc "src/ui.c", 91
+    jsr _key_get
+    sta $80
+    .loc "src/ui.c", 92
+    ora #0
+    bne @if_then85
+    bra @if_end87
+@if_then85:
+    lda $80
+    bra @__return
+@if_end87:
+@for_inc83:
+    bra @for_body82
+@__return:
+    rts
+    .func_flags zp_call, static_alloc
+    .reg_clobbers A, X, Y, Z
+    .flag_clobbers C, N, Z, V
+    .frame_size 0
+    endproc
+    .dbg_var "local _key_wait k char sym:_key_wait__zar+0"
+
+; function _a_an
+; SAC storage: 0 bytes (in BSS)
+    .segment "bss"
+    .res 1
+    .global _a_an__ar
+_a_an__ar:
+    .global _a_an__param_s
+_a_an__param_s:
+    .res 2
+_a_an__local_2:
+_a_an__local_3:
+_a_an__local_4:
+_a_an__local_8:
+_a_an__local_9:
+_a_an__local_10:
+_a_an__local_14:
+_a_an__local_15:
+_a_an__local_16:
+_a_an__local_20:
+_a_an__local_21:
+_a_an__local_22:
+_a_an__local_26:
+_a_an__local_27:
+_a_an__local_28:
+    .res 2
+    .res 1
+    .global cc45.sacsize._a_an
+    cc45.sacsize._a_an = 5
+    .segment "code"
+    .weak cc45.fsig._a_an.s2
+    cc45.fsig._a_an.s2 = 1
+    proc _a_an, W#@_p_s
+    .sac
+; SAC thunk: load ZP params into SAC storage
+    .global _a_an__sac
+_a_an__sac:
+    .var cc45.fp = 0
+    .var cc45.retx = 1
+    .loc "src/ui.c", 98
+    .var @_p_s = $10
+
+@entry:
+    .loc "src/ui.c", 99
+    ldy #0
+    lda ($10),y
+    sta $30
+    cmp #97
+    beq @sc_short95
+; @sc_merge94 (reached by falling through only)
+    ldy #0
+    lda ($10),y
+    cmp #101
+    php
+    pla
+    lsr
+    and #1
+    ldx #0
+    sta $32
+    sta $30
+    bra @sc_done96
+@sc_short95:
+    lda #1
+    sta $30
+@sc_done96:
+    lda $30
+    bne @sc_short93
+; @sc_merge92 (reached by falling through only)
+    ldy #0
+    lda ($10),y
+    cmp #105
+    php
+    pla
+    lsr
+    and #1
+    ldx #0
+    sta $32
+    sta $30
+    bra @sc_done97
+@sc_short93:
+    lda #1
+    sta $30
+@sc_done97:
+    lda $30
+    bne @sc_short91
+; @sc_merge90 (reached by falling through only)
+    ldy #0
+    lda ($10),y
+    cmp #111
+    php
+    pla
+    lsr
+    and #1
+    ldx #0
+    sta $32
+    sta $30
+    bra @sc_done98
+@sc_short91:
+    lda #1
+    sta $30
+@sc_done98:
+    lda $30
+    bne @sc_short89
+; @sc_merge88 (reached by falling through only)
+    ldy #0
+    lda ($10),y
+    cmp #117
+    php
+    pla
+    lsr
+    and #1
+    ldx #0
+    sta $32
+    sta $30
+    bra @sc_done99
+@sc_short89:
+    lda #1
+    sta $30
+@sc_done99:
+    lda $30
+    bne @tern_then100
+    bra @tern_else101
+@tern_then100:
+    ldax #__str_103
+    sta $30
+    sta $32
+    stx $33
+    bra @tern_end102
+@tern_else101:
+    ldax #__str_104
+    sta $30
+    sta $32
+    stx $33
+@tern_end102:
+    lda $32
+    ldx $33
+@__return:
+    rts
+    .func_flags zp_call, static_alloc, leaf
+    .param_sizes 2
+    .reg_clobbers A, X, Y
+    .flag_clobbers C, N, Z, V
+    .frame_size 0
+    endproc
+    .dbg_var "param _a_an s *char zp:$10"
+
+; function _str_cat
+; SAC storage: 0 bytes (in BSS)
+    .segment "bss"
+    .global _str_cat__ar
+_str_cat__ar:
+    .global _str_cat__param_d
+_str_cat__param_d:
+    .res 2
+    .global _str_cat__param_s
+_str_cat__param_s:
+    .res 2
+_str_cat__local_3:
+    .res 2
+    .res 1
+    .global cc45.sacsize._str_cat
+    cc45.sacsize._str_cat = 7
+    .segment "code"
+    .weak cc45.fsig._str_cat.s2_2
+    cc45.fsig._str_cat.s2_2 = 1
+    proc _str_cat, W#@_p_d, W#@_p_s
+    .sac
+; SAC thunk: load ZP params into SAC storage
+    .global _str_cat__sac
+_str_cat__sac:
+    .var cc45.fp = 0
+    .loc "src/ui.c", 102
+    .var @_p_d = $10
+    .var @_p_s = $12
+
+@entry:
+    .loc "src/ui.c", 103
+    bra @while_cond105
+@while_body106:
+    inw $10
+@while_cond105:
+    ldy #0
+    lda ($10),y
+    bne @while_body106
+    bra @while_cond108
+@while_body109:
+    .loc "src/ui.c", 104
+    ldy #0
+    lda ($12),y
+    sta $32
+    inw $12
+    lda $32
+    ldy #0
+    sta ($10),y
+    inw $10
+@while_cond108:
+    ldy #0
+    lda ($12),y
+    bne @while_body109
+; @while_end110 (reached by falling through only)
+    .loc "src/ui.c", 105
+    lda #0
+    ldy #0
+    sta ($10),y
+@__return:
+    rts
+    .func_flags zp_call, static_alloc, leaf
+    .param_sizes 2, 2
+    .reg_clobbers A, X, Y
+    .flag_clobbers C, N, Z, V
+    .frame_size 0
+    endproc
+    .dbg_var "param _str_cat d *char zp:$10"
+    .dbg_var "param _str_cat s *char zp:$12"
+
+; function _nth
+; SAC storage: 0 bytes (in BSS)
+    .segment "bss"
+    .global _nth__ar
+_nth__ar:
+    .global _nth__param_list
+_nth__param_list:
+    .res 2
+    .global _nth__param_n
+_nth__param_n:
+    .res 2
+    .res 1
+    .global cc45.sacsize._nth
+    cc45.sacsize._nth = 5
+    .segment "code"
+    .weak cc45.fsig._nth.s2_2
+    cc45.fsig._nth.s2_2 = 1
+    proc _nth, W#@_p_list, B#@_p_n
+    .sac
+; SAC thunk: load ZP params into SAC storage
+    .global _nth__sac
+_nth__sac:
+    .var cc45.fp = 0
+    .var cc45.retx = 1
+    .loc "src/ui.c", 111
+    .var @_p_list = $10
+    .var @_p_n = $12
+
+@entry:
+@while_cond111:
+    .loc "src/ui.c", 112
+    lda $12
+    ldx #0
+    sta $30
+    dec $12
+    lda $30
+    bne @while_cond114
+    bra @while_end113
+@while_cond114:
+    .loc "src/ui.c", 113
+    ldy #0
+    lda ($10),y
+    sta $32
+    inw $10
+    lda $32
+    bne @while_cond114
+    bra @while_cond111
+@while_end113:
+    .loc "src/ui.c", 114
+    lda $10
+    ldx $11
+@__return:
+    rts
+    .func_flags zp_call, static_alloc, leaf
+    .param_sizes 2, 2
+    .reg_clobbers A, X, Y
+    .flag_clobbers C, N, Z, V
+    .frame_size 0
+    endproc
+    .dbg_var "param _nth list *char zp:$10"
+    .dbg_var "param _nth n char zp:$12"
+
+; function _far_nth
+; SAC storage: 0 bytes (in BSS)
+    .segment "bss"
+    .global _far_nth__ar
+_far_nth__ar:
+    .global _far_nth__param_list
+_far_nth__param_list:
+    .res 4
+    .global _far_nth__param_n
+_far_nth__param_n:
+    .res 2
+_far_nth__local_6:
+_far_nth__local_7:
+_far_nth__local_11:
+_far_nth__local_12:
+_far_nth__local_17:
+_far_nth__local_18:
+_far_nth__local_19:
+    .res 2
+    .res 1
+    .global cc45.sacsize._far_nth
+    cc45.sacsize._far_nth = 9
+    .segment "code"
+    .weak cc45.fsig._far_nth.s4_2
+    cc45.fsig._far_nth.s4_2 = 1
+    proc _far_nth, D#@_p_list, B#@_p_n
+    .sac
+; SAC thunk: load ZP params into SAC storage
+    .global _far_nth__sac
+_far_nth__sac:
+    .var cc45.fp = 0
+    .var cc45.retx = 1
+    .loc "src/ui.c", 122
+    .var @_l_d = $30
+    .var @_p_list = $10
+    .var @_p_n = $14
+
+@entry:
+    .loc "src/ui.c", 123
+    ldax #_far_buf
+    sta $30
+    stx $31
+@while_cond117:
+    .loc "src/ui.c", 124
+    lda $14
+    ldx #0
+    sta $32
+    dec $14
+    lda $32
+    bne @while_cond120
+    bra @while_cond123
+@while_cond120:
+    ldq $10
+    sta $32
+    stx $33
+    sty $34
+    stz $35
+    .loc "src/ui.c", 125
+    ldq $32
+    inq
+    stq $10
+    ldz #0
+    lda [$32],z
+    ldx #0
+    sta $36
+    ora #0
+    bne @while_cond120
+    bra @while_cond117
+@while_cond123:
+    ldq $10
+    sta $32
+    stx $33
+    sty $34
+    stz $35
+    .loc "src/ui.c", 126
+    ldq $32
+    inq
+    stq $10
+    ldz #0
+    lda [$32],z
+    ldx #0
+    sta $36
+    lda $36
+    ldy #0
+    sta ($30),y
+    inw $30
+    lda $36
+    cmp #0
+    bne @while_cond123
+; @while_end125 (reached by falling through only)
+    .loc "src/ui.c", 127
+    ldax #_far_buf
+@__return:
+    rts
+    .func_flags zp_call, static_alloc, leaf
+    .param_sizes 4, 2
+    .reg_clobbers A, X, Y, Z
+    .flag_clobbers C, N, Z, V
+    .frame_size 0
+    endproc
+    .dbg_var "local _far_nth d *char zp:$30"
+    .dbg_var "param _far_nth list u32 zp:$10"
+    .dbg_var "param _far_nth n char zp:$14"
+
+; function _str_num
+    .global cc45.zc._str_num__param_d
+    cc45.zc._str_num__param_d = 274
+    .global cc45.zc._str_num__local_3
+    cc45.zc._str_num__local_3 = 1281
+; SAC storage: 6 bytes (in BSS)
+    .segment "bss"
+    .global _str_num__ar
+_str_num__ar:
+    .global _str_num__param_d
+_str_num__param_d:
+    .res 2
+    .global _str_num__param_v
+_str_num__param_v:
+    .res 2
+_str_num__local_2:
+    .res 6
+_str_num__local_4:
+    .res 2
+_str_num__local_9:
+    .res 2
+_str_num__local_13:
+    .res 2
+    .res 1
+    .global cc45.sacsize._str_num
+    cc45.sacsize._str_num = 17
+    .segment "code"
+    .weak cc45.fsig._str_num.s2_2
+    cc45.fsig._str_num.s2_2 = 1
+    .extern _str_num__zar
+    .global cc45.zarsize._str_num
+    cc45.zarsize._str_num = 3
+    proc _str_num, W#@_p_d, W#@_p_v
+    .zar $80, 3
+    .sac
+; SAC thunk: load ZP params into SAC storage
+    .extern __zp_args
+    jsr __zp_args
+    .byte 2
+    .word _str_num__zar+0
+    .byte 0
+    .global _str_num__sac
+_str_num__sac:
+    .var cc45.fp = 0
+    .loc "src/ui.c", 130
+    .local @_l_buf = 0
+    .var @_l_i = $82
+    .var @_p_d = $10
+    .var @_p_v = $12
+
+@entry:
+    lda #5
+    sta $82
+    .loc "src/ui.c", 132
+    .loc "src/ui.c", 133
+    ldax #_str_num__local_2
+    sta $32
+    stx $33
+    lda #0
+    ldy #5
+    sta ($32),y
+@do_body126:
+    .loc "src/ui.c", 135
+    lda #10
+    ldx #0
+    sta $30
+    stx $31
+    lda $30
+    sta __zp_scratch2
+    lda $30+1
+    sta __zp_scratch2+1
+    lda $12
+    ldx $13
+    .extern __modu16
+    jsr __modu16
+    clc
+    adc #48
+    sta $30
+    ldax #_str_num__local_2
+    sta $32
+    stx $33
+    dec $82
+    ldy $82
+    lda $30
+    ldx #0
+    sta ($32),y
+    .loc "src/ui.c", 136
+    lda #10
+    ldx #0
+    sta $30
+    stx $31
+    lda $30
+    sta __zp_scratch2
+    lda $30+1
+    sta __zp_scratch2+1
+    lda $12
+    ldx $13
+    .extern __divu16
+    jsr __divu16
+    sta $32
+    stx $33
+    sta $12
+    stx $13
+@do_cond127:
+    lda $12
+    ora $13
+    bne @do_body126
+; @do_end128 (reached by falling through only)
+    .loc "src/ui.c", 138
+    ldax #_str_num__local_2
+    sta $30
+    stx $31
+    lda $82
+    clc
+    adc $30
+    sta $34
+    lda #0
+    adc $31
+    sta $35
+    lda $80
+    ldx $81
+    sta $10
+    stx $11
+    lda $34
+    ldx $35
+    sta $12
+    stx $13
+    jsr _str_cat
+@__return:
+    rts
+    .func_flags zp_call, static_alloc
+    .param_sizes 2, 2
+    .reg_clobbers A, X, Y
+    .flag_clobbers C, N, Z, V
+    .frame_size 6
+    endproc
+    .dbg_var "local _str_num buf [6]char sym:_str_num__local_2"
+    .dbg_var "local _str_num i char sym:_str_num__zar+2"
+    .dbg_var "param _str_num d *char sym:_str_num__zar+0"
+    .dbg_var "param _str_num v u16 zp:$12"
+
+; function _ui_hline
+    .global cc45.zc._ui_hline__local_3
+    cc45.zc._ui_hline__local_3 = 1281
+    .global cc45.zc._ui_hline__param_w
+    cc45.zc._ui_hline__param_w = 513
+    .global cc45.zc._ui_hline__param_col
+    cc45.zc._ui_hline__param_col = 257
+    .global cc45.zc._ui_hline__param_row
+    cc45.zc._ui_hline__param_row = 257
+; SAC storage: 0 bytes (in BSS)
+    .segment "bss"
+    .global _ui_hline__ar
+_ui_hline__ar:
+    .global _ui_hline__param_col
+_ui_hline__param_col:
+    .res 2
+    .global _ui_hline__param_row
+_ui_hline__param_row:
+    .res 2
+    .global _ui_hline__param_w
+_ui_hline__param_w:
+    .res 2
+_ui_hline__local_5:
+_ui_hline__local_6:
+_ui_hline__local_10:
+    .res 2
+    .res 1
+    .global cc45.sacsize._ui_hline
+    cc45.sacsize._ui_hline = 9
+    .segment "code"
+    .weak cc45.fsig._ui_hline.s2_2_2
+    cc45.fsig._ui_hline.s2_2_2 = 1
+    .extern _ui_hline__zar
+    .global cc45.zarsize._ui_hline
+    cc45.zarsize._ui_hline = 4
+    proc _ui_hline, B#@_p_col, B#@_p_row, B#@_p_w
+    .zar $80, 4
+    .sac
+; SAC thunk: load ZP params into SAC storage
+    lda $10
+    sta $82
+    lda $12
+    sta $83
+    lda $14
+    sta $81
+    .global _ui_hline__sac
+_ui_hline__sac:
+    .var cc45.fp = 0
+    .loc "src/ui.c", 145
+    .var @_l_i = $80
+    .var @_p_col = $10
+    .var @_p_row = $12
+    .var @_p_w = $14
+
+@entry:
+    .loc "src/ui.c", 147
+    lda #0
+    sta $80
+    bra @for_cond129
+@for_body130:
+    lda $80
+    ldx #0
+    asl
+    tay
+    lda #108
+    ldx #19
+    sta _line,y
+    txa
+    sta _line+1,y
+@for_inc131:
+    inc $80
+@for_cond129:
+    lda $80
+    cmp $81
+    bcc @for_body130
+; @for_end132 (reached by falling through only)
+    .loc "src/ui.c", 148
+    lda $82
+    sta $10
+    lda $83
+    sta $12
+    ldax #_line
+    sta $14
+    stx $15
+    lda $81
+    sta $16
+    jsr _video_cells
+@__return:
+    rts
+    .func_flags zp_call, static_alloc
+    .param_sizes 2, 2, 2
+    .reg_clobbers A, X, Y, Z
+    .flag_clobbers C, N, Z, V
+    .frame_size 0
+    endproc
+    .dbg_var "local _ui_hline i char sym:_ui_hline__zar+0"
+    .dbg_var "param _ui_hline col char sym:_ui_hline__zar+2"
+    .dbg_var "param _ui_hline row char sym:_ui_hline__zar+3"
+    .dbg_var "param _ui_hline w char sym:_ui_hline__zar+1"
+
+; function _ui_frame
+    .global cc45.zc._ui_frame__local_24
+    cc45.zc._ui_frame__local_24 = 2097938
+    .global cc45.zc._ui_frame__local_4
+    cc45.zc._ui_frame__local_4 = 2561
+    .global cc45.zc._ui_frame__param_w
+    cc45.zc._ui_frame__param_w = 1281
+    .global cc45.zc._ui_frame__param_col
+    cc45.zc._ui_frame__param_col = 1025
+    .global cc45.zc._ui_frame__param_row
+    cc45.zc._ui_frame__param_row = 769
+    .global cc45.zc._ui_frame__param_h
+    cc45.zc._ui_frame__param_h = 513
+; SAC storage: 8 bytes (in BSS)
+    .segment "bss"
+    .global _ui_frame__ar
+_ui_frame__ar:
+    .global _ui_frame__param_col
+_ui_frame__param_col:
+    .res 2
+    .global _ui_frame__param_row
+_ui_frame__param_row:
+    .res 2
+    .global _ui_frame__param_w
+_ui_frame__param_w:
+    .res 2
+    .global _ui_frame__param_h
+_ui_frame__param_h:
+    .res 2
+_ui_frame__local_5:
+    .res 2
+_ui_frame__local_7:
+_ui_frame__local_9:
+_ui_frame__local_10:
+_ui_frame__local_11:
+_ui_frame__local_17:
+_ui_frame__local_20:
+_ui_frame__local_22:
+_ui_frame__local_23:
+_ui_frame__local_26:
+_ui_frame__local_28:
+_ui_frame__local_29:
+_ui_frame__local_30:
+_ui_frame__local_31:
+_ui_frame__local_32:
+_ui_frame__local_33:
+_ui_frame__local_34:
+_ui_frame__local_36:
+_ui_frame__local_38:
+_ui_frame__local_41:
+_ui_frame__local_42:
+_ui_frame__local_43:
+_ui_frame__local_44:
+_ui_frame__local_47:
+_ui_frame__local_48:
+_ui_frame__local_51:
+_ui_frame__local_52:
+_ui_frame__local_54:
+_ui_frame__local_55:
+_ui_frame__local_57:
+_ui_frame__local_59:
+_ui_frame__local_60:
+_ui_frame__local_61:
+_ui_frame__local_63:
+_ui_frame__local_64:
+_ui_frame__local_65:
+_ui_frame__local_67:
+_ui_frame__local_71:
+    .res 2
+_ui_frame__local_49:
+    .res 2
+_ui_frame__local_58:
+    .res 2
+    .res 1
+    .global cc45.sacsize._ui_frame
+    cc45.sacsize._ui_frame = 17
+    .segment "code"
+    .weak cc45.fsig._ui_frame.s2_2_2_2
+    cc45.fsig._ui_frame.s2_2_2_2 = 1
+    .extern _ui_frame__zar
+    .global cc45.zarsize._ui_frame
+    cc45.zarsize._ui_frame = 7
+    proc _ui_frame, B#@_p_col, B#@_p_row, B#@_p_w, B#@_p_h
+    .zar $80, 7
+    .sac
+; SAC thunk: load ZP params into SAC storage
+    lda $10
+    sta $84
+    lda $12
+    sta $85
+    lda $14
+    sta $83
+    lda $16
+    sta $86
+    .global _ui_frame__sac
+_ui_frame__sac:
+    .var cc45.fp = 0
+    .loc "src/ui.c", 151
+    .local @_l_c = 0
+    .var @_l_i = $82
+    .var @_p_col = $10
+    .var @_p_row = $12
+    .var @_p_w = $14
+    .var @_p_h = $16
+
+@entry:
+    .loc "src/ui.c", 154
+    lda #110
+    ldx #19
+    sta _line
+    stx _line+1
+    .loc "src/ui.c", 155
+    lda #1
+    sta $82
+@for_cond133_ph:
+    lda $83
+    sec
+    sbc #1
+    sta $30
+    lda #0
+    sbc #0
+    sta $31
+    bra @for_cond133
+@for_body134:
+    lda $82
+    ldx #0
+    asl
+    tay
+    lda #108
+    ldx #19
+    sta _line,y
+    txa
+    sta _line+1,y
+@for_inc135:
+    inc $82
+@for_cond133:
+    lda #0
+    cmp $31
+    bne @__zx_0
+    lda $82
+    cmp $30
+@__zx_0:
+    bcc @for_body134
+; @for_end136 (reached by falling through only)
+    .loc "src/ui.c", 156
+    lda $83
+    ldx #0
+    ldx #0
+    asl
+    pha
+    txa
+    rol
+    tax
+    pla
+    clc
+    adc #<(_line-2)
+    sta $80
+    txa
+    adc #>(_line-2)
+    sta $80+1
+    lda #111
+    ldx #19
+    ldy #0
+    sta ($80),y
+    txa
+    iny
+    sta ($80),y
+    .loc "src/ui.c", 157
+    lda $84
+    sta $10
+    lda $85
+    sta $12
+    ldax #_line
+    sta $14
+    stx $15
+    lda $83
+    sta $16
+    jsr _video_cells
+    .loc "src/ui.c", 158
+    lda #112
+    ldx #19
+    sta _line
+    stx _line+1
+    .loc "src/ui.c", 159
+    lda #113
+    ldx #19
+    ldy #0
+    sta ($80),y
+    txa
+    iny
+    sta ($80),y
+    .loc "src/ui.c", 160
+    lda $85
+    clc
+    adc $86
+    sta $30
+    dec a
+    sta $12
+    lda $84
+    sta $10
+    ldax #_line
+    sta $14
+    stx $15
+    lda $83
+    sta $16
+    jsr _video_cells
+    .loc "src/ui.c", 161
+    lda #109
+    sta _ui_frame__local_5
+    lda #19
+    sta _ui_frame__local_5+1
+    .loc "src/ui.c", 162
+    lda #1
+    sta $82
+@for_cond137_ph:
+    lda $86
+    sec
+    sbc #1
+    sta _ui_frame__local_44
+    lda #0
+    sbc #0
+    sta _ui_frame__local_44+1
+    .loc "src/ui.c", 164
+    lda $84
+    clc
+    adc $83
+    sta $30
+    dec a
+    sta _ui_frame__local_58
+    bra @for_cond137
+@for_body138:
+    .loc "src/ui.c", 163
+    lda $85
+    clc
+    adc $82
+    sta _ui_frame__local_49
+    ldax #_ui_frame__local_5
+    sta $14
+    stx $15
+    lda $84
+    sta $10
+    lda _ui_frame__local_49
+    sta $12
+    lda #1
+    sta $16
+    jsr _video_cells
+    .loc "src/ui.c", 164
+    ldax #_ui_frame__local_5
+    sta $14
+    stx $15
+    lda _ui_frame__local_58
+    sta $10
+    lda _ui_frame__local_49
+    sta $12
+    lda #1
+    sta $16
+    jsr _video_cells
+@for_inc139:
+    .loc "src/ui.c", 162
+    inc $82
+@for_cond137:
+    lda #0
+    cmp _ui_frame__local_44+1
+    bne @__zx_1
+    lda $82
+    cmp _ui_frame__local_44
+@__zx_1:
+    bcc @for_body138
+; @for_end140 (reached by falling through only)
+@__return:
+    rts
+    .func_flags zp_call, static_alloc
+    .param_sizes 2, 2, 2, 2
+    .reg_clobbers A, X, Y, Z
+    .flag_clobbers C, N, Z, V
+    .frame_size 8
+    endproc
+    .dbg_var "local _ui_frame i char sym:_ui_frame__zar+2"
+    .dbg_var "local _ui_frame c u16 sym:_ui_frame__local_5"
+    .dbg_var "param _ui_frame col char sym:_ui_frame__zar+4"
+    .dbg_var "param _ui_frame row char sym:_ui_frame__zar+5"
+    .dbg_var "param _ui_frame w char sym:_ui_frame__zar+3"
+    .dbg_var "param _ui_frame h char sym:_ui_frame__zar+6"
+
+; function _ui_bar
+    .global cc45.zc._ui_bar__local_18
+    cc45.zc._ui_bar__local_18 = 1281
+    .global cc45.zc._ui_bar__local_6
+    cc45.zc._ui_bar__local_6 = 2050
+    .global cc45.zc._ui_bar__param_w
+    cc45.zc._ui_bar__param_w = 769
+    .global cc45.zc._ui_bar__param_col
+    cc45.zc._ui_bar__param_col = 257
+    .global cc45.zc._ui_bar__param_row
+    cc45.zc._ui_bar__param_row = 257
+; SAC storage: 0 bytes (in BSS)
+    .segment "bss"
+    .global _ui_bar__ar
+_ui_bar__ar:
+    .global _ui_bar__param_col
+_ui_bar__param_col:
+    .res 2
+    .global _ui_bar__param_row
+_ui_bar__param_row:
+    .res 2
+    .global _ui_bar__param_w
+_ui_bar__param_w:
+    .res 2
+    .global _ui_bar__param_v
+_ui_bar__param_v:
+    .res 2
+    .global _ui_bar__param_max
+_ui_bar__param_max:
+    .res 2
+    .global _ui_bar__param_bar0
+_ui_bar__param_bar0:
+    .res 2
+_ui_bar__local_11:
+_ui_bar__local_12:
+_ui_bar__local_21:
+_ui_bar__local_22:
+_ui_bar__local_24:
+_ui_bar__local_30:
+_ui_bar__local_33:
+_ui_bar__local_34:
+_ui_bar__local_36:
+    .res 2
+    .res 1
+    .global cc45.sacsize._ui_bar
+    cc45.sacsize._ui_bar = 15
+    .segment "code"
+    .weak cc45.fsig._ui_bar.s2_2_2_2_2_2
+    cc45.fsig._ui_bar.s2_2_2_2_2_2 = 1
+    .extern _ui_bar__zar
+    .global cc45.zarsize._ui_bar
+    cc45.zarsize._ui_bar = 6
+    proc _ui_bar, B#@_p_col, B#@_p_row, B#@_p_w, B#@_p_v, B#@_p_max, W#@_p_bar0
+    .zar $80, 6
+    .sac
+; SAC thunk: load ZP params into SAC storage
+    lda $10
+    sta $84
+    lda $12
+    sta $85
+    lda $14
+    sta $83
+    .global _ui_bar__sac
+_ui_bar__sac:
+    .var cc45.fp = 0
+    .loc "src/ui.c", 168
+    .var @_l_fill = $81
+    .var @_l_i = $80
+    .var @_p_col = $10
+    .var @_p_row = $12
+    .var @_p_w = $14
+    .var @_p_v = $16
+    .var @_p_max = $18
+    .var @_p_bar0 = $1A
+
+@entry:
+    .loc "src/ui.c", 169
+    lda $18
+    bne @tern_then141
+    bra @tern_else142
+@tern_then141:
+    lda $16
+    ldx #0
+    ldx #0
+    ldy #0
+    ldz #0
+    sta $30
+    stx $31
+    sty $32
+    stz $33
+    lda $83
+    ldx #0
+    ldx #0
+    ldy #0
+    ldz #0
+    sta $34
+    stx $35
+    sty $36
+    stz $37
+    ldq $34
+    mul.32 .AXYZ, $30
+    sta $38
+    stx $39
+    sty $3A
+    stz $3B
+    ldq $38
+    lsl.32 .AXYZ
+    lsl.32 .AXYZ
+    lsl.32 .AXYZ
+    sta $30
+    stx $31
+    sty $32
+    stz $33
+    lda $18
+    ldx #0
+    ldx #0
+    ldy #0
+    ldz #0
+    sta $34
+    stx $35
+    sty $36
+    stz $37
+    lda $34
+    sta __zp_scratch2
+    lda $34+1
+    sta __zp_scratch2+1
+    lda $34+2
+    sta __zp_scratch2+2
+    lda $34+3
+    sta __zp_scratch2+3
+    ldq $30
+    .extern __divu32
+    jsr __divu32
+    sta $38
+    stx $39
+    sty $3A
+    stz $3B
+    ldq $38
+    sta $30
+    stx $31
+    sta $32
+    stx $33
+    bra @tern_end143
+@tern_else142:
+    lda #0
+    sta $30
+    sta $31
+    ldx $31
+    sta $32
+    stx $33
+@tern_end143:
+    lda $32
+    ldx $33
+    sta $81
+    stx $82
+    .loc "src/ui.c", 171
+    lda $16
+    bne @and_rhs147
+    bra @if_end146
+@and_rhs147:
+    lda $81
+    ora $82
+    bne @if_end146
+; @if_then144 (reached by falling through only)
+    lda #1
+    sta $81
+    ldx #0
+    stx $82
+@if_end146:
+    .loc "src/ui.c", 172
+    lda #0
+    sta $80
+    bra @for_cond148
+@for_body149:
+    .loc "src/ui.c", 173
+    lda $81
+    ldx $82
+    cmp.16 .AX, #8
+    bcs @tern_then152
+    bra @tern_else153
+@tern_then152:
+    lda #8
+    ldx #0
+    sta $30
+    stx $31
+    sta $32
+    stx $33
+    bra @tern_end154
+@tern_else153:
+    lda $81
+    ldx $82
+    sta $32
+    stx $33
+@tern_end154:
+    lda $1A
+    clc
+    adc $32
+    sta $30
+    lda $1B
+    adc $33
+    sta $31
+    lda $80
+    ldx #0
+    asl
+    tay
+    lda $30
+    ldx $31
+    sta _line,y
+    txa
+    sta _line+1,y
+    .loc "src/ui.c", 174
+    lda $81
+    ldx $82
+    cmp.16 .AX, #8
+    bcs @tern_then155
+    bra @tern_else156
+@tern_then155:
+    lda $81
+    sec
+    sbc #8
+    sta $30
+    lda $82
+    sbc #0
+    sta $31
+    bra @tern_end157
+@tern_else156:
+    lda #0
+    sta $32
+    sta $33
+    ldx $33
+    sta $30
+    stx $31
+@tern_end157:
+    lda $30
+    ldx $31
+    sta $81
+    stx $82
+@for_inc150:
+    .loc "src/ui.c", 172
+    inc $80
+@for_cond148:
+    lda $80
+    cmp $83
+    bcc @for_body149
+; @for_end151 (reached by falling through only)
+    .loc "src/ui.c", 176
+    lda $84
+    sta $10
+    lda $85
+    sta $12
+    ldax #_line
+    sta $14
+    stx $15
+    lda $83
+    sta $16
+    jsr _video_cells
+@__return:
+    rts
+    .func_flags zp_call, static_alloc
+    .param_sizes 2, 2, 2, 2, 2, 2
+    .reg_clobbers A, X, Y, Z
+    .flag_clobbers C, N, Z, V
+    .frame_size 0
+    endproc
+    .dbg_var "local _ui_bar fill u16 sym:_ui_bar__zar+1"
+    .dbg_var "local _ui_bar i char sym:_ui_bar__zar+0"
+    .dbg_var "param _ui_bar col char sym:_ui_bar__zar+4"
+    .dbg_var "param _ui_bar row char sym:_ui_bar__zar+5"
+    .dbg_var "param _ui_bar w char sym:_ui_bar__zar+3"
+    .dbg_var "param _ui_bar v char zp:$16"
+    .dbg_var "param _ui_bar max char zp:$18"
+    .dbg_var "param _ui_bar bar0 u16 zp:$1A"
+
+; function _ui_wrap
+    .global cc45.zc._ui_wrap__param_s
+    cc45.zc._ui_wrap__param_s = 8391442
+    .global cc45.zc._ui_wrap__local_7
+    cc45.zc._ui_wrap__local_7 = 2561
+    .global cc45.zc._ui_wrap__local_6
+    cc45.zc._ui_wrap__local_6 = 2561
+    .global cc45.zc._ui_wrap__param_row
+    cc45.zc._ui_wrap__param_row = 1281
+    .global cc45.zc._ui_wrap__param_col
+    cc45.zc._ui_wrap__param_col = 257
+    .global cc45.zc._ui_wrap__param_w
+    cc45.zc._ui_wrap__param_w = 257
+    .global cc45.zc._ui_wrap__param_colour
+    cc45.zc._ui_wrap__param_colour = 257
+; SAC storage: 81 bytes (in BSS)
+    .segment "bss"
+    .global _ui_wrap__ar
+_ui_wrap__ar:
+    .global _ui_wrap__param_col
+_ui_wrap__param_col:
+    .res 2
+    .global _ui_wrap__param_row
+_ui_wrap__param_row:
+    .res 2
+    .global _ui_wrap__param_w
+_ui_wrap__param_w:
+    .res 2
+    .global _ui_wrap__param_s
+_ui_wrap__param_s:
+    .res 2
+    .global _ui_wrap__param_colour
+_ui_wrap__param_colour:
+    .res 2
+_ui_wrap__local_5:
+    .res 81
+_ui_wrap__local_13:
+    .res 2
+_ui_wrap__local_15:
+    .res 2
+_ui_wrap__local_16:
+    .res 2
+_ui_wrap__local_17:
+    .res 2
+_ui_wrap__local_19:
+    .res 2
+_ui_wrap__local_20:
+    .res 2
+_ui_wrap__local_22:
+    .res 2
+_ui_wrap__local_24:
+    .res 2
+_ui_wrap__local_25:
+    .res 2
+_ui_wrap__local_26:
+    .res 2
+_ui_wrap__local_28:
+    .res 2
+_ui_wrap__local_30:
+    .res 2
+_ui_wrap__local_32:
+    .res 2
+_ui_wrap__local_34:
+    .res 2
+_ui_wrap__local_35:
+    .res 2
+_ui_wrap__local_36:
+    .res 2
+_ui_wrap__local_38:
+    .res 2
+_ui_wrap__local_40:
+    .res 2
+_ui_wrap__local_41:
+    .res 2
+_ui_wrap__local_42:
+    .res 2
+_ui_wrap__local_45:
+    .res 2
+_ui_wrap__local_46:
+    .res 2
+_ui_wrap__local_52:
+    .res 2
+_ui_wrap__local_63:
+    .res 2
+_ui_wrap__local_64:
+    .res 2
+_ui_wrap__local_65:
+    .res 2
+_ui_wrap__local_68:
+    .res 2
+_ui_wrap__local_69:
+    .res 2
+_ui_wrap__local_70:
+    .res 2
+_ui_wrap__local_73:
+    .res 2
+_ui_wrap__local_74:
+    .res 2
+_ui_wrap__local_75:
+    .res 2
+_ui_wrap__local_79:
+    .res 2
+_ui_wrap__local_80:
+    .res 2
+_ui_wrap__local_81:
+    .res 2
+_ui_wrap__local_83:
+    .res 2
+_ui_wrap__local_85:
+    .res 2
+    .res 1
+    .global cc45.sacsize._ui_wrap
+    cc45.sacsize._ui_wrap = 166
+    .segment "code"
+    .weak cc45.fsig._ui_wrap.s2_2_2_2_2
+    cc45.fsig._ui_wrap.s2_2_2_2_2 = 1
+    .extern _ui_wrap__zar
+    .global cc45.zarsize._ui_wrap
+    cc45.zarsize._ui_wrap = 8
+    proc _ui_wrap, B#@_p_col, B#@_p_row, B#@_p_w, W#@_p_s, B#@_p_colour
+    .zar $80, 8
+    .sac
+; SAC thunk: load ZP params into SAC storage
+    .extern __zp_args
+    jsr __zp_args
+    .byte 1
+    .word _ui_wrap__zar+5
+    .byte 1
+    .word _ui_wrap__zar+4
+    .byte 1
+    .word _ui_wrap__zar+6
+    .byte 2
+    .word _ui_wrap__zar+0
+    .byte 1
+    .word _ui_wrap__zar+7
+    .byte 0
+    .global _ui_wrap__sac
+_ui_wrap__sac:
+    .var cc45.fp = 0
+    .loc "src/ui.c", 181
+    .var @_l_brk = $82
+    .local @_l_buf = 0
+    .var @_l_n = $83
+    .var @_p_col = $10
+    .var @_p_row = $12
+    .var @_p_w = $14
+    .var @_p_s = $16
+    .var @_p_colour = $18
+
+@entry:
+@while_cond158:
+    .loc "src/ui.c", 184
+    ldy #0
+    lda ($80),y
+    sta $30
+    bne @while_body159
+    bra @while_end160
+@while_body159:
+    .loc "src/ui.c", 185
+    lda #0
+    sta $83
+    .loc "src/ui.c", 186
+    lda #0
+    sta $82
+    bra @while_cond161
+@and_rhs165:
+    .loc "src/ui.c", 187
+    ldy #0
+    lda ($30),y
+    sta $32
+    cmp #10
+    bne @and_rhs164
+    bra @while_end163
+@and_rhs164:
+    lda $83
+    cmp $86
+    bcc @while_body162
+    bra @while_end163
+@while_body162:
+    .loc "src/ui.c", 188
+    ldy #0
+    lda ($30),y
+    sta $32
+    cmp #32
+    beq @if_then166
+    bra @if_end168
+@if_then166:
+    lda $83
+    sta $82
+@if_end168:
+    .loc "src/ui.c", 189
+    inc $83
+@while_cond161:
+    .loc "src/ui.c", 187
+    lda $83
+    ldx #0
+    ldx #0
+    clc
+    adc $80
+    sta $30
+    txa
+    adc $80+1
+    sta $30+1
+    ldy #0
+    lda ($30),y
+    sta $32
+    bne @and_rhs165
+@while_end163:
+    .loc "src/ui.c", 191
+    ldy #0
+    lda ($30),y
+    sta $32
+    bne @and_rhs174
+    bra @if_end171
+@and_rhs174:
+    ldy #0
+    lda ($30),y
+    sta $32
+    cmp #10
+    bne @and_rhs173
+    bra @if_end171
+@and_rhs173:
+    ldy #0
+    lda ($30),y
+    sta $32
+    cmp #32
+    bne @and_rhs172
+    bra @if_end171
+@and_rhs172:
+    lda $82
+    bne @if_then169
+    bra @if_end171
+@if_then169:
+    lda $82
+    sta $83
+@if_end171:
+    .loc "src/ui.c", 192
+    lda #0
+    sta $82
+    bra @for_cond175
+@for_body176:
+    ldy $82
+    lda ($80),y
+    ldx #0
+    sta $32
+    ldax #_ui_wrap__local_5
+    sta $30
+    stx $31
+    ldy $82
+    lda $32
+    ldx #0
+    sta ($30),y
+@for_inc177:
+    inc $82
+@for_cond175:
+    lda $82
+    cmp $83
+    bcc @for_body176
+; @for_end178 (reached by falling through only)
+    .loc "src/ui.c", 193
+    ldax #_ui_wrap__local_5
+    sta $32
+    stx $33
+    ldy $83
+    lda #0
+    sta ($32),y
+    .loc "src/ui.c", 194
+    lda $84
+    ldx #0
+    sta $30
+    inc $84
+    ldax #_ui_wrap__local_5
+    sta $14
+    stx $15
+    lda $85
+    sta $10
+    lda $30
+    sta $12
+    lda $87
+    sta $16
+    jsr _video_text
+    .loc "src/ui.c", 195
+    lda $83
+    clc
+    adc $80
+    sta $80
+    lda #0
+    adc $81
+    sta $81
+@while_cond179:
+    .loc "src/ui.c", 196
+    ldy #0
+    lda ($80),y
+    sta $30
+    cmp #32
+    beq @while_body180
+; @or_rhs182 (reached by falling through only)
+    ldy #0
+    lda ($80),y
+    sta $30
+    cmp #10
+    beq @while_body180
+    bra @while_cond158
+@while_body180:
+    .loc "src/ui.c", 197
+    ldy #0
+    lda ($80),y
+    sta $30
+    cmp #10
+    beq @and_rhs186
+    bra @if_end185
+@and_rhs186:
+    ldy #1
+    lda ($80),y
+    sta $32
+    cmp #10
+    beq @if_then183
+    bra @if_end185
+@if_then183:
+    inc $84
+@if_end185:
+    .loc "src/ui.c", 198
+    inw $80
+    bra @while_cond179
+@while_end160:
+@__return:
+    rts
+    .func_flags zp_call, static_alloc
+    .param_sizes 2, 2, 2, 2, 2
+    .reg_clobbers A, X, Y, Z
+    .flag_clobbers C, N, Z, V
+    .frame_size 81
+    endproc
+    .dbg_var "local _ui_wrap buf [81]char sym:_ui_wrap__local_5"
+    .dbg_var "local _ui_wrap n char sym:_ui_wrap__zar+3"
+    .dbg_var "local _ui_wrap brk char sym:_ui_wrap__zar+2"
+    .dbg_var "param _ui_wrap col char sym:_ui_wrap__zar+5"
+    .dbg_var "param _ui_wrap row char sym:_ui_wrap__zar+4"
+    .dbg_var "param _ui_wrap w char sym:_ui_wrap__zar+6"
+    .dbg_var "param _ui_wrap s *char sym:_ui_wrap__zar+0"
+    .dbg_var "param _ui_wrap colour char sym:_ui_wrap__zar+7"
+
+; function _ui_stats
+    .global cc45.zc._ui_stats__local_15
+    cc45.zc._ui_stats__local_15 = 3146770
+    .global cc45.zc._ui_stats__local_17
+    cc45.zc._ui_stats__local_17 = 3146770
+    .global cc45.zc._ui_stats__local_72
+    cc45.zc._ui_stats__local_72 = 2097938
+    .global cc45.zc._ui_stats__local_74
+    cc45.zc._ui_stats__local_74 = 2097938
+    .global cc45.zc._ui_stats__param_col
+    cc45.zc._ui_stats__param_col = 2817
+    .global cc45.zc._ui_stats__param_row
+    cc45.zc._ui_stats__param_row = 2049
+; SAC storage: 26 bytes (in BSS)
+    .segment "bss"
+    .global _ui_stats__ar
+_ui_stats__ar:
+    .global _ui_stats__param_col
+_ui_stats__param_col:
+    .res 2
+    .global _ui_stats__param_row
+_ui_stats__param_row:
+    .res 2
+_ui_stats__local_2:
+    .res 24
+_ui_stats__local_3:
+_ui_stats__local_4:
+_ui_stats__local_8:
+_ui_stats__local_10:
+_ui_stats__local_11:
+_ui_stats__local_12:
+_ui_stats__local_14:
+_ui_stats__local_20:
+_ui_stats__local_24:
+_ui_stats__local_26:
+_ui_stats__local_32:
+_ui_stats__local_35:
+_ui_stats__local_36:
+_ui_stats__local_37:
+_ui_stats__local_40:
+_ui_stats__local_42:
+_ui_stats__local_44:
+_ui_stats__local_46:
+_ui_stats__local_53:
+_ui_stats__local_55:
+_ui_stats__local_56:
+_ui_stats__local_57:
+_ui_stats__local_58:
+_ui_stats__local_60:
+_ui_stats__local_61:
+_ui_stats__local_63:
+_ui_stats__local_64:
+_ui_stats__local_65:
+_ui_stats__local_67:
+_ui_stats__local_68:
+_ui_stats__local_69:
+_ui_stats__local_70:
+_ui_stats__local_71:
+_ui_stats__local_77:
+_ui_stats__local_78:
+_ui_stats__local_82:
+_ui_stats__local_84:
+_ui_stats__local_90:
+_ui_stats__local_93:
+_ui_stats__local_94:
+_ui_stats__local_95:
+_ui_stats__local_97:
+_ui_stats__local_98:
+_ui_stats__local_99:
+_ui_stats__local_100:
+_ui_stats__local_102:
+_ui_stats__local_103:
+_ui_stats__local_104:
+_ui_stats__local_108:
+_ui_stats__local_114:
+_ui_stats__local_115:
+_ui_stats__local_116:
+_ui_stats__local_117:
+_ui_stats__local_119:
+_ui_stats__local_120:
+_ui_stats__local_124:
+_ui_stats__local_129:
+_ui_stats__local_132:
+_ui_stats__local_133:
+_ui_stats__local_134:
+_ui_stats__local_136:
+_ui_stats__local_137:
+_ui_stats__local_138:
+_ui_stats__local_139:
+_ui_stats__local_141:
+_ui_stats__local_142:
+_ui_stats__local_143:
+_ui_stats__local_147:
+_ui_stats__local_159:
+_ui_stats__local_160:
+_ui_stats__local_161:
+_ui_stats__local_164:
+_ui_stats__local_165:
+_ui_stats__local_167:
+_ui_stats__local_170:
+_ui_stats__local_171:
+_ui_stats__local_172:
+_ui_stats__local_174:
+_ui_stats__local_175:
+_ui_stats__local_176:
+_ui_stats__local_179:
+_ui_stats__local_180:
+_ui_stats__local_181:
+    .res 2
+    .res 1
+    .global cc45.sacsize._ui_stats
+    cc45.sacsize._ui_stats = 31
+    .segment "code"
+    .weak cc45.fsig._ui_stats.s2_2
+    cc45.fsig._ui_stats.s2_2 = 1
+    .extern _ui_stats__zar
+    .global cc45.zarsize._ui_stats
+    cc45.zarsize._ui_stats = 10
+    proc _ui_stats, B#@_p_col, B#@_p_row
+    .zar $80, 10
+    .sac
+; SAC thunk: load ZP params into SAC storage
+    lda $10
+    sta $88
+    lda $12
+    sta $89
+    .global _ui_stats__sac
+_ui_stats__sac:
+    .var cc45.fp = 0
+    .loc "src/ui.c", 204
+    .local @_l_buf = 0
+    .var @_p_col = $10
+    .var @_p_row = $12
+
+@entry:
+    .loc "src/ui.c", 206
+    lda $88
+    sta $10
+    lda $89
+    sta $12
+    lda #23
+    sta $14
+    lda #4
+    sta $16
+    jsr _video_blank
+    .loc "src/ui.c", 207
+    ldax #__str_187
+    sta $14
+    stx $15
+    lda $88
+    sta $10
+    lda $89
+    sta $12
+    lda #1
+    sta $16
+    jsr _video_text
+    .loc "src/ui.c", 208
+    lda $88
+    clc
+    adc #5
+    sta $10
+    ldax #_pl
+    clc
+    adc #2
+    sta $80
+    txa
+    adc #0
+    sta $81
+    ldy #0
+    lda ($80),y
+    sta $16
+    ldax #_pl
+    clc
+    adc #3
+    sta $82
+    txa
+    adc #0
+    sta $83
+    ldy #0
+    lda ($82),y
+    sta $18
+    lda $89
+    sta $12
+    lda #10
+    sta $14
+    lda #116
+    ldx #19
+    sta $1A
+    stx $1B
+    jsr _ui_bar
+    .loc "src/ui.c", 209
+    ldax #_ui_stats__local_2
+    sta $32
+    stx $33
+    lda #0
+    ldy #0
+    sta ($32),y
+    .loc "src/ui.c", 210
+    ldax #_ui_stats__local_2
+    sta $10
+    stx $11
+    ldy #0
+    lda ($80),y
+    sta $30
+    ldx #0
+    ldx #0
+    sta $12
+    stx $13
+    jsr _str_num
+    .loc "src/ui.c", 211
+    ldax #_ui_stats__local_2
+    sta $10
+    stx $11
+    ldax #__str_188
+    sta $12
+    stx $13
+    jsr _str_cat
+    .loc "src/ui.c", 212
+    ldax #_ui_stats__local_2
+    sta $10
+    stx $11
+    ldy #0
+    lda ($82),y
+    sta $30
+    ldx #0
+    ldx #0
+    sta $12
+    stx $13
+    jsr _str_num
+    .loc "src/ui.c", 213
+    lda $88
+    clc
+    adc #16
+    sta $30
+    ldax #_ui_stats__local_2
+    sta $32
+    stx $33
+    ldy #0
+    lda ($80),y
+    ldx #0
+    ldx #0
+    stx $37
+    pha
+    rol
+    rol
+    rol
+    and #3
+    tax
+    pla
+    asl
+    asl
+    sta $34
+    stx $35
+    ldy #0
+    lda ($82),y
+    sta $36
+    lda $34
+    ldx $35
+    cpx #0
+    bne @__zx_2
+    cmp $36
+@__zx_2:
+    bcc @tern_then189
+    bra @tern_else190
+@tern_then189:
+    lda #4
+    ldx #0
+    sta $34
+    stx $35
+    sta $36
+    stx $37
+    bra @tern_end191
+@tern_else190:
+    lda #1
+    ldx #0
+    sta $34
+    stx $35
+    sta $36
+    stx $37
+@tern_end191:
+    lda $36
+    ldx $37
+    sta $16
+    lda $30
+    sta $10
+    lda $89
+    sta $12
+    lda $32
+    ldx $33
+    sta $14
+    stx $15
+    jsr _video_text
+    .loc "src/ui.c", 214
+    lda $89
+    inc a
+    sta _ui_stats__local_58
+    ldax #__str_192
+    sta $14
+    stx $15
+    lda $88
+    sta $10
+    lda _ui_stats__local_58
+    sta $12
+    lda #1
+    sta $16
+    jsr _video_text
+    .loc "src/ui.c", 215
+    lda $88
+    clc
+    adc #5
+    sta $10
+    ldax #_pl
+    clc
+    adc #4
+    sta $84
+    txa
+    adc #0
+    sta $85
+    ldy #0
+    lda ($84),y
+    sta $16
+    ldax #_pl
+    clc
+    adc #5
+    sta $86
+    txa
+    adc #0
+    sta $87
+    ldy #0
+    lda ($86),y
+    sta $18
+    lda _ui_stats__local_58
+    sta $12
+    lda #10
+    sta $14
+    lda #125
+    ldx #19
+    sta $1A
+    stx $1B
+    jsr _ui_bar
+    .loc "src/ui.c", 216
+    ldax #_ui_stats__local_2
+    sta $32
+    stx $33
+    lda #0
+    ldy #0
+    sta ($32),y
+    .loc "src/ui.c", 217
+    ldax #_ui_stats__local_2
+    sta $10
+    stx $11
+    ldy #0
+    lda ($84),y
+    sta $30
+    ldx #0
+    ldx #0
+    sta $12
+    stx $13
+    jsr _str_num
+    .loc "src/ui.c", 218
+    ldax #_ui_stats__local_2
+    sta $10
+    stx $11
+    ldax #__str_193
+    sta $12
+    stx $13
+    jsr _str_cat
+    .loc "src/ui.c", 219
+    ldax #_ui_stats__local_2
+    sta $10
+    stx $11
+    ldy #0
+    lda ($86),y
+    sta $30
+    ldx #0
+    ldx #0
+    sta $12
+    stx $13
+    jsr _str_num
+    .loc "src/ui.c", 220
+    lda $88
+    clc
+    adc #16
+    sta $10
+    ldax #_ui_stats__local_2
+    sta $14
+    stx $15
+    lda _ui_stats__local_58
+    sta $12
+    lda #6
+    sta $16
+    jsr _video_text
+    .loc "src/ui.c", 221
+    ldax #_ui_stats__local_2
+    sta $32
+    stx $33
+    lda #0
+    ldy #0
+    sta ($32),y
+    .loc "src/ui.c", 222
+    ldax #_ui_stats__local_2
+    sta $10
+    stx $11
+    ldax #__str_194
+    sta $12
+    stx $13
+    jsr _str_cat
+    .loc "src/ui.c", 223
+    ldax #_ui_stats__local_2
+    sta $10
+    stx $11
+    ldax #_pl
+    clc
+    adc #37
+    sta $30
+    txa
+    adc #0
+    sta $31
+    ldy #1
+    lda ($30),y
+    tax
+    dey
+    lda ($30),y
+    sta $12
+    stx $13
+    jsr _str_num
+    .loc "src/ui.c", 224
+    lda $89
+    clc
+    adc #2
+    sta _ui_stats__local_117
+    ldax #_ui_stats__local_2
+    sta $14
+    stx $15
+    lda $88
+    sta $10
+    lda _ui_stats__local_117
+    sta $12
+    lda #3
+    sta $16
+    jsr _video_text
+    .loc "src/ui.c", 225
+    ldax #_ui_stats__local_2
+    sta $32
+    stx $33
+    lda #0
+    ldy #0
+    sta ($32),y
+    .loc "src/ui.c", 226
+    ldax #_ui_stats__local_2
+    sta $10
+    stx $11
+    ldax #__str_195
+    sta $12
+    stx $13
+    jsr _str_cat
+    .loc "src/ui.c", 227
+    ldax #_ui_stats__local_2
+    sta $10
+    stx $11
+    ldax #_pl
+    clc
+    adc #11
+    sta $30
+    txa
+    adc #0
+    sta $31
+    ldy #0
+    lda ($30),y
+    sta $32
+    ldx #0
+    ldx #0
+    sta $12
+    stx $13
+    jsr _str_num
+    .loc "src/ui.c", 228
+    lda $88
+    clc
+    adc #12
+    sta $10
+    ldax #_ui_stats__local_2
+    sta $14
+    stx $15
+    lda _ui_stats__local_117
+    sta $12
+    lda #4
+    sta $16
+    jsr _video_text
+    .loc "src/ui.c", 229
+    ldax #_ui_stats__local_2
+    sta $32
+    stx $33
+    lda #0
+    ldy #0
+    sta ($32),y
+    .loc "src/ui.c", 230
+    ldax #_ui_stats__local_2
+    sta $10
+    stx $11
+    ldax #__str_196
+    sta $12
+    stx $13
+    jsr _str_cat
+    .loc "src/ui.c", 231
+    ldax #_ui_stats__local_2
+    sta $10
+    stx $11
+    ldax #_pl
+    clc
+    adc #6
+    sta $30
+    txa
+    adc #0
+    sta $31
+    ldy #0
+    lda ($30),y
+    sta $32
+    ldx #0
+    ldx #0
+    sta $12
+    stx $13
+    jsr _str_num
+    .loc "src/ui.c", 232
+    ldax #_ui_stats__local_2
+    sta $10
+    stx $11
+    ldax #__str_197
+    sta $12
+    stx $13
+    jsr _str_cat
+    .loc "src/ui.c", 233
+    ldax #_ui_stats__local_2
+    sta $10
+    stx $11
+    ldax #_pl
+    clc
+    adc #39
+    sta $30
+    txa
+    adc #0
+    sta $31
+    ldy #1
+    lda ($30),y
+    tax
+    dey
+    lda ($30),y
+    sta $12
+    stx $13
+    jsr _str_num
+    .loc "src/ui.c", 234
+    lda $89
+    clc
+    adc #3
+    sta $12
+    ldax #_ui_stats__local_2
+    sta $14
+    stx $15
+    lda $88
+    sta $10
+    lda #2
+    sta $16
+    jsr _video_text
+    .loc "src/ui.c", 235
+    ldax #_pl
+    clc
+    adc #16
+    sta $30
+    txa
+    adc #0
+    sta $31
+    ldy #0
+    lda ($30),y
+    sta $32
+    bne @if_then198
+    bra @if_end200
+@if_then198:
+    lda $88
+    clc
+    adc #19
+    sta $10
+    lda $89
+    clc
+    adc #3
+    sta $12
+    ldax #__str_201
+    sta $14
+    stx $15
+    lda #3
+    sta $16
+    jsr _video_text
+@if_end200:
+@__return:
+    rts
+    .func_flags zp_call, static_alloc
+    .param_sizes 2, 2
+    .reg_clobbers A, X, Y, Z
+    .flag_clobbers C, N, Z, V
+    .frame_size 26
+    endproc
+    .dbg_var "local _ui_stats buf [24]char sym:_ui_stats__local_2"
+    .dbg_var "param _ui_stats col char sym:_ui_stats__zar+8"
+    .dbg_var "param _ui_stats row char sym:_ui_stats__zar+9"
+
+; function _log_init
+; SAC storage: 0 bytes (in BSS)
+    .segment "bss"
+    .global _log_init__ar
+_log_init__ar:
+    .global _log_init__param_col
+_log_init__param_col:
+    .res 2
+    .global _log_init__param_row
+_log_init__param_row:
+    .res 2
+    .global _log_init__param_w
+_log_init__param_w:
+    .res 2
+    .global _log_init__param_h
+_log_init__param_h:
+    .res 2
+_log_init__local_5:
+_log_init__local_6:
+_log_init__local_7:
+_log_init__local_13:
+_log_init__local_14:
+_log_init__local_15:
+_log_init__local_22:
+_log_init__local_23:
+_log_init__local_24:
+_log_init__local_27:
+_log_init__local_28:
+_log_init__local_29:
+_log_init__local_30:
+_log_init__local_33:
+_log_init__local_34:
+    .res 2
+    .res 1
+    .global cc45.sacsize._log_init
+    cc45.sacsize._log_init = 11
+    .segment "code"
+    .weak cc45.fsig._log_init.s2_2_2_2
+    cc45.fsig._log_init.s2_2_2_2 = 1
+    proc _log_init, B#@_p_col, B#@_p_row, B#@_p_w, B#@_p_h
+    .sac
+; SAC thunk: load ZP params into SAC storage
+    .global _log_init__sac
+_log_init__sac:
+    .var cc45.fp = 0
+    .loc "src/ui.c", 246
+    .var @_l___lsr_36 = $32
+    .var @_l_k = $30
+    .var @_p_col = $10
+    .var @_p_row = $12
+    .var @_p_w = $14
+    .var @_p_h = $16
+
+@entry:
+    .loc "src/ui.c", 248
+    lda $10
+    sta _log_c
+    .loc "src/ui.c", 249
+    lda $12
+    sta _log_r
+    .loc "src/ui.c", 250
+    lda $14
+    cmp #52
+    beq @tern_else203
+    bcs @tern_then202
+    bra @tern_else203
+@tern_then202:
+    lda #52
+    ldx #0
+    sta $34
+    sta $36
+    stx $37
+    bra @tern_end204
+@tern_else203:
+    lda $14
+    ldx #0
+    ldx #0
+    sta $34
+    sta $36
+    stx $37
+@tern_end204:
+    lda $36
+    ldx $37
+    sta $34
+    lda $34
+    sta _log_w
+    .loc "src/ui.c", 251
+    lda $16
+    cmp #12
+    beq @tern_else206
+    bcs @tern_then205
+    bra @tern_else206
+@tern_then205:
+    lda #12
+    ldx #0
+    sta $34
+    sta $36
+    stx $37
+    bra @tern_end207
+@tern_else206:
+    lda $16
+    ldx #0
+    ldx #0
+    sta $34
+    sta $36
+    stx $37
+@tern_end207:
+    lda $36
+    ldx $37
+    sta $34
+    lda $34
+    sta _log_h
+    .loc "src/ui.c", 252
+    lda #0
+    sta $30
+    lda #0
+    sta $32
+    sta $33
+    bra @for_cond208
+@for_body209:
+    lda $32
+    ldx $33
+    sta $36
+    stx $37
+    ldax #_scratch
+    clc
+    adc $36
+    sta $38
+    txa
+    adc $36+1
+    sta $39
+    lda #0
+    ldy #0
+    sta ($38),y
+@for_inc210:
+    inc $30
+    lda $32
+    clc
+    adc #53
+    sta $32
+    lda $33
+    adc #0
+    sta $33
+@for_cond208:
+    lda $30
+    cmp #12
+    bcc @for_body209
+; @for_end211 (reached by falling through only)
+@__return:
+    rts
+    .func_flags zp_call, static_alloc, leaf
+    .param_sizes 2, 2, 2, 2
+    .reg_clobbers A, X, Y
+    .flag_clobbers C, N, Z, V
+    .frame_size 0
+    endproc
+    .dbg_var "local _log_init k char zp:$30"
+    .dbg_var "param _log_init col char zp:$10"
+    .dbg_var "param _log_init row char zp:$12"
+    .dbg_var "param _log_init w char zp:$14"
+    .dbg_var "param _log_init h char zp:$16"
+
+; function _log_line__ui
+; SAC storage: 0 bytes (in BSS)
+    .segment "bss"
+    .global _log_line__ui__ar
+_log_line__ui__ar:
+    .global _log_line__ui__param_s
+_log_line__ui__param_s:
+    .res 2
+    .global _log_line__ui__param_n
+_log_line__ui__param_n:
+    .res 2
+    .global _log_line__ui__param_colour
+_log_line__ui__param_colour:
+    .res 2
+_log_line__ui__local_7:
+_log_line__ui__local_9:
+_log_line__ui__local_14:
+_log_line__ui__local_15:
+_log_line__ui__local_16:
+_log_line__ui__local_18:
+_log_line__ui__local_19:
+_log_line__ui__local_20:
+_log_line__ui__local_22:
+_log_line__ui__local_27:
+_log_line__ui__local_28:
+_log_line__ui__local_29:
+_log_line__ui__local_30:
+_log_line__ui__local_34:
+_log_line__ui__local_36:
+_log_line__ui__local_38:
+_log_line__ui__local_39:
+_log_line__ui__local_43:
+_log_line__ui__local_45:
+_log_line__ui__local_46:
+_log_line__ui__local_47:
+_log_line__ui__local_49:
+_log_line__ui__local_50:
+_log_line__ui__local_52:
+_log_line__ui__local_57:
+_log_line__ui__local_58:
+_log_line__ui__local_61:
+_log_line__ui__local_62:
+_log_line__ui__local_66:
+_log_line__ui__local_67:
+_log_line__ui__local_69:
+_log_line__ui__local_71:
+_log_line__ui__local_72:
+_log_line__ui__local_73:
+_log_line__ui__local_77:
+_log_line__ui__local_80:
+_log_line__ui__local_81:
+_log_line__ui__local_83:
+_log_line__ui__local_85:
+_log_line__ui__local_86:
+_log_line__ui__local_91:
+_log_line__ui__local_92:
+_log_line__ui__local_93:
+_log_line__ui__local_94:
+_log_line__ui__local_95:
+    .res 2
+    .res 1
+    .global cc45.sacsize._log_line__ui
+    cc45.sacsize._log_line__ui = 9
+    .segment "code"
+    .weak cc45.fsig._log_line__ui.s2_2_2
+    cc45.fsig._log_line__ui.s2_2_2 = 1
+    proc _log_line__ui, W#@_p_s, B#@_p_n, B#@_p_colour
+    .sac
+; SAC thunk: load ZP params into SAC storage
+    .global _log_line__ui__sac
+_log_line__ui__sac:
+    .var cc45.fp = 0
+    .loc "src/ui.c", 255
+    .var @_l_i = $32
+    .var @_l_k = $30
+    .var @_p_s = $10
+    .var @_p_n = $12
+    .var @_p_colour = $14
+
+@entry:
+    .loc "src/ui.c", 257
+    lda #0
+    sta $30
+@for_cond212:
+    lda _log_h
+    ldx #0
+    sta $34
+    lda $34
+    sec
+    sbc #1
+    sta $36
+    lda #0
+    sbc #0
+    sta $37
+    lda #0
+    cmp $37
+    bne @__zx_3
+    lda $30
+    cmp $36
+@__zx_3:
+    bcc @for_body213
+    bra @for_end215
+@for_body213:
+    .loc "src/ui.c", 258
+    lda #0
+    sta $32
+@for_cond216_ph:
+    lda $30
+    ldx #0
+    ldx #0
+    sta $36
+    stx $37
+    lda $36
+    clc
+    adc #1
+    sta $3C
+    lda #0
+    adc #0
+    sta $3D
+    lda $3C
+    ldx $3D
+    mul.16 .AX, #53
+    sta $3E
+    stx $3F
+    ldax #_scratch
+    clc
+    adc $3E
+    sta $38
+    txa
+    adc $3E+1
+    sta $39
+    lda $36
+    ldx $37
+    mul.16 .AX, #53
+    sta $3C
+    stx $3D
+    ldax #_scratch
+    clc
+    adc $3C
+    sta $36
+    txa
+    adc $3C+1
+    sta $37
+@for_cond216:
+    lda $32
+    cmp #52
+    bcc @for_body217
+    beq @for_body217
+    bra @for_end219
+@for_body217:
+    ldy $32
+    lda ($38),y
+    ldx #0
+    sta $3C
+    ldy $32
+    lda $3C
+    ldx #0
+    sta ($36),y
+@for_inc218:
+    inc $32
+    bra @for_cond216
+@for_end219:
+    lda $30
+    ldx #0
+    ldx #0
+    .loc "src/ui.c", 259
+    tay
+    lda _log_cols+1,y
+    ldx #0
+    sta $3A
+    lda $30
+    ldx #0
+    ldx #0
+    clc
+    adc #<_log_cols
+    sta $36
+    txa
+    adc #>_log_cols
+    sta $36+1
+    lda $3A
+    ldy #0
+    sta ($36),y
+    .loc "src/ui.c", 260
+    ldy #0
+    lda ($36),y
+    sta $38
+    cmp #11
+    bne @and_rhs223
+    bra @if_end222
+@and_rhs223:
+    lda $34
+    sec
+    sbc #3
+    sta $38
+    lda #0
+    sbc #0
+    sta $39
+    lda #0
+    cmp $39
+    bne @__zx_4
+    lda $30
+    cmp $38
+@__zx_4:
+    bcc @if_then220
+    bra @if_end222
+@if_then220:
+    lda #2
+    ldy #0
+    sta ($36),y
+@if_end222:
+@for_inc214:
+    .loc "src/ui.c", 257
+    inc $30
+    bra @for_cond212
+@for_end215:
+    .loc "src/ui.c", 262
+    lda #0
+    sta $32
+@for_cond224_ph:
+    lda $34
+    sec
+    sbc #1
+    sta $38
+    lda #0
+    sbc #0
+    sta $39
+    lda $38
+    ldx $39
+    ldy #53
+    .extern __mul16y
+    jsr __mul16y
+    sta $3A
+    stx $3B
+    ldax #_scratch
+    clc
+    adc $3A
+    sta $36
+    txa
+    adc $3A+1
+    sta $37
+@for_cond224:
+    lda $32
+    cmp $12
+    bcc @for_body225
+    bra @for_end227
+@for_body225:
+    ldy $32
+    lda ($10),y
+    ldx #0
+    sta $3A
+    ldy $32
+    lda $3A
+    ldx #0
+    sta ($36),y
+@for_inc226:
+    inc $32
+    bra @for_cond224
+@for_end227:
+    .loc "src/ui.c", 263
+    lda $34
+    ldx #0
+    ldx #0
+    sta $38
+    stx $39
+    lda $38
+    sec
+    sbc #1
+    sta $34
+    lda $39
+    sbc #0
+    sta $35
+    lda $34
+    ldx $35
+    ldy #53
+    .extern __mul16y
+    jsr __mul16y
+    sta $3C
+    stx $3D
+    ldax #_scratch
+    clc
+    adc $3C
+    sta $34
+    txa
+    adc $3C+1
+    sta $35
+    ldy $12
+    lda #0
+    sta ($34),y
+    .loc "src/ui.c", 264
+    lda $38
+    ldx $39
+    clc
+    adc #<(_log_cols-1)
+    sta __zp_scratch
+    txa
+    adc #>(_log_cols-1)
+    sta __zp_scratch+1
+    lda $14
+    ldx #0
+    ldy #0
+    sta (__zp_scratch),y
+@__return:
+    rts
+    .func_flags zp_call, static_alloc, leaf
+    .param_sizes 2, 2, 2
+    .reg_clobbers A, X, Y
+    .flag_clobbers C, N, Z, V
+    .frame_size 0
+    endproc
+    .dbg_var "local _log_line__ui k char zp:$30"
+    .dbg_var "local _log_line__ui i char zp:$32"
+    .dbg_var "param _log_line__ui s *char zp:$10"
+    .dbg_var "param _log_line__ui n char zp:$12"
+    .dbg_var "param _log_line__ui colour char zp:$14"
+
+; function _log_add
+    .global cc45.zc._log_add__param_s
+    cc45.zc._log_add__param_s = 4196370
+    .global cc45.zc._log_add__local_4
+    cc45.zc._log_add__local_4 = 2049
+    .global cc45.zc._log_add__local_2
+    cc45.zc._log_add__local_2 = 2305
+    .global cc45.zc._log_add__local_3
+    cc45.zc._log_add__local_3 = 1025
+    .global cc45.zc._log_add__param_colour
+    cc45.zc._log_add__param_colour = 257
+; SAC storage: 0 bytes (in BSS)
+    .segment "bss"
+    .global _log_add__ar
+_log_add__ar:
+    .global _log_add__param_s
+_log_add__param_s:
+    .res 2
+    .global _log_add__param_colour
+_log_add__param_colour:
+    .res 2
+_log_add__local_11:
+    .res 2
+_log_add__local_12:
+    .res 2
+_log_add__local_14:
+    .res 2
+_log_add__local_16:
+    .res 2
+_log_add__local_17:
+    .res 2
+_log_add__local_18:
+    .res 2
+_log_add__local_20:
+    .res 2
+_log_add__local_22:
+    .res 2
+_log_add__local_24:
+    .res 2
+_log_add__local_26:
+    .res 2
+_log_add__local_27:
+    .res 2
+_log_add__local_28:
+    .res 2
+_log_add__local_33:
+    .res 2
+_log_add__local_34:
+    .res 2
+_log_add__local_35:
+    .res 2
+_log_add__local_37:
+    .res 2
+_log_add__local_45:
+    .res 2
+_log_add__local_46:
+    .res 2
+_log_add__local_48:
+    .res 2
+_log_add__local_53:
+    .res 2
+_log_add__local_57:
+    .res 2
+_log_add__local_60:
+    .res 2
+_log_add__local_61:
+    .res 2
+_log_add__local_67:
+    .res 2
+_log_add__local_68:
+    .res 2
+    .res 1
+    .global cc45.sacsize._log_add
+    cc45.sacsize._log_add = 55
+    .segment "code"
+    .weak cc45.fsig._log_add.s2_2
+    cc45.fsig._log_add.s2_2 = 1
+    .extern _log_add__zar
+    .global cc45.zarsize._log_add
+    cc45.zarsize._log_add = 6
+    proc _log_add, W#@_p_s, B#@_p_colour
+    .zar $80, 6
+    .sac
+; SAC thunk: load ZP params into SAC storage
+    .extern __zp_args
+    jsr __zp_args
+    .byte 2
+    .word _log_add__zar+0
+    .byte 1
+    .word _log_add__zar+5
+    .byte 0
+    .global _log_add__sac
+_log_add__sac:
+    .var cc45.fp = 0
+    .loc "src/ui.c", 268
+    .var @_l_brk = $84
+    .var @_l_k = $82
+    .var @_l_n = $83
+    .var @_p_s = $10
+    .var @_p_colour = $12
+
+@entry:
+@while_cond228:
+    .loc "src/ui.c", 270
+    ldy #0
+    lda ($80),y
+    sta $30
+    bne @while_body229
+    bra @while_end230
+@while_body229:
+    .loc "src/ui.c", 271
+    lda #0
+    sta $83
+    .loc "src/ui.c", 272
+    lda #0
+    sta $84
+@while_cond231:
+    .loc "src/ui.c", 273
+    lda $83
+    ldx #0
+    ldx #0
+    clc
+    adc $80
+    sta $30
+    txa
+    adc $80+1
+    sta $30+1
+    ldy #0
+    lda ($30),y
+    bne @and_rhs234
+    bra @while_end233
+@and_rhs234:
+    lda $83
+    cmp _log_w
+    bcc @while_body232
+    bra @while_end233
+@while_body232:
+    .loc "src/ui.c", 274
+    ldy #0
+    lda ($30),y
+    cmp #32
+    beq @if_then235
+    bra @if_end237
+@if_then235:
+    lda $83
+    sta $84
+@if_end237:
+    .loc "src/ui.c", 275
+    inc $83
+    bra @while_cond231
+@while_end233:
+    .loc "src/ui.c", 277
+    ldy #0
+    lda ($30),y
+    bne @and_rhs242
+    bra @if_end240
+@and_rhs242:
+    ldy #0
+    lda ($30),y
+    cmp #32
+    bne @and_rhs241
+    bra @if_end240
+@and_rhs241:
+    lda $84
+    bne @if_then238
+    bra @if_end240
+@if_then238:
+    lda $84
+    sta $83
+@if_end240:
+    .loc "src/ui.c", 278
+    lda $80
+    ldx $81
+    sta $10
+    stx $11
+    lda $83
+    sta $12
+    lda $85
+    sta $14
+    jsr _log_line__ui
+    .loc "src/ui.c", 279
+    lda $83
+    clc
+    adc $80
+    sta $80
+    lda #0
+    adc $81
+    sta $81
+@while_cond243:
+    .loc "src/ui.c", 280
+    ldy #0
+    lda ($80),y
+    sta $30
+    cmp #32
+    beq @while_body244
+    bra @while_cond228
+@while_body244:
+    inw $80
+    bra @while_cond243
+@while_end230:
+    .loc "src/ui.c", 282
+    lda _log_c
+    ldx #0
+    sta $10
+    lda _log_r
+    ldx #0
+    sta $12
+    lda _log_w
+    ldx #0
+    sta $14
+    lda _log_h
+    sta $16
+    jsr _video_blank
+    .loc "src/ui.c", 283
+    lda #0
+    sta $82
+@for_cond246:
+    lda $82
+    cmp _log_h
+    bcc @for_body247
+    bra @for_end249
+@for_body247:
+    lda $82
+    ldx #0
+    ldx #0
+    sta $30
+    stx $31
+    .loc "src/ui.c", 284
+    mul.16 .AX, #53
+    sta $34
+    stx $35
+    ldax #_scratch
+    clc
+    adc $34
+    sta $30
+    txa
+    adc $34+1
+    sta $31
+    ldy #0
+    lda ($30),y
+    bne @if_then250
+    bra @if_end252
+@if_then250:
+    lda _log_c
+    ldx #0
+    sta $30
+    lda $82
+    ldx #0
+    ldx #0
+    sta $34
+    stx $35
+    lda _log_r
+    clc
+    adc $82
+    sta $36
+    lda $34
+    ldx $35
+    mul.16 .AX, #53
+    sta $38
+    stx $39
+    ldax #_scratch
+    clc
+    adc $38
+    sta $14
+    txa
+    adc $38+1
+    sta $15
+    ldy $82
+    lda _log_cols,y
+    sta $16
+    lda $30
+    sta $10
+    lda $36
+    sta $12
+    jsr _video_text
+@if_end252:
+@for_inc248:
+    .loc "src/ui.c", 283
+    inc $82
+    bra @for_cond246
+@for_end249:
+@__return:
+    rts
+    .func_flags zp_call, static_alloc
+    .param_sizes 2, 2
+    .reg_clobbers A, X, Y, Z
+    .flag_clobbers C, N, Z, V
+    .frame_size 0
+    endproc
+    .dbg_var "local _log_add n char sym:_log_add__zar+3"
+    .dbg_var "local _log_add brk char sym:_log_add__zar+4"
+    .dbg_var "local _log_add k char sym:_log_add__zar+2"
+    .dbg_var "param _log_add s *char sym:_log_add__zar+0"
+    .dbg_var "param _log_add colour char sym:_log_add__zar+5"
+
+; function _msg_show
+    .global cc45.zc._msg_show__local_0
+    cc45.zc._msg_show__local_0 = 2305
+; SAC storage: 0 bytes (in BSS)
+    .segment "bss"
+    .global _msg_show__ar
+_msg_show__ar:
+_msg_show__local_1:
+_msg_show__local_2:
+_msg_show__local_3:
+_msg_show__local_4:
+_msg_show__local_10:
+_msg_show__local_11:
+_msg_show__local_12:
+_msg_show__local_15:
+_msg_show__local_17:
+_msg_show__local_18:
+_msg_show__local_19:
+_msg_show__local_20:
+_msg_show__local_21:
+_msg_show__local_23:
+_msg_show__local_24:
+_msg_show__local_25:
+_msg_show__local_26:
+_msg_show__local_32:
+_msg_show__local_33:
+_msg_show__local_34:
+_msg_show__local_40:
+_msg_show__local_42:
+    .res 2
+    .res 1
+    .global cc45.sacsize._msg_show
+    cc45.sacsize._msg_show = 3
+    .segment "code"
+    .weak cc45.fsig._msg_show.s
+    cc45.fsig._msg_show.s = 1
+    .extern _msg_show__zar
+    .global cc45.zarsize._msg_show
+    cc45.zarsize._msg_show = 1
+    proc _msg_show
+    .zar $80, 1
+; Phase 51: zero-alloc leaf (all parameters constant)
+    .global _msg_show__sac
+_msg_show__sac:
+    .var cc45.fp = 0
+    .loc "src/ui.c", 298
+    .var @_l_k = $80
+
+@entry:
+    .loc "src/ui.c", 300
+    lda #1
+    sta $10
+    lda #46
+    sta $12
+    lda #53
+    sta $14
+    lda #4
+    sta $16
+    jsr _video_blank
+    .loc "src/ui.c", 301
+    lda #0
+    sta $80
+    bra @for_cond253
+@for_body254:
+    .loc "src/ui.c", 302
+    lda $80
+    ldx #0
+    ldx #0
+    mul.16 .AX, #54
+    clc
+    adc #<_msgs
+    sta $30
+    txa
+    adc #>_msgs
+    sta $30+1
+    ldy #0
+    lda ($30),y
+    sta $32
+    bne @if_then257
+    bra @if_end259
+@if_then257:
+    lda $80
+    clc
+    adc #46
+    sta $32
+    lda $80
+    cmp #3
+    beq @tern_then260
+    bra @tern_else261
+@tern_then260:
+    ldy $80
+    lda _msg_col,y
+    ldx #0
+    ldx #0
+    ldx #0
+    sta $36
+    stx $37
+    bra @tern_end262
+@tern_else261:
+    lda $80
+    cmp #2
+    beq @tern_then263
+    bra @tern_else264
+@tern_then263:
+    lda #2
+    ldx #0
+    sta $38
+    stx $39
+    bra @tern_end265
+@tern_else264:
+    lda #11
+    ldx #0
+    sta $38
+    stx $39
+@tern_end265:
+    lda $38
+    ldx $39
+    sta $36
+    stx $37
+@tern_end262:
+    lda $36
+    ldx $37
+    sta $16
+    lda #1
+    sta $10
+    lda $32
+    sta $12
+    lda $30
+    ldx $31
+    sta $14
+    stx $15
+    jsr _video_text
+@if_end259:
+@for_inc255:
+    .loc "src/ui.c", 301
+    inc $80
+@for_cond253:
+    lda $80
+    cmp #4
+    bcc @for_body254
+; @for_end256 (reached by falling through only)
+@__return:
+    rts
+    .func_flags zp_call, static_alloc
+    .reg_clobbers A, X, Y, Z
+    .flag_clobbers C, N, Z, V
+    .frame_size 0
+    endproc
+    .dbg_var "local _msg_show k char sym:_msg_show__zar+0"
+
+; function _msg
+    .global cc45.zc._msg__local_3
+    cc45.zc._msg__local_3 = 3585
+    .global cc45.zc._msg__local_2
+    cc45.zc._msg__local_2 = 2049
+    .global cc45.zc._msg__param_colour
+    cc45.zc._msg__param_colour = 513
+; SAC storage: 0 bytes (in BSS)
+    .segment "bss"
+    .global _msg__ar
+_msg__ar:
+    .global _msg__param_s
+_msg__param_s:
+    .res 2
+    .global _msg__param_colour
+_msg__param_colour:
+    .res 2
+_msg__local_5:
+_msg__local_6:
+_msg__local_7:
+_msg__local_10:
+_msg__local_11:
+_msg__local_12:
+_msg__local_14:
+_msg__local_15:
+_msg__local_16:
+_msg__local_17:
+_msg__local_23:
+_msg__local_25:
+_msg__local_27:
+_msg__local_28:
+_msg__local_32:
+_msg__local_38:
+_msg__local_39:
+_msg__local_40:
+_msg__local_42:
+_msg__local_44:
+_msg__local_45:
+_msg__local_46:
+_msg__local_49:
+_msg__local_52:
+_msg__local_53:
+_msg__local_54:
+_msg__local_57:
+_msg__local_58:
+_msg__local_61:
+_msg__local_64:
+_msg__local_70:
+_msg__local_72:
+_msg__local_78:
+_msg__local_79:
+_msg__local_80:
+_msg__local_84:
+_msg__local_85:
+_msg__local_86:
+    .res 2
+    .res 1
+    .global cc45.sacsize._msg
+    cc45.sacsize._msg = 7
+    .segment "code"
+    .weak cc45.fsig._msg.s2_2
+    cc45.fsig._msg.s2_2 = 1
+    .extern _msg__zar
+    .global cc45.zarsize._msg
+    cc45.zarsize._msg = 3
+    proc _msg, W#@_p_s, B#@_p_colour
+    .zar $80, 3
+    .sac
+; SAC thunk: load ZP params into SAC storage
+    lda $12
+    sta $82
+    .global _msg__sac
+_msg__sac:
+    .var cc45.fp = 0
+    .loc "src/ui.c", 309
+    .var @_l_k = $81
+    .var @_l_n = $80
+    .var @_p_s = $10
+    .var @_p_colour = $12
+
+@entry:
+    .loc "src/ui.c", 311
+    lda #0
+    sta $81
+    bra @for_cond266
+@for_body267:
+    .loc "src/ui.c", 312
+    lda #0
+    sta $80
+@for_cond270_ph:
+    lda $81
+    ldx #0
+    ldx #0
+    sta $30
+    stx $31
+    mul.16 .AX, #54
+    clc
+    adc #<(_msgs+54)
+    sta $32
+    txa
+    adc #>(_msgs+54)
+    sta $32+1
+    lda $81
+    ldx #0
+    ldx #0
+    mul.16 .AX, #54
+    clc
+    adc #<_msgs
+    sta $30
+    txa
+    adc #>_msgs
+    sta $30+1
+    bra @for_cond270
+@for_body271:
+    ldy $80
+    lda ($32),y
+    ldx #0
+    sta $36
+    ldy $80
+    lda $36
+    ldx #0
+    sta ($30),y
+@for_inc272:
+    inc $80
+@for_cond270:
+    lda $80
+    cmp #53
+    bcc @for_body271
+    beq @for_body271
+; @for_end273 (reached by falling through only)
+    lda $81
+    ldx #0
+    ldx #0
+    sta $30
+    stx $31
+    .loc "src/ui.c", 313
+    tay
+    lda _msg_col+1,y
+    ldx #0
+    sta $34
+    ldy $81
+    lda $34
+    ldx #0
+    sta _msg_col,y
+@for_inc268:
+    .loc "src/ui.c", 311
+    inc $81
+@for_cond266:
+    lda $81
+    cmp #3
+    bcc @for_body267
+; @for_end269 (reached by falling through only)
+    .loc "src/ui.c", 315
+    lda #0
+    sta $80
+@for_cond274:
+    lda $80
+    ldx #0
+    ldx #0
+    clc
+    adc $10
+    sta $30
+    txa
+    adc $10+1
+    sta $30+1
+    ldy #0
+    lda ($30),y
+    sta $32
+    bne @sc_merge278
+    bra @sc_short279
+@sc_merge278:
+    lda $80
+    cmp #53
+    lda #0
+    rol
+    eor #1
+    ldx #0
+    sta $32
+    sta $34
+    bra @sc_done280
+@sc_short279:
+    lda #0
+    sta $34
+@sc_done280:
+    lda $34
+    bne @for_body275
+    bra @for_end277
+@for_body275:
+    ldy #0
+    lda ($30),y
+    sta $32
+    ldax #_msgs
+    clc
+    adc #162
+    sta $30
+    txa
+    adc #0
+    sta $31
+    ldy $80
+    lda $32
+    ldx #0
+    sta ($30),y
+@for_inc276:
+    inc $80
+    bra @for_cond274
+@for_end277:
+    .loc "src/ui.c", 316
+    ldax #_msgs
+    clc
+    adc #162
+    sta $32
+    txa
+    adc #0
+    sta $33
+    ldy $80
+    lda #0
+    sta ($32),y
+    .loc "src/ui.c", 317
+    lda #3
+    ldx #0
+    tay
+    lda $82
+    ldx #0
+    sta _msg_col,y
+    .loc "src/ui.c", 318
+    lda _hist_at
+    ldx #0
+    ldx #0
+    pha
+    lsr
+    lsr
+    tax
+    pla
+    asl
+    asl
+    asl
+    asl
+    asl
+    asl
+    ldy #0
+    ldz #0
+    sta $32
+    stx $33
+    lda #50
+    sta $34
+    lda #8
+    sta $35
+    ldax #_msgs
+    clc
+    adc #162
+    sta $30
+    txa
+    adc #0
+    sta $31
+    lda $30
+    ldx $31
+    ldy #0
+    ldz #0
+    sta $36
+    stx $37
+    sty $38
+    stz $39
+    lda $80
+    clc
+    adc #1
+    sta $30
+    lda #0
+    adc #0
+    sta $31
+    ldq $32
+    stq $10
+    ldq $36
+    stq $14
+    lda $30
+    ldx $31
+    sta $18
+    stx $19
+    jsr ___dma_copy_far
+    .loc "src/ui.c", 319
+    lda _hist_at
+    ldx #0
+    sta $30
+    ldy $30
+    lda $82
+    ldx #0
+    sta _hist_col,y
+    .loc "src/ui.c", 320
+    lda _hist_at
+    inc a
+    sta $30
+    lda $30
+    sta _hist_at
+    lda $30
+    cmp #36
+    beq @if_then281
+    bra @if_end283
+@if_then281:
+    lda #0
+    sta _hist_at
+@if_end283:
+    .loc "src/ui.c", 321
+    lda _hist_n
+    cmp #36
+    bcc @if_then284
+    bra @if_end286
+@if_then284:
+    inc _hist_n
+@if_end286:
+    .loc "src/ui.c", 322
+    jsr _msg_show
+@__return:
+    rts
+    .func_flags zp_call, static_alloc
+    .param_sizes 2, 2
+    .reg_clobbers A, X, Y, Z
+    .flag_clobbers C, N, Z, V
+    .frame_size 0
+    endproc
+    .dbg_var "local _msg k char sym:_msg__zar+1"
+    .dbg_var "local _msg n char sym:_msg__zar+0"
+    .dbg_var "param _msg s *char zp:$10"
+    .dbg_var "param _msg colour char sym:_msg__zar+2"
+
+; function _msg_clear
+; SAC storage: 0 bytes (in BSS)
+    .segment "bss"
+    .global _msg_clear__ar
+_msg_clear__ar:
+_msg_clear__local_2:
+_msg_clear__local_3:
+_msg_clear__local_4:
+_msg_clear__local_8:
+_msg_clear__local_9:
+    .res 2
+    .res 1
+    .global cc45.sacsize._msg_clear
+    cc45.sacsize._msg_clear = 3
+    .segment "code"
+    .weak cc45.fsig._msg_clear.s
+    cc45.fsig._msg_clear.s = 1
+    proc _msg_clear
+; Phase 51: zero-alloc leaf (all parameters constant)
+    .global _msg_clear__sac
+_msg_clear__sac:
+    .var cc45.fp = 0
+    .loc "src/ui.c", 325
+    .var @_l_k = $30
+
+@entry:
+    .loc "src/ui.c", 327
+    lda #0
+    sta $30
+@for_cond287:
+    lda $30
+    cmp #4
+    bcc @for_body288
+    bra @for_end290
+@for_body288:
+    lda $30
+    ldx #0
+    ldx #0
+    mul.16 .AX, #54
+    clc
+    adc #<_msgs
+    sta __zp_scratch
+    txa
+    adc #>_msgs
+    sta __zp_scratch+1
+    lda #0
+    ldy #0
+    sta (__zp_scratch),y
+@for_inc289:
+    inc $30
+    bra @for_cond287
+@for_end290:
+@__return:
+    rts
+    .func_flags zp_call, static_alloc, leaf
+    .reg_clobbers A, X, Y
+    .flag_clobbers C, N, Z, V
+    .frame_size 0
+    endproc
+    .dbg_var "local _msg_clear k char zp:$30"
+
+
+    .segment "data"
+__str_0:
+    .ascii "FF____o____"
+    .byte 0
+__str_103:
+    .ascii "an "
+    .byte 0
+__str_104:
+    .ascii "a "
+    .byte 0
+__str_187:
+    .ascii "Life"
+    .byte 0
+__str_188:
+    .ascii "/"
+    .byte 0
+__str_192:
+    .ascii "Mana"
+    .byte 0
+__str_193:
+    .ascii "/"
+    .byte 0
+__str_194:
+    .ascii "Gold "
+    .byte 0
+__str_195:
+    .ascii "Potions "
+    .byte 0
+__str_196:
+    .ascii "Level "
+    .byte 0
+__str_197:
+    .ascii "  XP "
+    .byte 0
+__str_201:
+    .ascii "Key"
+    .byte 0

@@ -146,7 +146,8 @@ void pick_up(unsigned int i, unsigned char n) {
         break;
     default:
         buf[0] = 0;
-        str_cat(buf, "You pick up a ");
+        str_cat(buf, "You pick up ");
+        str_cat(buf, a_an(item_name(obj_item[n], 1)));
         str_cat(buf, item_name(obj_item[n], 1));
         str_cat(buf, ".");
         take(i, obj_item[n], buf, item_col[obj_item[n]]);

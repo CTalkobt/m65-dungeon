@@ -107,7 +107,8 @@ static unsigned char find(unsigned char line, unsigned char good) {
     } else if (r < 41 || (r < 44 && rng_range(2))) {
         i = I_FLASK + rng_range(FLASKS);
         pl.items[i]++;
-        str_cat(buf, "Wrapped in straw: a ");
+        str_cat(buf, "Wrapped in straw: ");
+        str_cat(buf, a_an(item_name(i, 1)));
         str_cat(buf, item_name(i, 1));
         str_cat(buf, ".");
     } else if (r < 44) {

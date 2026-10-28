@@ -23,7 +23,7 @@ static unsigned char free_for(struct mon *c, unsigned char x, unsigned char y) {
     if (t == O_WEDGE && c->awake == 2 && rng_range(8) == 0) {
         /* a wedged door, battered at: now and then it gives */
         obj_set(AT(x, y), O_NONE);
-        msg("Wood splinters: something has battered through a door.", C_ORANGE);
+        msg("Wood splinters: something has broken through a door.", C_ORANGE);
         sfx_far(SFX_HEAVY, (signed char)((signed int)x - pl.x));
         return 0;
     }
@@ -74,8 +74,8 @@ static void plate(unsigned char k) {
         msg(buf, C_HILITE);
         sfx(SFX_TRAP);
     } else sfx_far(SFX_TRAP, (signed char)((signed int)c->x - pl.x));
-    c->stun = 2;
     mon_hurt(k, 4 + rng_range(6) + pl.depth * 2);
+    if (c->hp) c->stun = 2;               /* (after: a wound that does not kill wakes it) */
 }
 
 /* creature k a step toward dx, dy (round what is in the way): 0, or the
