@@ -46,7 +46,7 @@ wedged door and a hunting creature beyond; `TEST=-DTEST_GEAR` starts with
 Superior dragonbone and rune plate; `TEST=-DTEST_DOG=<life>` starts the dog
 with that much life (0: away, back in 3 turns); `TEST_FIGHT`'s creature
 stands beside the dog; `TEST=-DTEST_SNIFF=1` puts a mimic, still a chest,
-three east, `=2` a hidden plate two east (for the dog's nose). `TEST=-DTEST_VENOM` starts with venom in the blood and an antidote;
+beside the dog, `=2` a hidden plate two east (for the dog's nose). `TEST=-DTEST_VENOM` starts with venom in the blood and an antidote;
 `TEST=-DTEST_CHARMS=<0-4>` with one of each charm, wearing the one that
 does that (CH_*).
 
@@ -257,8 +257,8 @@ more for each level you have. It opens no doors, follows you down the
 stairs, trades places with you when you walk into it, and creatures cannot
 walk through it. In a close-up fight it joins in if it was beside the
 creature when the fight began: half the rounds, a bite of 1. It has a
-nose, too: a mimic still a chest, in sight, it runs at as at any creature
-but only growls at, the once, and leaves be; and a hidden pressure plate
+nose, too: a mimic still a chest it does not run at, but when it is
+beside one it growls at it, the once, and leaves it be; and a hidden pressure plate
 within two places of you it now and then sniffs out (1 in 6 a turn, while
 it has nothing to chase): the plate is found, as your own search finds one.
 

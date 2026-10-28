@@ -4,8 +4,8 @@
  * creatures' turn: creatures.c calls dog_move first). It opens no doors;
  * the player walking into it trades places (explore.c); creatures cannot
  * walk through it (creatures.c free_for); in a close-up fight it worries
- * at the foe it was beside (battle.c). Its nose: it runs at a mimic still
- * a chest as at any creature, but growls at it (the once) and leaves it be;
+ * at the foe it was beside (battle.c). Its nose: a mimic still a chest it
+ * does not run at, but beside one it growls (the once) and leaves it be;
  * and now and then it sniffs out a hidden plate near the player (sniff:
  * found, as the player's search finds one). */
 #pragma cc45 overlay(aim)
@@ -96,10 +96,19 @@ void dog_move(void) {
     for (k = 0; k < nmons; k++) {
         c = &mons[k];
         if (!c->hp || (mon_flags[c->kind] & MF_BOSS)) continue;
-        if (!c->awake && (mon_habits[c->kind] & MH_MIMIC) && dog_warned == AT(c->x, c->y)) continue;
         d = vis_at(c->x, c->y);
         if (!d || d == VIS_SHADOW) continue;
         d = apart(c->x, c->y, pl.dog_x, pl.dog_y);
+        if (!c->awake && (mon_habits[c->kind] & MH_MIMIC)) {
+            /* a chest that smells wrong, beside it: growled at, the once,
+             * and left be (not run at) */
+            if (d <= 1 && dog_warned != AT(c->x, c->y)) {
+                dog_warned = AT(c->x, c->y);
+                msg("Your dog growls at the chest, hackles up.", C_HILITE);
+                sfx(SFX_BARK);
+            }
+            continue;
+        }
         if (d < best) {
             best = d;
             t = k;
@@ -118,13 +127,6 @@ void dog_move(void) {
     if (best > 1) {
         if (best == 9) return;
         dog_step(toward(pl.dog_x, c->x), toward(pl.dog_y, c->y));
-        return;
-    }
-    if (!c->awake && (mon_habits[c->kind] & MH_MIMIC)) {
-        /* a chest that smells wrong: growled at, the once, and left be */
-        dog_warned = AT(c->x, c->y);
-        msg("Your dog growls at the chest, hackles up.", C_HILITE);
-        sfx(SFX_BARK);
         return;
     }
     /* beside it: a bite, and now and then it bites back */

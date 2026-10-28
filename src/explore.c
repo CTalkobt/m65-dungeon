@@ -500,8 +500,8 @@ static unsigned char explore_run(unsigned char resume) {
 #endif
 #ifdef TEST_SNIFF
 #if TEST_SNIFF == 1
-    mons[0].x = pl.x + 3;              /* (tests: the dog's nose: a mimic, still a chest, */
-    mons[0].y = pl.y;
+    mons[0].x = pl.dog_x + 1;          /* (tests: the dog's nose: a mimic, still a chest, */
+    mons[0].y = pl.dog_y;              /* beside it, */
     mons[0].kind = M_MIMIC;
     mons[0].hp = FRESH;
     mons[0].awake = 0;
