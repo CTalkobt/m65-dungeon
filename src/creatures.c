@@ -18,15 +18,15 @@ static signed char sgn(signed int v) {
 
 static unsigned char free_for(struct mon *c, unsigned char x, unsigned char y) {
     unsigned char t = terrain(x, y);
-    if (t == TR_ROCK || t == TR_LOCKED || t == TR_RUBBLE || mon_at(x, y)) return 0;
-    t = obj_at(AT(x, y));
-    if (t == O_WEDGE && c->awake == 2 && rng_range(8) == 0) {
-        /* a wedged door, battered at: now and then it gives */
-        obj_set(AT(x, y), O_NONE);
+    if (t == TR_WEDGED && c->awake == 2 && rng_range(8) == 0) {
+        /* a wedged door, battered at: now and then it gives (shut still) */
+        vm_set(x, y, vm_kind(x, y) - TK_DOOR_WEDGED_H + TK_DOOR_H);
         msg("Wood splinters: something has broken through a door.", C_ORANGE);
         sfx_far(SFX_HEAVY, (signed char)((signed int)x - pl.x));
         return 0;
     }
+    if (t == TR_ROCK || t == TR_LOCKED || t == TR_RUBBLE || t == TR_WEDGED || mon_at(x, y)) return 0;
+    t = obj_at(AT(x, y));
     if (BLOCKS(t)) return 0;
     t = terrain(x, y);
     if (t == TR_DOOR) {

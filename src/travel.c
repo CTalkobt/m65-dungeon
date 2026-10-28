@@ -28,7 +28,7 @@ static unsigned char way_open(unsigned char x, unsigned char y) {
     unsigned char t;
     if (!seen_get(AT(x, y)) || vm_kind(x, y) == TK_TRAP) return 0;   /* (round a found plate) */
     t = terrain(x, y);
-    if (t != TR_FLOOR && t != TR_CORR && t != TR_OPEN && t != TR_STAIRS && t != TR_DOOR) return 0;
+    if (t != TR_FLOOR && t != TR_CORR && t != TR_OPEN && t != TR_STAIRS && t != TR_DOOR && t != TR_WEDGED) return 0;
     t = obj_at(AT(x, y));
     return !BLOCKS(t) && t != O_CHEST && t != O_IDOL;
 }

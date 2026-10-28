@@ -89,6 +89,7 @@ unsigned char terrain(unsigned char x, unsigned char y) {
     if (k == TK_STAIRS) return TR_STAIRS;
     if (k <= TK_DOOR_LOCKED_V) return TR_LOCKED;
     if (k == TK_TRAP) return TR_FLOOR;      /* (one found: still armed, walked into to disarm) */
+    if (k >= TK_DOOR_WEDGED_H) return TR_WEDGED;
     if (k >= TK_RUBBLE) return TR_RUBBLE;
     return TR_ROCK;                         /* a secret door: a wall, till it is found */
 }
@@ -173,7 +174,7 @@ const unsigned char item_col[I_COUNT] = {
 const unsigned char item_tile[I_COUNT] = {
     T_POTION, T_DRAUGHT, T_SCROLL, T_SCROLL, T_SCROLL, T_KEY, T_RAGS, T_STICKS, T_FUR, T_CANDLE,
     T_FLINT, T_FIRESTICK, T_ARROWS, T_SHOT, T_OIL, T_FOOD, T_ANTIDOTE, T_FLASK1, T_FLASK2, T_FLASK3, T_FLASK4,
-    T_CHARM, T_CHARM, T_CHARM, T_CHARM, T_CHARM,
+    T_RING, T_RING, T_RING, T_AMULET, T_AMULET,
 };
 
 unsigned char arrows_spent;

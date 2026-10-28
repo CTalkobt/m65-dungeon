@@ -666,8 +666,27 @@ for _k, (_a, _b) in enumerate((("g", "G"), ("s", "S"), ("p", "P"), ("Y", "d"))):
 ART["oil"] = [r.replace('r', 'Y').replace('R', 'd').replace('n', 'b') for r in ART["potion"]]
 ART["idol_spent"] = [r.replace('z', 'T') for r in ART["idol"]]
 ART["draught"] = [r.replace('r', 'u').replace('R', 'U') for r in ART["potion"]]
-# a charm: a ring or an amulet, a stone in gold on its loop (one tile for all)
-ART["charm"] = [
+# a ring: gold, a pale stone set in it (the iron, jade and silver rings)
+ART["ring"] = [
+    "................",
+    "................",
+    "................",
+    "................",
+    "......kkkk......",
+    ".....kcwcck.....",
+    "......kcck......",
+    ".....kYYYYk.....",
+    "....kYdkkdYk....",
+    "...kYk....kYk...",
+    "...kYk....kYk...",
+    "...kYk....kYk...",
+    "....kYdkkdYk....",
+    ".....kYYYYk.....",
+    "......kkkk......",
+    "................",
+]
+# an amulet: a stone in gold on its loop (the bone and amber amulets)
+ART["amulet"] = [
     "................",
     "................",
     "................",
@@ -930,7 +949,7 @@ def wall(mask, style=0):
     return img, edge
 
 
-def door(vertical, open_, locked=False):
+def door(vertical, open_, locked=False, wedged=False):
     """a door in a gap of the wall: planks and iron (and a lock plate, when
     locked), or swung open. Its edges: the iron bands and the lock (the
     door swung back, when open)"""
@@ -967,6 +986,19 @@ def door(vertical, open_, locked=False):
         img[:, 11:13] = np.array([0.35, 0.35, 0.38], np.float32)
         img[10:12, 7:9] = np.array([0.8, 0.7, 0.3], np.float32)
         edge[:, 3:5] = edge[:, 11:13] = True
+    if wedged:
+        # sticks jammed against it: two bundles braced across in an X, pale
+        # wood two pixels thick over a dark shadow (the shadow an edge: it
+        # shows in the memory)
+        stick = np.array([0.86, 0.7, 0.42], np.float32)
+        shadow = np.array([0.12, 0.08, 0.05], np.float32)
+        for k in range(1, T - 1):
+            for y, x in ((k, k), (k, T - 1 - k)):
+                for dy, dx, c in ((1, 0, shadow), (0, 1, shadow), (0, 0, stick), (-1, 0, stick)):
+                    yy, xx = y + dy, x + dx
+                    if 0 <= yy < T and 0 <= xx < T:
+                        img[yy, xx] = c
+                        edge[yy, xx] = c is shadow   # (an edge is the material's one edge colour)
     if locked:
         brass = np.array([0.78, 0.62, 0.25], np.float32)
         img[5:11, 5:11] = brass * 0.6
@@ -1090,13 +1122,15 @@ def terrain_kinds(style=0):
     out.append(("RUBBLE",) + st(rubble(style)))
     out.append(("CRACK_NS",) + st(crack(5, style)))
     out.append(("CRACK_EW",) + st(crack(10, style)))
+    for name, v in (("DOOR_WEDGED_H", 0), ("DOOR_WEDGED_V", 1)):   # (shut, sticks against it: explore.c K)
+        out.append((name,) + door(v, 0, wedged=True))
     return out
 
 
 SPRITES = ("chest", "chest_open", "idol", "idol_spent", "potion", "gold", "bones", "brazier",
            "brazier_cold", "scroll", "key", "draught", "rags", "sticks", "fur", "candle", "flint", "firestick",
            "arrows", "shot", "merchant", "fountain", "fountain_dry", "shelf", "oil", "food", "flames",
-           "flask1", "flask2", "flask3", "flask4", "antidote", "charm", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats", "ghoul", "ember",
+           "flask1", "flask2", "flask3", "flask4", "antidote", "ring", "amulet", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats", "ghoul", "ember",
            "note1", "note2", "note3", "note4")
 
 

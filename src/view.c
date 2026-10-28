@@ -174,10 +174,10 @@ static unsigned char ov_n;
 #define row_ov (ov_v + MAX_OV)
 typedef char scratch_fits[COLS * 8 + MAX_OV * 5 <= SCRATCH_SIZE ? 1 : -1];
 
-static const unsigned char obj_tile[29] = {
+static const unsigned char obj_tile[28] = {
     0, T_CHEST, T_CHEST_OPEN, T_IDOL, T_IDOL_SPENT, T_POTION, T_GOLD, T_BONES, T_BRAZIER,
     T_SCROLL, T_KEY, T_DRAUGHT, T_RAGS, T_STICKS, T_FUR, T_CANDLE, T_FLINT, T_FIRESTICK,
-    T_ARROWS, T_SHOT, 0, T_BRAZIER_COLD, T_MERCHANT, T_FOUNTAIN, T_FOUNTAIN_DRY, T_SHELF, T_SHELF, T_FLAMES, T_STICKS,
+    T_ARROWS, T_SHOT, 0, T_BRAZIER_COLD, T_MERCHANT, T_FOUNTAIN, T_FOUNTAIN_DRY, T_SHELF, T_SHELF, T_FLAMES,
 };
 
 static void ov_add(unsigned char x, unsigned char y, unsigned char k, unsigned char v) {

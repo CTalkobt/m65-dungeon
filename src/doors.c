@@ -28,7 +28,7 @@ unsigned char door_shut(void) {
                     return 0;
                 }
                 pl.items[I_STICKS]--;
-                obj_set(AT(x, y), O_WEDGE);
+                vm_set(x, y, vm_kind(x, y) - TK_DOOR_H + TK_DOOR_WEDGED_H);
                 sfx(SFX_HEAVY);
                 msg("You wedge the door shut with a bundle of sticks.", C_TEXT);
                 return 1;

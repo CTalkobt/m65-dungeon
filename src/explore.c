@@ -183,12 +183,13 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
         msg("The iron key turns. The door swings open.", C_GOLD);
         return 1;
     }
+    if (t == TR_WEDGED) {
+        vm_set(x, y, vm_kind(x, y) - TK_DOOR_WEDGED_H + TK_DOOR_H);
+        pl.items[I_STICKS]++;
+        msg("You kick the wedge free and take up the sticks.", C_DIM);
+        t = TR_DOOR;
+    }
     if (t == TR_DOOR) {
-        if (obj_at(i) == O_WEDGE) {
-            obj_set(i, O_NONE);
-            pl.items[I_STICKS]++;
-            msg("You kick the wedge free and take up the sticks.", C_DIM);
-        }
         door_open(x, y);
         sfx(SFX_DOOR);
         msg("The latch clicks, and the door swings open.", C_DIM);
@@ -476,8 +477,7 @@ static unsigned char explore_run(unsigned char resume) {
 #ifdef TEST_BATTER
     for (r = 0; r < MAP_H; r++)          /* (tests: a wall two east, a wedged door in it, a hunter beyond) */
         if (terrain(pl.x + 2, r) == TR_FLOOR) vm_set(pl.x + 2, r, TK_WALL0 + 5);
-    vm_set(pl.x + 2, pl.y, TK_DOOR_V);
-    obj_set(AT(pl.x + 2, pl.y), O_WEDGE);
+    vm_set(pl.x + 2, pl.y, TK_DOOR_WEDGED_V);
     mons[0].x = pl.x + 3;
     mons[0].y = pl.y;
     mons[0].kind = TEST_BATTER;

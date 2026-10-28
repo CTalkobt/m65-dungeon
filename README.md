@@ -529,6 +529,6 @@ round the player, memory a byte a place in colour RAM.
 | $8080000- | attic RAM: the sounds, decoded |
 | $8100000- | attic RAM: the close-ups seen so far, 128 KB each |
 | $8300000-$8305FFF | attic RAM: the level's map, its terrain as characters (128 x 96) |
-| $8310000-$831A27F | attic RAM: DGLOOK, each depth's stone (5 x 8,320 bytes) |
+| $8310000-$831AC7F | attic RAM: DGLOOK, each depth's stone (5 x 8,832 bytes) |
 | $8320000-$83208FF | attic RAM: the messages' history (36 x 64 bytes) |
 | $8340000-$8340623 | attic RAM: the names and `tile_char`, `__bank(0x834)` data (DUNGEON.OV3) |

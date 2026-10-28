@@ -35,7 +35,8 @@ void vm_set(unsigned char x, unsigned char y, unsigned char kind);
 #define TR_STAIRS  5
 #define TR_LOCKED  6          /* shut, and an iron key's to open */
 #define TR_RUBBLE  7          /* fallen stones, a cracked wall: cleared by heaving at them */
-#define SOLID(t)   ((t) == TR_ROCK || (t) == TR_DOOR || (t) == TR_LOCKED || (t) == TR_RUBBLE)   /* nothing seen through */
+#define TR_WEDGED  8          /* shut, sticks against it (K): no creature opens it; walked into, kicked free */
+#define SOLID(t)   ((t) == TR_ROCK || (t) == TR_DOOR || (t) == TR_LOCKED || (t) == TR_RUBBLE || (t) == TR_WEDGED)   /* nothing seen through */
 unsigned char terrain(unsigned char x, unsigned char y);
 
 /* the rooms (with their walls): one lit (lit_on 1: its brazier burns) is
@@ -82,7 +83,6 @@ unsigned char vault_at(unsigned char x, unsigned char y);
 #define O_SHELF       25      /* search it, once */
 #define O_SHELF_BARE  26
 #define O_FLAMES      27      /* burning oil (thing_n: the turns it has left) */
-#define O_WEDGE       28      /* sticks wedged under a shut door: none open it (explore.c door_shut) */
 #define BLOCKS(o)     ((o) == O_BRAZIER || ((o) >= O_BRAZIER_COLD && (o) < O_PILE))   /* none walk through */
 #define O_PILE        32      /* O_PILE + I_*: so many (thing_n) of a thing carried, put down */
 #define MAX_OBJ       96      /* (a deep level starts with 45-56 things; room for the rest) */

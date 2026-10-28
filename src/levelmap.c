@@ -40,7 +40,7 @@ static unsigned int glyph(unsigned char x, unsigned char y) {
     switch (terrain(x, y)) {
     case TR_FLOOR: return UI_MAP_FLOOR;
     case TR_CORR: return UI_MAP_CORR;
-    case TR_DOOR: return UI_MAP_DOOR;
+    case TR_DOOR: case TR_WEDGED: return UI_MAP_DOOR;
     case TR_OPEN: return UI_MAP_OPEN;
     case TR_STAIRS: return UI_MAP_STAIRS;
     case TR_LOCKED: return UI_MAP_LOCKED;
