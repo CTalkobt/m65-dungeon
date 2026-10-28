@@ -1,7 +1,7 @@
 """balance.py — the close-up fight (src/battle.c) played many times over, to
 see how hard each creature is at each depth for each calling.
 
-    python3 tools/balance.py [fights] [lean]
+    python3 tools/balance.py [fights] [lean] [descent]
 
 The fight's rules are battle.c's, ported; the player plays sensibly (see
 player_turn). What a player has at each depth is a guess, in PROGRESS: the
@@ -360,11 +360,146 @@ def levels(n):
         print(row)
 
 
+# ---------------------------------------------------------------- a whole descent
+
+# what the map does between fights, from the game's numbers (dungeon.c,
+# trap.c, aim.c foe_shoots, explore.c); the guesses are marked
+TURNS = {1: 450, 2: 500, 3: 550, 4: 600, 5: 600}   # (guess) turns a level takes, explored and left
+FUEL_FOUND = 0.7         # (guess) of the level's fuel, what the player finds
+FUEL = (80, 120, 160, 220)                         # rags, sticks, fur, tallow (pack.c burns_for)
+TORCH_MAX, TORCH_LOW = 600, 150
+PLATE_STEP = 0.25        # (guess) each hidden plate: the chance it is stepped on before it is found
+FOUGHT = 0.5             # (guess) of the level's creatures, those fought
+POTIONS_FOUND = 1.0      # (guess) healing potions found a level, on average
+ARCHER_SHOTS = 2         # (guess) a skeleton's shots before it closes, 4 places off on average
+
+
+def descent(calling):
+    """one descent: ('won', 5) or (cause, depth); and the turns in the dark"""
+    random.seed()
+    depth, dark, level = 1, 0, 0
+    pl = Player(calling, 1)
+    pl.potions = {"fighter": 3, "hunter": 2, "lamplighter": 2}[calling]
+    fuel = TORCH_MAX if calling == "lamplighter" else 400
+    lights = {"fighter": 2, "hunter": 2, "lamplighter": 99}[calling]   # firesticks; the flint (lamplighter)
+    lit = True
+    for depth in range(1, 6):
+        # arriving: the level (a level gained heals, as gain_xp), the gear found
+        lv, w, a, _ = PROGRESS[depth]
+        fresh = Player(calling, depth)
+        if lv > level:
+            pl.hp = fresh.maxhp
+            pl.mp = fresh.maxmp
+        level = lv
+        pl.level, pl.maxhp, pl.maxmp = fresh.level, fresh.maxhp, fresh.maxmp
+        pl.wdice, pl.wsides, pl.wplus, pl.defence = fresh.wdice, fresh.wsides, fresh.wplus, fresh.defence
+        pl.hp = min(pl.hp, pl.maxhp)
+        pl.potions += 1 if random.random() < POTIONS_FOUND else 0
+        turns = TURNS[depth]
+        # the events, at their turns: fuel found, plates stepped on, archers, fights
+        ev = []
+        for _ in range(4 + random.randrange(3)):
+            if random.random() < FUEL_FOUND:
+                ev.append((random.randrange(turns), "fuel", random.choice(FUEL)))
+        for _ in range(1 + depth):
+            if random.random() < PLATE_STEP:
+                ev.append((random.randrange(turns), "plate", 0))
+        mons = creatures_at(depth)
+        weights = [x[2] for x in mons]
+        for _ in range(6 + 2 * (depth - 1)):
+            if random.random() < FOUGHT:
+                name, info, _ = random.choices(mons, weights)[0]
+                ev.append((random.randrange(turns), "fight", info))
+                if "ARCHER" in info["habits"]:
+                    ev.append((max(0, ev[-1][0] - 1), "arrows", 0))
+        if depth == 5:
+            lich = [m[2] for m in monsters.MONSTERS if m[0] == "lich"][0]
+            skel = [m[2] for m in monsters.MONSTERS if m[0] == "skeleton"][0]
+            ev += [(turns - 3, "fight", skel), (turns - 2, "fight", skel), (turns - 1, "fight", lich)]
+        ev.sort(key=lambda e: e[0])
+        venom, t = 0, 0
+        for when, kind, what in ev:
+            # the turns between: the torch burns, life mends (not while venom lasts)
+            for _ in range(when - t):
+                if lit:
+                    fuel -= 1
+                    if fuel <= 0:
+                        fuel, lit = 0, False
+                if not lit:
+                    dark += 1
+                if venom:
+                    venom -= 1
+                    if venom % 3 == 0 and pl.hp > 1:
+                        pl.hp -= 1
+                elif random.randrange(12) == 0:
+                    pl.hp = min(pl.maxhp, pl.hp + 1)
+            t = when
+            if kind == "fuel":
+                fuel = min(TORCH_MAX, fuel + what) if fuel < TORCH_MAX - 40 else fuel
+                if not lit and fuel and lights:
+                    lit, lights = True, lights - (calling != "lamplighter")
+            elif kind == "plate":
+                if random.randrange(8) < 2:
+                    continue                          # stepped off in time
+                k = random.randrange(4)
+                if k == 0:
+                    d = 2 + random.randrange(4) + depth
+                    if pl.hp <= d:
+                        return ("a dart", depth), dark
+                    pl.hp -= d
+                elif k == 1 and lit:
+                    lit = False
+                    if lights:
+                        lit, lights = True, lights - (calling != "lamplighter")
+                elif k == 3:
+                    info = random.choices(mons, weights)[0][1]   # the bell: one more comes
+                    ev.append((when, "fight", info))
+            elif kind == "arrows":
+                for _ in range(ARCHER_SHOTS):
+                    if random.randrange(100) < 55:
+                        d = dice(1, 6) + depth // 2
+                        d = d - pl.defence if d > pl.defence else 1
+                        if pl.hp <= d:
+                            return ("arrows", depth), dark
+                        pl.hp -= d
+            else:
+                f = Fight(pl, what, ambush=random.randrange(2) if lit else 1)
+                if not f.run():
+                    return (what["name"], depth), dark
+                venom = f.poison * 8
+                pl.mp = min(pl.maxmp, pl.mp + 2)
+        if depth == 5:
+            return ("won", 5), dark
+    return ("won", 5), dark
+
+
+def descents(n):
+    print("\nWhole descents (%d each): how far, what ends them, the torch" % n)
+    for calling in CALLINGS:
+        reached = [0] * 6
+        causes = {}
+        dark = 0
+        for _ in range(n):
+            (cause, depth), d = descent(calling)
+            dark += d
+            for k in range(1, depth + 1):
+                reached[k] += 1
+            causes[cause] = causes.get(cause, 0) + 1
+        won = causes.pop("won", 0)
+        top = sorted(causes.items(), key=lambda c: -c[1])[:5]
+        print("  %-12s reach depth 2-5: %s   win %d%%   turns dark %.0f a descent" % (
+            calling, " ".join("%3d%%" % (100 * reached[k] // n) for k in range(2, 6)), 100 * won // n, dark / n))
+        print("  %-12s ended by: %s" % ("", ", ".join("%s %d%%" % (c, 100 * k // n) for c, k in top)))
+
+
 if __name__ == "__main__":
-    args = [a for a in sys.argv[1:] if a != "lean"]
+    args = [a for a in sys.argv[1:] if a not in ("lean", "descent")]
     if "lean" in sys.argv:
         PROGRESS = LEAN
     n = int(args[0]) if args else 2000
     random.seed(1)
-    one_fights(n)
-    levels(n)
+    if "descent" in sys.argv:
+        descents(n)
+    else:
+        one_fights(n)
+        levels(n)

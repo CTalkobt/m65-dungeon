@@ -148,8 +148,13 @@ sensible player (a potion when low, great blows parried, fire where it
 bites, shots from afar): each creature fought once from full life, at
 each depth and for each calling, and a level's fights in a row with
 wounds and potions carried. What a player has at each depth is a guess
-(PROGRESS; `lean`: slow to level, no better gear). Keep it in step with
-`src/battle.c`.
+(PROGRESS; `lean`: slow to level, no better gear). `descent` plays whole
+descents instead: five levels in a row, with the torch's fuel found and
+burned, hidden plates stepped on, skeletons' arrows, mending as the turns
+pass, and the fights; it says how far each calling gets, what ends them,
+and how many turns go by in the dark. Its guesses (turns a level, fuel
+found, plates stepped on, creatures fought) are at its top. Keep it in
+step with `src/battle.c`.
 
 **Settings** (O on the map, S on the title). The music's and the sounds'
 levels, 1-15, or off (RETURN turns the chosen one off and back on). The
