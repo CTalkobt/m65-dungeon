@@ -8,6 +8,7 @@
 #include "game.h"
 #include "load.h"
 #include <dma.h>
+#include <time.h>
 #include <audio_tune.h>
 #include "music.h"
 
@@ -115,21 +116,12 @@ static void prompt(void) {
 /* ---------------------------------------------------------------- the day's descent */
 
 /* the day by the MEGA65's clock: (year - 2000) * 372 + month * 31 + day
- * (1 and up; one number a date), 0 if the clock does not know the day.
- * The clock's day, month and year are BCD at $FFD7113-5 (a DMA's reach;
- * <time.h>'s rtc_read would bring mktime and 3 KB with it) */
-static unsigned char bcd(unsigned char b) {
-    return (b >> 4) * 10 + (b & 15);
-}
-
+ * (1 and up; one number a date), 0 if the clock does not know the day */
 static unsigned int day_of(void) {
-    unsigned char r[3], d, m, y;
-    dma_copy_far((unsigned long)(unsigned int)r, 0xFFD7113UL, 3);
-    d = bcd(r[0] & 0x3F);
-    m = bcd(r[1] & 0x1F);
-    y = bcd(r[2]);
-    if (y < 20 || m < 1 || m > 12 || d < 1 || d > 31) return 0;
-    return (unsigned int)y * 372 + (m - 1) * 31 + d;
+    struct tm t;
+    rtc_read(&t);
+    if (t.tm_year < 120 || t.tm_mon < 0 || t.tm_mon > 11 || t.tm_mday < 1 || t.tm_mday > 31) return 0;
+    return (unsigned int)(t.tm_year - 100) * 372 + t.tm_mon * 31 + t.tm_mday;
 }
 
 /* "27 October" of a day's number */
