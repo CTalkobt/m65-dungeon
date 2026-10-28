@@ -495,7 +495,8 @@ static unsigned char explore_run(unsigned char resume) {
     mons[0].stun = 0;
 #endif
 #ifdef TEST_DOG
-    pl.dog_hp = TEST_DOG;              /* (tests: the dog nearly done) */
+    pl.dog_hp = TEST_DOG;              /* (tests: the dog nearly done; 0: away, back in 3 turns) */
+    if (!pl.dog_hp) pl.dog_down = 3;
 #endif
 #ifdef TEST_GEAR
     pl.wq = pl.aq = 3;                 /* (tests: Superior dragonbone and rune plate) */
@@ -538,6 +539,8 @@ static unsigned char explore_run(unsigned char resume) {
     /* (tests: a fight with that kind of creature at once) */
     mons[0].kind = TEST_FIGHT;
     mons[0].hp = FRESH;
+    mons[0].x = pl.dog_x + 1;          /* (beside the dog: it joins in) */
+    mons[0].y = pl.dog_y;
 #ifdef TEST_HP
     mons[0].hp = TEST_HP;            /* (tests: the creature already wounded) */
 #endif

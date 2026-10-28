@@ -41,7 +41,11 @@ merchant a step east, and 100 gold; `TEST=-DTEST_FIXTURE` a fountain east and
 a shelf west; `TEST=-DTEST_RUBBLE` starts beside fallen stones or a crack.
 Other letters in `KEYS` are typed as they are (`KEYS='F__i'` opens the
 inventory).
-`TEST=-DTEST_HP=<n>` (with TEST_FIGHT) starts the creature with n life; `TEST=-DTEST_LURE=<kind>` puts a found plate two east and a hunting creature beyond it; `TEST=-DTEST_VENOM` starts with venom in the blood and an antidote;
+`TEST=-DTEST_HP=<n>` (with TEST_FIGHT) starts the creature with n life; `TEST=-DTEST_LURE=<kind>` puts a found plate two east and a hunting creature beyond it; `TEST=-DTEST_BATTER=<kind>` walls off the start two places east with a
+wedged door and a hunting creature beyond; `TEST=-DTEST_GEAR` starts with
+Superior dragonbone and rune plate; `TEST=-DTEST_DOG=<life>` starts the dog
+with that much life (0: away, back in 3 turns); `TEST_FIGHT`'s creature
+stands beside the dog. `TEST=-DTEST_VENOM` starts with venom in the blood and an antidote;
 `TEST=-DTEST_CHARMS=<0-4>` with one of each charm, wearing the one that
 does that (CH_*).
 
@@ -241,6 +245,17 @@ flame* (the torch burns half as fast), *mending* (wounds mend over twice
 as fast), the *cat's eye* (what is in shadow is seen dimly, as with
 dark-sight), *against the dead* (a ward at the start of every fight with
 the undead) and *against venom* (no venom takes hold).
+
+**Your dog.** A dog goes down with you, whoever you are. It keeps close
+(two places off at most; left far behind, it catches up), and runs at the
+nearest creature in sight (not the lich: it is warded) and bites it, 1 a
+turn, waking it. Bitten, a creature snaps back now and then (1-3, and more
+deeper down); at no life left the dog yelps and limps off into the dark,
+and comes bounding back to your side 35 turns later. Its life is 10, and 2
+more for each level you have. It opens no doors, follows you down the
+stairs, trades places with you when you walk into it, and creatures cannot
+walk through it. In a close-up fight it joins in if it was beside the
+creature when the fight began: half the rounds, a bite of 1.
 
 **Doors.** Creatures open shut doors (it takes them a move), but a shut
 door breaks their line of sight: K shuts an open door beside you. K again
