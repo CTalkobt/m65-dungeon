@@ -4,9 +4,9 @@
  * way[] holds each place's distance from them, mod 3, plus 1 (2 bits a
  * place; 0 not reached). From any place reached, a neighbour one step
  * nearer is the one with the distance before (neighbours differ by one
- * step at most). (The overlay "aim": out of the walk's way.)
+ * step at most). (The overlay "scenes": out of the walk's way.)
  */
-#pragma cc45 overlay(aim)
+#pragma cc45 overlay(scenes)
 #include "hw.h"
 #include "assets.h"
 #include "video.h"

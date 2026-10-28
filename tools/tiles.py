@@ -685,6 +685,25 @@ ART["ring"] = [
     "......kkkk......",
     "................",
 ]
+# the player's dog, side on: brown, a dark muzzle and eye, the tail up
+ART["dog"] = [
+    "................",
+    "................",
+    "................",
+    "................",
+    "...........kk...",
+    "..........knnk..",
+    "..........knkNkk",
+    "..k.......knnnnk",
+    ".knk.....knnnkk.",
+    "..knkkkkknnnk...",
+    "...knnnnnnnnk...",
+    "...knnnnnnnk....",
+    "...knNkkkkNk....",
+    "...kNk...kNk....",
+    "...kk.....kk....",
+    "................",
+]
 # an amulet: a stone in gold on its loop (the bone and amber amulets)
 ART["amulet"] = [
     "................",
@@ -1130,7 +1149,7 @@ def terrain_kinds(style=0):
 SPRITES = ("chest", "chest_open", "idol", "idol_spent", "potion", "gold", "bones", "brazier",
            "brazier_cold", "scroll", "key", "draught", "rags", "sticks", "fur", "candle", "flint", "firestick",
            "arrows", "shot", "merchant", "fountain", "fountain_dry", "shelf", "oil", "food", "flames",
-           "flask1", "flask2", "flask3", "flask4", "antidote", "ring", "amulet", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats", "ghoul", "ember",
+           "flask1", "flask2", "flask3", "flask4", "antidote", "ring", "amulet", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats", "ghoul", "ember", "dog",
            "note1", "note2", "note3", "note4")
 
 

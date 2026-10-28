@@ -25,7 +25,7 @@ static unsigned char free_for(struct mon *c, unsigned char x, unsigned char y) {
         sfx_far(SFX_BATTER, (signed char)((signed int)x - pl.x));
         return 0;
     }
-    if (t == TR_ROCK || t == TR_LOCKED || t == TR_RUBBLE || t == TR_WEDGED || mon_at(x, y)) return 0;
+    if (t == TR_ROCK || t == TR_LOCKED || t == TR_RUBBLE || t == TR_WEDGED || mon_at(x, y) || DOG_AT(x, y)) return 0;
     t = obj_at(AT(x, y));
     if (BLOCKS(t)) return 0;
     t = terrain(x, y);
@@ -105,6 +105,7 @@ unsigned char creatures_move(void) {
     unsigned char k, d, sees, y;
     signed char dx, dy;
     struct mon *c;
+    dog_move();
     /* the burning oil: its flames die down, the rooms it lit go dark */
     for (k = 0; k < MAX_OBJ; k++)
         if (thing_kind[k] == O_FLAMES && !--thing_n[k]) obj_set(thing_at[k], O_NONE);

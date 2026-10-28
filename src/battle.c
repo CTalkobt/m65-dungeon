@@ -44,6 +44,7 @@ static unsigned char dist, intent, last_intent, mhp_max;
 static unsigned char frozen, staggered, roar, parrying;
 static unsigned char poison, snared, ward, burning, numb, chilled;
 static unsigned char dealt;                  /* what the creature has taken of the player's life (the lich's rite) */
+static unsigned char dog;                    /* the dog was beside the foe: it joins in */
 static unsigned char sel, menu, casting;     /* menu: MENU_*; casting: a spell lands (no guard stops it) */
 #define MENU_ACTS   0
 #define MENU_SPELLS 1
@@ -744,6 +745,7 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
     dist = ambush ? 0 : 1;
     frozen = staggered = roar = parrying = snared = ward = burning = numb = chilled = dealt = 0;
     poison = pl.venom ? 3 : 0;                /* (venom from before goes on burning) */
+    dog = pl.dog_hp && (unsigned char)(pl.dog_x - m->x + 1) < 3 && (unsigned char)(pl.dog_y - m->y + 1) < 3;
     sel = menu = casting = 0;
     intent = last_intent = A_NONE;
 
@@ -786,6 +788,13 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
             return FLED;
         }
         if (!m->hp) break;
+        if (dog && rng_range(2) && !(mt.flags & MF_BOSS)) {
+            sfx(SFX_BARK);
+            say("Your dog worries at it. (1)", C_TEXT);
+            m->hp--;
+            draw_foe();
+            if (!m->hp) break;
+        }
         pause(10);
         if (!creature_acts()) {
             pl.cause = CAUSE_SLAIN + m->kind;

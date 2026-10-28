@@ -194,6 +194,7 @@ static void ov_gather(void) {
     ov_n = 0;
     if (pl.lit) ov_add(pl.x, pl.y, T_PLAYER, 0);
     else ov_add(pl.x, pl.y, T_PLAYER_DARK, 3);
+    if (pl.dog_hp && (v = vis_at(pl.dog_x, pl.dog_y)) != 0 && v != VIS_SHADOW) ov_add(pl.dog_x, pl.dog_y, T_DOG, OV_TORCH);
     for (k = 0; k < nmons; k++) {
         if (!mons[k].hp) continue;
         v = vis_at(mons[k].x, mons[k].y);

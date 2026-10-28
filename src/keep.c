@@ -19,7 +19,7 @@
 #define KEEP_KINDS 1024
 #define KEEP_SEEN  (KEEP_KINDS + MAP_N)
 #define KEEP_END   (KEEP_SEEN + MAP_N)
-#define VERSION    13
+#define VERSION    14
 
 extern unsigned char vault_x0, vault_y0, vault_x1, vault_y1;
 
@@ -164,6 +164,8 @@ void player_new(void) {
     pl.known = pl.cknown = pl.worn = pl.wfx = 0;
     pl.sight = pl.venom = pl.rite = 0;
     pl.day = 0;
+    pl.dog_hp = 12;                           /* (DOG_MAX at level 1) */
+    pl.dog_down = 0;
     turn = 1;
 }
 

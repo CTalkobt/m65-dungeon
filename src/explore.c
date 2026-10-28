@@ -69,6 +69,7 @@ static void level_enter(void) {
     char buf[64];
     video_fade(0);
     dungeon_make();
+    if (pl.dog_hp && !dog_place()) pl.dog_hp = 0, pl.dog_down = 1;   /* (the dog comes down too) */
     buf[0] = 0;
     str_cat(buf, "You descend into ");
     str_cat(buf, depth_name(pl.depth));
@@ -156,6 +157,14 @@ static unsigned char step(signed char dx, signed char dy, unsigned char *out) {
             mons[m - 1].awake = 2;
         }
         *out = fight(m - 1, t);       /* (a mimic: it strikes first) */
+        return 1;
+    }
+    if (DOG_AT(x, y)) {
+        pl.dog_x = pl.x;                 /* (the dog: trade places) */
+        pl.dog_y = pl.y;
+        pl.x = x;
+        pl.y = y;
+        sfx(SFX_STEP);
         return 1;
     }
     t = terrain(x, y);
@@ -484,6 +493,9 @@ static unsigned char explore_run(unsigned char resume) {
     mons[0].hp = FRESH;
     mons[0].awake = 2;
     mons[0].stun = 0;
+#endif
+#ifdef TEST_DOG
+    pl.dog_hp = TEST_DOG;              /* (tests: the dog nearly done) */
 #endif
 #ifdef TEST_GEAR
     pl.wq = pl.aq = 3;                 /* (tests: Superior dragonbone and rune plate) */
