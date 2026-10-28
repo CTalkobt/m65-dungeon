@@ -59,6 +59,11 @@ SOUNDS = [
     ("BELL", NIMBE, "fr_ambience_ancient_bell.wav", 0.0, 1.00, 0.8, "L"),
     ("TRAP", TEMPLE, "dart-hits-wood.wav", 0.0, 0.60, 1.0, "S"),
     ("STIR", TEMPLE, "bat-screech.wav", 0.0, 0.80, 0.7, "L"),
+    ("WEDGE", NIMBE, "fr_dungeon_wooden_bar.wav", 0.0, 0.45, 0.9, "S"),
+    ("BATTER", NIMBE, "fr_combat_wood_shield_block.wav", 0.0, 0.40, 1.0, "S"),
+    ("STAB", NIMBE, "fr_combat_dagger_stab.wav", 0.0, 0.30, 1.0, "S"),
+    ("RITE", NIMBE, "fr_magic_summon_wisp.wav", 0.0, 0.80, 1.0, "L"),
+    ("NUMB", ROGUE, "freeze-apply.wav", 0.0, 0.50, 0.9, "S"),
     # the map's ambience, now and then
     ("DRIP1", NIMBE, "fr_ambience_water_drop_small.wav", 0.0, 0.62, 0.7, "S"),
     ("DRIP2", NIMBE, "fr_ambience_water_drop_deep.wav", 0.0, 0.66, 0.7, "S"),

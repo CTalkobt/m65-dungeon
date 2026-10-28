@@ -29,7 +29,7 @@ unsigned char door_shut(void) {
                 }
                 pl.items[I_STICKS]--;
                 vm_set(x, y, vm_kind(x, y) - TK_DOOR_H + TK_DOOR_WEDGED_H);
-                sfx(SFX_HEAVY);
+                sfx(SFX_WEDGE);
                 msg("You wedge the door shut with a bundle of sticks.", C_TEXT);
                 return 1;
             }

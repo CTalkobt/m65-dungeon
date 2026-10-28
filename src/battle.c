@@ -416,7 +416,7 @@ static unsigned char creature_acts(void) {
             say("Fire catches on your clothes!", C_ORANGE);
         } else if (a == A_NUMB && rng_range(2) == 0) {
             numb = 1;
-            sfx(SFX_CURSE);
+            sfx(SFX_NUMB);
             say("A deathly numbness creeps up your arm.", C_PURPLE);
         }
         draw_you();
@@ -802,7 +802,7 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
              * crown, mends half of what it has dealt the player less 3 (1
              * at the least), and its next blow will be terrible */
             pl.rite = 1;
-            sfx(SFX_CURSE);
+            sfx(SFX_RITE);
             say("The lich's crown blazes violet. The dark pours into it!", C_PURPLE);
             flash(200, 60, 255, 24);
             m->hp += dealt > 7 ? dealt / 2 - 3 : 1;

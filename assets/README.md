@@ -53,6 +53,11 @@ author's commercial subscription (their README says so).
 | BELL | NimbeKit | `fr_ambience_ancient_bell.wav` |
 | TRAP | moneywithjj | `dart-hits-wood.wav` |
 | STIR | moneywithjj | `bat-screech.wav` |
+| WEDGE | NimbeKit | `fr_dungeon_wooden_bar.wav` |
+| BATTER | NimbeKit | `fr_combat_wood_shield_block.wav` |
+| STAB | NimbeKit | `fr_combat_dagger_stab.wav` |
+| RITE | NimbeKit | `fr_magic_summon_wisp.wav` |
+| NUMB | moneywithjj | `freeze-apply.wav` |
 | DRIP1 | NimbeKit | `fr_ambience_water_drop_small.wav` |
 | DRIP2 | NimbeKit | `fr_ambience_water_drop_deep.wav` |
 | CHAIN | NimbeKit | `fr_ambience_distant_chain.wav` |

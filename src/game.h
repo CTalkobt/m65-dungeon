@@ -401,7 +401,14 @@ void sfx_update(void);
 #define SFX_BELL   24
 #define SFX_TRAP   25
 #define SFX_CHEST  26
-#define SFX_COUNT  27
+#define SFX_WEDGE  27         /* a door barred with sticks */
+#define SFX_BATTER 28         /* a wedged door battered through */
+#define SFX_STAB   29         /* a plate's dart in a creature */
+#define SFX_RITE   30         /* the lich calls on its crown */
+#define SFX_NUMB   31         /* a ghoul's numbing touch */
+#define SFX_BARK   32         /* the dog (the SID's only) */
+#define SFX_YELP   33
+#define SFX_COUNT  34
 void sfx(unsigned char n);
 extern unsigned char vol_music, vol_sfx;         /* 0 (off) - 15 */
 void sound_levels(void);                         /* vol_music to the SIDs */

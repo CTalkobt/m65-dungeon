@@ -34,6 +34,8 @@ static const struct fx fxs[] = {
     {TRI, 0x2600, 0, 28, 0x0C, 0x00},           /* chime */
     {TRI, 0x1A00, -0x70, 44, 0x0D, 0x00},       /* death */
     {NOISE, 0x7000, -0x280, 22, 0x2B, 0x00},    /* frost */
+    {PULSE, 0x0C00, -0x140, 7, 0x08, 0x00},     /* bark (no sampled one: sid_like) */
+    {TRI, 0x1800, 0x180, 12, 0x08, 0x00},       /* yelp */
 };
 
 /* the sampled sound for each effect */
@@ -41,12 +43,13 @@ static const unsigned char sampled[SFX_COUNT] = {
     SND_STEP, SND_HIT, SND_HURT, SND_CLANG, SND_FIRE, SND_DOOR, SND_GROWL, SND_COIN, SND_DOOR,
     SND_COIN, SND_DEFEAT, SND_FROST, SND_SWING, SND_HEAVY, SND_FIRE, SND_HEAL, SND_WARD,
     SND_POISON, SND_CURSE, SND_DRINK, SND_VICTORY, SND_LEVEL, SND_DEFEAT, SND_STIR, SND_BELL,
-    SND_TRAP, SND_CHEST,
+    SND_TRAP, SND_CHEST, SND_WEDGE, SND_BATTER, SND_STAB, SND_RITE, SND_NUMB, SND_NONE, SND_NONE,
 };
 /* without samples, the effects past the SID's own: the nearest SID one */
 static const unsigned char sid_like[SFX_COUNT - SFX_SWING] = {
     SFX_HIT, SFX_HURT, SFX_SPELL, SFX_CHIME, SFX_SPELL, SFX_FROST, SFX_SPELL, SFX_CHIME,
     SFX_CHIME, SFX_CHIME, SFX_DEATH, SFX_GROWL, SFX_CHIME, SFX_HIT, SFX_CREAK,
+    SFX_DOOR, SFX_HIT, SFX_HIT, SFX_SPELL, SFX_FROST, 12, 13,   /* (12, 13: fxs' bark and yelp) */
 };
 
 static unsigned char left[1];

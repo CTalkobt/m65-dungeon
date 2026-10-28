@@ -22,7 +22,7 @@ static unsigned char free_for(struct mon *c, unsigned char x, unsigned char y) {
         /* a wedged door, battered at: now and then it gives (shut still) */
         vm_set(x, y, vm_kind(x, y) - TK_DOOR_WEDGED_H + TK_DOOR_H);
         msg("Wood splinters: something has broken through a door.", C_ORANGE);
-        sfx_far(SFX_HEAVY, (signed char)((signed int)x - pl.x));
+        sfx_far(SFX_BATTER, (signed char)((signed int)x - pl.x));
         return 0;
     }
     if (t == TR_ROCK || t == TR_LOCKED || t == TR_RUBBLE || t == TR_WEDGED || mon_at(x, y)) return 0;
@@ -72,8 +72,8 @@ static void plate(unsigned char k) {
         str_cat(buf, mon_name(c->kind));
         str_cat(buf, "!");
         msg(buf, C_HILITE);
-        sfx(SFX_TRAP);
-    } else sfx_far(SFX_TRAP, (signed char)((signed int)c->x - pl.x));
+        sfx(SFX_STAB);
+    } else sfx_far(SFX_STAB, (signed char)((signed int)c->x - pl.x));
     mon_hurt(k, 4 + rng_range(6) + pl.depth * 2);
     if (c->hp) c->stun = 2;               /* (after: a wound that does not kill wakes it) */
 }
