@@ -229,6 +229,7 @@ static void add_mon(unsigned char kind, unsigned int at) {
 void dungeon_make(void) {
     unsigned int i;
     unsigned char k, t, x, y, w, h, r, v, last, d = pl.depth - 1;
+    struct item_info in;
 
     for (y = 0; y < MAP_H; y++) {
         video_poll();
@@ -386,16 +387,15 @@ void dungeon_make(void) {
     /* something to shoot */
     for (k = 0; k < 1 + rng_range(2); k++) put(spot(rng_range(nrooms)), O_ARROWS);
     if (pl.depth > 1 && rng_range(2)) put(spot(rng_range(nrooms)), O_SHOT);
-    /* oil and meat, to throw */
-    put(spot(rng_range(nrooms)), O_PILE + I_OIL);
-    if (rng_range(2)) put(spot(rng_range(nrooms)), O_PILE + I_FOOD);
-    /* for the dog: a biscuit now and then; a stick, to replace one lost */
-    if (rng_range(3) == 0) put(spot(rng_range(nrooms)), O_PILE + I_BISCUIT);
-    if (rng_range(5) == 0) put(spot(rng_range(nrooms)), O_PILE + I_STICK);
+    /* what lies about, as tools/items.py has it (floor: k times in n): oil
+     * and meat to throw, antidotes, the dog's biscuits and a stick */
+    for (k = 0; k < I_COUNT; k++) {
+        item_info(k, &in);
+        if (in.floor_n && (in.floor_n == 1 || rng_range(in.floor_n) < in.floor_k))
+            put(spot(rng_range(nrooms)), O_PILE + k);
+    }
     /* a charm, now and then, below the first level */
     if (pl.depth > 1 && rng_range(3) == 0) put(spot(rng_range(nrooms)), O_PILE + I_CHARM + rng_range(CHARMS));
-    /* an antidote, now and then: the venomous are on every level */
-    if (rng_range(3)) put(spot(rng_range(nrooms)), O_PILE + I_ANTIDOTE);
     /* strange flasks, what they do unknown till drunk */
     for (k = 0; k < 1 + (pl.depth > 2); k++) put(spot(rng_range(nrooms)), O_PILE + I_FLASK + rng_range(FLASKS));
 
@@ -414,7 +414,7 @@ void dungeon_make(void) {
     }
 
     /* a merchant on some levels (not the last), stocked with six of his
-     * ten kinds of wares, one to three of each */
+     * kinds of wares (WARE_KINDS), one to three of each */
     for (k = 0; k < WARES; k++) ware_left[k] = 0;
     if (pl.depth < DEPTHS && rng_range(3)) {
         i = spot(1 + rng_range(last));

@@ -172,58 +172,38 @@ void memory_sweep(void) {
 
 
 
-/* each item's colour in lists and messages */
-const unsigned char item_col[I_COUNT] = {
-    C_RED, C_BLUE, C_BONE, C_BONE, C_BONE, C_GOLD, C_ORANGE, C_ORANGE, C_ORANGE, C_ORANGE, C_GREY, C_ORANGE,
-    C_TEXT, C_GREY, C_ORANGE, C_BLOOD, C_CYAN, C_GOLD, C_BONE, C_GREEN, C_GREY, C_PURPLE, C_GOLD,
-    C_GREY, C_GREEN, C_TEXT, C_BONE, C_GOLD,
-};
-
-/* each thing's tile, lying on the floor */
-const unsigned char item_tile[I_COUNT] = {
-    T_POTION, T_DRAUGHT, T_SCROLL, T_SCROLL, T_SCROLL, T_KEY, T_RAGS, T_STICKS, T_FUR, T_CANDLE,
-    T_FLINT, T_FIRESTICK, T_ARROWS, T_SHOT, T_OIL, T_FOOD, T_ANTIDOTE, T_BISCUIT, T_STICK, T_FLASK1, T_FLASK2, T_FLASK3, T_FLASK4,
-    T_RING, T_RING, T_RING, T_AMULET, T_AMULET,
-};
-
 unsigned char arrows_spent;
 unsigned char ware[WARES], ware_left[WARES];
 
-/* the things one carries, one and many; a flask by its colour until it
- * is known, then by what it does */
-/* (the names are kept in attic RAM: NAMES_BANK; far_nth copies one out) */
-static __bank(NAMES_BANK) const char item_names[] =
-    "healing potion\0healing potions\0mana draught\0mana draughts\0"
-    "scroll of fire\0scrolls of fire\0scroll of recall\0scrolls of recall\0"
-    "scroll of far sight\0scrolls of far sight\0iron key\0iron keys\0"
-    "twist of rags\0twists of rags\0bundle of sticks\0bundles of sticks\0"
-    "scrap of fur\0scraps of fur\0tallow candle\0tallow candles\0"
-    "flint\0flints\0firestick\0firesticks\0arrow\0arrows\0cartridge\0cartridges\0"
-    "flask of oil\0flasks of oil\0strip of dried meat\0strips of dried meat\0"
-    "vial of antidote\0vials of antidote\0dog biscuit\0dog biscuits\0chewed stick\0chewed sticks";
-static __bank(NAMES_BANK) const char flask_names[] =
-    "cloudy green flask\0cloudy green flasks\0smoky grey flask\0smoky grey flasks\0"
-    "violet flask\0violet flasks\0amber flask\0amber flasks\0"
+/* (items.c, made by tools/items.py: kept in attic RAM, NAMES_BANK) */
+extern __bank(NAMES_BANK) const char item_names[];
+extern __bank(NAMES_BANK) const unsigned char item_far[];
+
+void item_info(unsigned char i, struct item_info *o) {
+    const unsigned char __far *p = item_far + (unsigned int)i * ITEM_FIELDS;
+    unsigned char *d = (unsigned char *)o, k;
+    for (k = 0; k < ITEM_FIELDS; k++) d[k] = p[k];
+}
+
+/* what a strange flask and a ring or amulet are called once known: by what
+ * they do (FX_*, CH_*); till then, by colour and look (item_names) */
+static __bank(NAMES_BANK) const char flask_fx[] =
     "flask of dark-sight\0flasks of dark-sight\0flask of clear memory\0flasks of clear memory\0"
     "flask of vigour\0flasks of vigour\0flask of poison\0flasks of poison";
 
-static __bank(NAMES_BANK) const char charm_names[] =
-    "iron ring\0iron rings\0jade ring\0jade rings\0silver ring\0silver rings\0"
-    "bone amulet\0bone amulets\0amber amulet\0amber amulets\0"
+static __bank(NAMES_BANK) const char charm_fx[] =
     "charm of the steady flame\0charms of the steady flame\0charm of mending\0charms of mending\0"
     "charm of the cat's eye\0charms of the cat's eye\0charm against the dead\0charms against the dead\0"
     "charm against venom\0charms against venom";
 
 const char *item_name(unsigned char i, unsigned char n) {
-    if (i >= I_CHARM) {
-        i -= I_CHARM;
-        if (pl.cknown & (1 << i)) return qual_name(pl.cq[i], far_nth(charm_names, (CHARMS + pl.charm[i]) * 2 + (n != 1)));
-        return far_nth(charm_names, i * 2 + (n != 1));
-    }
-    if (i >= I_FLASK) {
-        i -= I_FLASK;
-        if (pl.known & (1 << i)) i = FLASKS + pl.flask[i];
-        return far_nth(flask_names, i * 2 + (n != 1));
+    unsigned char c;
+    if (item_use[i] == U_CHARM) {
+        c = i - I_CHARM;
+        if (pl.cknown & (1 << c)) return qual_name(pl.cq[c], far_nth(charm_fx, pl.charm[c] * 2 + (n != 1)));
+    } else if (item_use[i] == U_FLASK) {
+        c = i - I_FLASK;
+        if (pl.known & (1 << c)) return far_nth(flask_fx, pl.flask[c] * 2 + (n != 1));
     }
     return far_nth(item_names, i * 2 + (n != 1));
 }

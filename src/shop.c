@@ -7,12 +7,8 @@
 #include "video.h"
 #include "game.h"
 
-/* his kinds of wares: what, how many to the sale, for how much gold */
-static const unsigned char ware_item[WARE_KINDS] = {
-    I_POTION, I_DRAUGHT, I_RAGS, I_STICKS, I_CANDLE, I_FIRESTICK, I_FLINT, I_ARROWS, I_SHOT, I_SIGHT, I_OIL, I_FOOD, I_ANTIDOTE, I_BISCUIT,
-};
-static const unsigned char ware_n[WARE_KINDS] = {1, 1, 1, 1, 1, 1, 1, 5, 3, 1, 1, 2, 1, 2};
-static const unsigned char ware_price[WARE_KINDS] = {25, 30, 6, 10, 18, 12, 40, 15, 24, 45, 20, 8, 20, 8};
+/* his kinds of wares: ware_item (items.h); how many to the sale, for how
+ * much gold: each item's shop_n, shop_price (tools/items.py) */
 
 #define SH_COL 14
 #define SH_ROW 8
@@ -20,8 +16,14 @@ static const unsigned char ware_price[WARE_KINDS] = {25, 30, 6, 10, 18, 12, 40, 
 #define SH_H   20
 
 unsigned char shop(void) {
-    unsigned char k, w, sel = 0;
+    unsigned char k, w, sel = 0, wn[WARES], wp[WARES];
+    struct item_info in;
     char buf[64];
+    for (k = 0; k < WARES; k++) {
+        item_info(ware_item[ware[k]], &in);
+        wn[k] = in.shop_n;
+        wp[k] = in.shop_price;
+    }
     msg("A merchant lifts his lantern. \"Coin for light?\"", C_GOLD);
     video_blank(SH_COL, SH_ROW, SH_W, SH_H);
     ui_frame(SH_COL, SH_ROW, SH_W, SH_H);
@@ -39,22 +41,22 @@ unsigned char shop(void) {
             buf[0] = k == sel ? '>' : ' ';
             buf[1] = ' ';
             buf[2] = 0;
-            if (ware_n[w] > 1) {
-                str_num(buf, ware_n[w]);
+            if (wn[k] > 1) {
+                str_num(buf, wn[k]);
                 str_cat(buf, " ");
             }
-            str_cat(buf, item_name(ware_item[w], ware_n[w]));
+            str_cat(buf, item_name(ware_item[w], wn[k]));
             video_blank(SH_COL + 2, SH_ROW + 5 + k * 2, SH_W - 4, 1);
             video_text(SH_COL + 2, SH_ROW + 5 + k * 2, buf,
                        !ware_left[k] ? C_DARK : k == sel ? C_HILITE : item_col[ware_item[w]]);
             buf[0] = 0;
             if (ware_left[k]) {
-                str_num(buf, ware_price[w]);
+                str_num(buf, wp[k]);
                 str_cat(buf, " gold  (");
                 str_num(buf, ware_left[k]);
                 str_cat(buf, ")");
             } else str_cat(buf, "sold");
-            video_text(SH_COL + 32, SH_ROW + 5 + k * 2, buf, ware_left[k] && pl.gold >= ware_price[w] ? C_TEXT : C_DARK);
+            video_text(SH_COL + 32, SH_ROW + 5 + k * 2, buf, ware_left[k] && pl.gold >= wp[k] ? C_TEXT : C_DARK);
         }
         k = key_wait();
         if (k == K_UP) sel = sel ? sel - 1 : WARES - 1;
@@ -63,17 +65,17 @@ unsigned char shop(void) {
         else if (k == K_FIRE) {
             w = ware[sel];
             if (!ware_left[sel]) msg("\"That is gone, friend.\"", C_DIM);
-            else if (pl.gold < ware_price[w]) msg("\"More coin than that, friend.\"", C_DIM);
+            else if (pl.gold < wp[sel]) msg("\"More coin than that, friend.\"", C_DIM);
             else {
-                pl.gold -= ware_price[w];
+                pl.gold -= wp[sel];
                 ware_left[sel]--;
-                pl.items[ware_item[w]] += ware_n[w];
+                pl.items[ware_item[w]] += wn[sel];
                 buf[0] = 0;
                 str_cat(buf, "You buy ");
-                if (ware_n[w] > 1) str_num(buf, ware_n[w]);
+                if (wn[sel] > 1) str_num(buf, wn[sel]);
                 else str_cat(buf, "a");
                 str_cat(buf, " ");
-                str_cat(buf, item_name(ware_item[w], ware_n[w]));
+                str_cat(buf, item_name(ware_item[w], wn[sel]));
                 str_cat(buf, ".");
                 msg(buf, C_GOLD);
                 sfx(SFX_COIN);

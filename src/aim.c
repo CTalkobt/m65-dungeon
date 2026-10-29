@@ -250,26 +250,37 @@ unsigned char shoot(unsigned char gun) {
  * they are in), and burns it, the more if fire is its bane; the meat is
  * fallen on by any creature that hungers, and keeps it busy a while */
 unsigned char throw_it(unsigned char i) {
+    struct item_info in;
     unsigned char t, d, k;
     unsigned int at;
     struct mon *m;
     char buf[64];
     if (i == I_COUNT) {
-        if ((pl.items[I_OIL] != 0) + (pl.items[I_FOOD] != 0) + (pl.items[I_STICK] != 0) > 1) {
-            msg("Throw what? O: oil. M: meat. S: the stick.", C_HILITE);
+        /* what is carried that is thrown by a key (items.py); more than
+         * one, the key chooses */
+        for (k = d = 0; k < I_COUNT; k++)
+            if (pl.items[k] && (item_use[k] == U_THROW || item_use[k] == U_STICK)) {
+                d++;
+                i = k;
+            }
+        if (d > 1) {
+            msg(item_throw_what, C_HILITE);
             d = key_wait();
-            i = d == 'o' ? I_OIL : d == 'm' ? I_FOOD : d == 's' ? I_STICK : I_COUNT;
+            for (k = 0, i = I_COUNT; k < I_COUNT; k++) {
+                item_info(k, &in);
+                if (pl.items[k] && in.key == d) i = k;
+            }
             if (i == I_COUNT) {
                 msg("You think better of it.", C_DIM);
                 return 0;
             }
-        } else i = pl.items[I_OIL] ? I_OIL : pl.items[I_FOOD] ? I_FOOD : I_STICK;
+        }
     }
-    if (!pl.items[i]) {
+    if (i == I_COUNT || !pl.items[i]) {
         msg("You have nothing to throw.", C_DIM);
         return 0;
     }
-    if (i == I_STICK) return throw_stick();
+    if (item_use[i] == U_STICK) return throw_stick();
     find_targets(THROW_REACH);
     if (!ntargets) {
         msg("Nothing in sight and in reach to throw at.", C_DIM);

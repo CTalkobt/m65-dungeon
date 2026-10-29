@@ -10,19 +10,21 @@
 #include "rng.h"
 #include "game.h"
 
-/* the torch fed with fuel item k (I_RAGS ..); 1 if it was (a turn) */
-static const unsigned char burns_for[4] = {80, 120, 160, 220};
+/* the torch fed with fuel item k (U_FUEL: its val the turns it burns, its
+ * sub the words); 1 if it was (a turn) */
 
 static unsigned char feed(unsigned char k) {
+    struct item_info in;
     if (pl.fuel > TORCH_MAX - 40) {
         msg("Your torch has all it can hold.", C_DIM);
         return 0;
     }
+    item_info(k, &in);
     pl.items[k]--;
-    pl.fuel += burns_for[k - I_RAGS];
+    pl.fuel += in.val;
     if (pl.fuel > TORCH_MAX) pl.fuel = TORCH_MAX;
     msg(nth("You wrap the rags round the torch's head.\0You bind the sticks to the torch.\0"
-            "You wrap the fur round the torch. It stinks.\0You melt the tallow onto the torch.", k - I_RAGS), C_ORANGE);
+            "You wrap the fur round the torch. It stinks.\0You melt the tallow onto the torch.", in.sub), C_ORANGE);
     if (!pl.lit) msg("Now it wants lighting.", C_DIM);
     return 1;
 }
@@ -54,8 +56,8 @@ unsigned char light(unsigned char k) {
  * firestick */
 unsigned char feed_any(void) {
     unsigned char k;
-    for (k = I_RAGS; k <= I_CANDLE; k++)
-        if (pl.items[k]) return feed(k);
+    for (k = 0; k < I_COUNT; k++)
+        if (item_use[k] == U_FUEL && pl.items[k]) return feed(k);
     msg("You have nothing to feed the torch.", C_DIM);
     return 0;
 }
@@ -320,10 +322,10 @@ static unsigned char biscuit(void) {
 
 static unsigned char use(unsigned char k) {
     unsigned char d;
-    switch (k) {
-    case I_POTION:
+    switch (item_use[k]) {
+    case U_POTION:
         return drink();
-    case I_DRAUGHT:
+    case U_DRAUGHT:
         if (pl.mp == pl.maxmp) {
             msg("Your mana is full.", C_DIM);
             return 0;
@@ -334,36 +336,43 @@ static unsigned char use(unsigned char k) {
         msg("The draught hums on your tongue. Mana returns.", C_BLUE);
         sfx(SFX_DRINK);
         return 1;
-    case I_FIRE:
+    case U_FIGHT:
         msg("A scroll of fire is for a fight.", C_DIM);
         return 0;
-    case I_RECALL:
+    case U_RECALL:
         pl.items[I_RECALL]--;
         memory_renew();
         msg("The halls you have walked come back to you.", C_CYAN);
         sfx(SFX_CHIME);
         return 1;
-    case I_SIGHT:
+    case U_SIGHT:
         pl.items[I_SIGHT]--;
         level_reveal();
         msg("The shape of this level unfolds in your mind.", C_CYAN);
         sfx(SFX_BELL);
         return 1;
-    case I_KEY:
+    case U_KEY:
         msg("Walk into a locked door to turn the key.", C_DIM);
         return 0;
-    case I_ARROWS:
+    case U_BOW:
         return shoot(0);
-    case I_SHOT:
+    case U_GUN:
         return shoot(1);
-    case I_OIL:
-    case I_FOOD:
+    case U_THROW:
         return throw_it(k);
-    case I_STICK:
+    case U_STICK:
         return throw_stick();
-    case I_BISCUIT:
+    case U_BISCUIT:
         return biscuit();
-    case I_ANTIDOTE:
+    case U_FUEL:
+        return feed(k);
+    case U_LIGHT:
+        return light(k);
+    case U_FLASK:
+        return quaff(k - I_FLASK);
+    case U_CHARM:
+        return wear(k - I_CHARM);
+    case U_ANTIDOTE:
         if (!pl.venom) {
             msg("There is no venom in you to cure.", C_DIM);
             return 0;
@@ -374,10 +383,7 @@ static unsigned char use(unsigned char k) {
         sfx(SFX_DRINK);
         return 1;
     }
-    if (k >= I_CHARM) return wear(k - I_CHARM);
-    if (k >= I_FLASK) return quaff(k - I_FLASK);
-    if (k >= I_FLINT) return light(k);
-    return feed(k);
+    return 0;
 }
 
 /* n of item put down at (x, y), or on a free place next to it (a floor,

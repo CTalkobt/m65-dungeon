@@ -5,6 +5,7 @@
 #pragma once
 #pragma encoding ascii
 #include "assets.h"
+#include "items.h"
 
 #define MAP_W      64
 #define MAP_H      48
@@ -133,31 +134,11 @@ extern struct mon mons[MAX_MON];
 extern unsigned char nmons;
 
 
-/* what the player carries: so many of each */
-#define I_POTION   0          /* healing */
-#define I_DRAUGHT  1          /* mana */
-#define I_FIRE     2          /* scroll of fire: for a fight */
-#define I_RECALL   3          /* scroll of recall: what was seen, fresh again */
-#define I_SIGHT    4          /* scroll of far sight: the level's shape */
-#define I_KEY      5          /* iron key: opens a locked door */
-#define I_RAGS     6          /* the torch's fuel: rags, sticks, fur, tallow */
-#define I_STICKS   7
-#define I_FUR      8
-#define I_CANDLE   9
-#define I_FLINT    10         /* lights the torch, now and then; kept */
-#define I_FIRESTICK 11        /* lights the torch, once */
-#define I_ARROWS   12         /* the bow's */
-#define I_SHOT     13         /* the flintlock's: paper cartridges, powder and ball */
-#define I_OIL      14         /* a flask of lamp oil: thrown, it bursts into fire (aim.c) */
-#define I_FOOD     15         /* dried meat: thrown, the hungry fall on it */
-#define I_ANTIDOTE 16         /* a vial of antidote: the venom's cure */
-#define I_BISCUIT  17         /* a dog biscuit: the dog, beside you, made whole */
-#define I_STICK    18         /* the dog's chewed stick: thrown (aim.c), fetched (dog.c) */
-#define I_FLASK    19         /* + 0-3: a strange flask, by its colour (green, grey, violet, amber) */
-#define FLASKS     4
-#define I_CHARM    23         /* + 0-4: a ring or an amulet, by its look (iron, jade, silver, bone, amber) */
-#define CHARMS     5
-#define I_COUNT    28
+/* what the player carries: so many of each (I_*: items.h, made from
+ * tools/items.py with what each is, does and where it is found; FLASKS
+ * strange flasks from I_FLASK, by colour; CHARMS rings and amulets from
+ * I_CHARM, by look) */
+void item_info(unsigned char i, struct item_info *o);   /* game.c: the rest of what is known of it */
 /* what a flask's colour does: shuffled for each descent (pl.flask), known
  * once drunk (pl.known, a bit a colour) or read of on a shelf's page */
 #define FX_SIGHT   0          /* dark-sight: what is in shadow is seen, dimly, a while */
@@ -175,18 +156,15 @@ extern unsigned char nmons;
 #define CH_SNAKE   4          /* no venom takes hold */
 #define WEARS(fx)  (pl.wfx == (fx) + 1)
 const char *item_name(unsigned char i, unsigned char n);   /* game.c: as for n of them */
-extern const unsigned char item_col[I_COUNT];               /* game.c: its colour in text */
-extern const unsigned char item_tile[I_COUNT];              /* game.c: its tile, put down (T_*) */
 extern unsigned char arrows_spent;    /* arrows shot in this fight (battle.c; explore.c gathers them) */
 /* pack.c: the things carried, used on the map; 1 if that took the turn */
 unsigned char inventory(void);
 unsigned char shop(void);
 unsigned char fixture(unsigned int i, unsigned char n);   /* fixture.c: a fountain or a shelf, used: 1 a turn */
 
-/* the merchant's wares on this level (WARES of the shop's list, WARE_KINDS
- * kinds), and how many of each are left (game.c; dungeon.c stocks him) */
+/* the merchant's wares on this level (WARES of ware_item's WARE_KINDS:
+ * items.h), and how many of each are left (game.c; dungeon.c stocks him) */
 #define WARES      6
-#define WARE_KINDS 14
 extern unsigned char ware[WARES], ware_left[WARES];
 unsigned char drink(void);
 unsigned char quaff(unsigned char c);   /* pack.c: the flask of colour c drunk */

@@ -454,6 +454,18 @@ the battle reads when it starts; the map's part (its tile, its close-up,
 its flags, which creatures each level draws from) goes in `assets.h`.
 Adding a creature is a new entry and its tile (`tools/tiles.py`).
 
+**The items** (`tools/items.py`, made into `build/items/items.h` and
+`items.c` by `make`, without the slow art build). Each thing one carries
+is one line: its name and plural, colour, tile, what it does (its *use*:
+a potion, fuel, a light, thrown, a flask, a charm, ...), and where it is
+found: the merchant's count and price, how often it lies about on a
+level, and its weight in a chest's bundle or scroll case. The list's
+order is the items' numbers (`I_*`), which a save keeps; `pack.c` does
+each use the same for all its items, and the shop, the levels and the
+chests read the rest from the table (`item_info`, kept in attic RAM with
+the names). Adding an item is a line, its tile, and code only for a use
+that is new.
+
 **The close-ups** (`tools/stage.py`, `monsters.py`, `props.py`,
 `backdrop.py`). Each is 448 x 240 (56 x 30 characters). The creatures are
 drawn in Python from 3D shapes (ellipsoids, tubes of spheres, boxes,

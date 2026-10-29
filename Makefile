@@ -28,6 +28,7 @@ BUILD   ?= build
 ART     := build/art
 SFX     := build/sfx
 MUSIC   := build/music
+ITEMS   := build/items
 TUNE45  := $(M65)/bin/tune45
 # the sampled sounds: on assets/baseimage.d81 (DGSFX1, 2, ...), which
 # make sounds rebuilds from the sound packs' zip files in SFX_DIR; without
@@ -39,7 +40,7 @@ ifdef SEED
 DEFS    += -DSEED=$(SEED)
 endif
 
-CFLAGS  := -O2 -fmax-inline-ir-size=4 -I$(M65)/lib/include -Isrc -I$(ART) -I$(SFX) -I$(MUSIC) $(DEFS)
+CFLAGS  := -O2 -fmax-inline-ir-size=4 -I$(M65)/lib/include -Isrc -I$(ART) -I$(SFX) -I$(MUSIC) -I$(ITEMS) $(DEFS)
 
 TARGET  := $(BUILD)/dungeon.prg
 # the code overlays (walk, pack, aim, battle, gen, scenes), written by ln45
@@ -52,8 +53,8 @@ OVL2    := $(BUILD)/dungeon.ov2
 OVL3    := $(BUILD)/dungeon.ov3
 OVL_STORE ?= 0x8000000-0x800FFFF,0x8010000-0x801FFFF
 C_MODS  := main video video_boot load rng game dungeon keep trap view ui explore pack shop fixture aim creatures doors dog travel battle detail front settings scene levelmap help cheat sfx audio audio_boot
-OBJS    := $(C_MODS:%=$(BUILD)/%.o45) $(BUILD)/ld.o45 $(BUILD)/assets.o45 $(BUILD)/sfxdata.o45 $(BUILD)/seen.o45 $(BUILD)/vmap.o45
-HEADERS := $(wildcard src/*.h) $(ART)/assets.h $(SFX)/sfxdata.h $(MUSIC)/music.h $(wildcard $(M65)/lib/include/*.h)
+OBJS    := $(C_MODS:%=$(BUILD)/%.o45) $(BUILD)/ld.o45 $(BUILD)/assets.o45 $(BUILD)/items.o45 $(BUILD)/sfxdata.o45 $(BUILD)/seen.o45 $(BUILD)/vmap.o45
+HEADERS := $(wildcard src/*.h) $(ART)/assets.h $(ITEMS)/items.h $(SFX)/sfxdata.h $(MUSIC)/music.h $(wildcard $(M65)/lib/include/*.h)
 
 # the art: one file a monster, the tiles, the chest and the idol
 ART_STAMP := $(ART)/art.stamp
@@ -67,7 +68,7 @@ all: $(DISK)
 $(BUILD):
 	mkdir -p $@
 
-$(ART_STAMP) $(ART)/assets.h &: $(wildcard tools/*.py)
+$(ART_STAMP) $(ART)/assets.h &: $(filter-out tools/items.py,$(wildcard tools/*.py))
 	mkdir -p $(ART)
 	$(PYTHON) tools/gen_art.py $(ART)
 	touch $(ART_STAMP)
@@ -146,6 +147,13 @@ clean:
 
 $(BUILD)/assets.o45: $(ART_STAMP) | $(BUILD)
 	$(CC45) $(CFLAGS) -c $(ART)/assets.c -o $@
+
+# the things one carries (tools/items.py): their numbers, uses, names, finds
+$(ITEMS)/items.h $(ITEMS)/items.c &: tools/items.py
+	$(PYTHON) tools/items.py $(ITEMS)
+
+$(BUILD)/items.o45: $(ITEMS)/items.c $(HEADERS) | $(BUILD)
+	$(CC45) $(CFLAGS) -c $(ITEMS)/items.c -o $@
 
 # a build that plays the keys KEYS (with TEST: more -D options, e.g.
 # TEST=-DTEST_FIGHT=4 a fight with an orc at once, TEST=-DTEST_VIEW=1 a chest) (ui.c: U D L R the cursor keys, F

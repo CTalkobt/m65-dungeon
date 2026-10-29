@@ -57,8 +57,6 @@ static void leave(void) {
     video_fade(0);
 }
 
-/* one find in a chest, its line of text at line; the next line. good: the
- * weapons, the armour and the potions more likely */
 /* how well made a weapon, armour or bow found is: better deeper down, and
  * in a vault (good) */
 static unsigned char make(unsigned char good) {
@@ -66,6 +64,29 @@ static unsigned char make(unsigned char good) {
     return r < 4 ? Q_MINOR : r < 11 ? Q_PLAIN : r < 16 ? 2 : r < 20 ? 3 : Q_RARE;
 }
 
+/* a thing of a chest's group (tools/items.py chest: 1 the bundle in waxed
+ * cloth, 2 the scroll case), by its weight there; *n how many (1 .. its
+ * most) */
+static unsigned char chest_pick(unsigned char group, unsigned char *n) {
+    struct item_info in;
+    unsigned char k, r = 0;
+    for (k = 0; k < I_COUNT; k++) {
+        item_info(k, &in);
+        if (in.chest == group) r += in.chest_w;
+    }
+    r = rng_range(r);
+    for (k = 0; k < I_COUNT; k++) {
+        item_info(k, &in);
+        if (in.chest != group) continue;
+        if (r < in.chest_w) break;
+        r -= in.chest_w;
+    }
+    *n = in.chest_most > 1 ? 1 + rng_range(in.chest_most) : 1;
+    return k;
+}
+
+/* one find in a chest, its line of text at line; the next line. good: the
+ * weapons, the armour and the potions more likely */
 static unsigned char find(unsigned char line, unsigned char good) {
     unsigned char r = rng_range(good ? 60 : 100), d, i;
     char buf[80];
@@ -133,17 +154,13 @@ static unsigned char find(unsigned char line, unsigned char good) {
         pl.items[I_ANTIDOTE]++;
         str_cat(buf, "A slim vial, bitter-smelling: a vial of antidote.");
     } else if (r < 70) {
-        r = rng_range(10);
-        i = r < 4 ? I_FIRE : r < 7 ? I_RECALL : I_SIGHT;
-        pl.items[i]++;
+        i = chest_pick(2, &d);
+        pl.items[i] += d;
         str_cat(buf, "A bone scroll case, sealed with wax: a ");
         str_cat(buf, item_name(i, 1));
         str_cat(buf, ".");
     } else if (r < 78 || (r < 86 && !pl.bow && !pl.gun)) {
-        r = rng_range(15);
-        i = r < 3 ? I_RAGS : r < 5 ? I_STICKS : r < 7 ? I_FUR : r < 8 ? I_CANDLE : r < 9 ? I_FIRESTICK :
-            r < 10 ? I_FLINT : r < 12 ? I_OIL : r < 13 ? I_FOOD : I_BISCUIT;
-        d = i == I_FLINT ? 1 : 1 + rng_range(2);
+        i = chest_pick(1, &d);
         pl.items[i] += d;
         str_cat(buf, "Dry, wrapped in waxed cloth: ");
         str_num(buf, d);
