@@ -7,7 +7,9 @@
  * at the foe it was beside (battle.c). Its nose: a mimic still a chest it
  * does not run at, but beside one it growls (the once) and leaves it be;
  * and now and then it sniffs out a hidden plate near the player (sniff:
- * found, as the player's search finds one). */
+ * found, as the player's search finds one). Told to stay (B: explore.c)
+ * it holds where it is, biting only what comes beside it, till told to
+ * follow, or a new level, or it comes back from the dark. */
 #pragma cc45 overlay(aim)
 #pragma cc45 noescape_strings
 #include "hw.h"
@@ -65,6 +67,7 @@ static unsigned char apart(unsigned char x0, unsigned char y0, unsigned char x1,
 /* a hidden plate where the player is going (two places each way, in
  * sight), found by the dog's nose ranging round (1 in 6 a turn) */
 static void sniff(void) {
+    char buf[64];
     unsigned char x, y, x0 = pl.x - 2, y0 = pl.y - 2;
     for (y = y0; y != (unsigned char)(y0 + 5); y++)
         for (x = x0; x != (unsigned char)(x0 + 5); x++) {
@@ -72,7 +75,7 @@ static void sniff(void) {
             if (obj_at(AT(x, y)) == O_TRAP && !rng_range(6)) {
                 obj_set(AT(x, y), O_NONE);
                 vm_set(x, y, TK_TRAP);
-                msg("Your dog sniffs at the floor, and growls: a plate!", C_HILITE);
+                msg(dog_says(buf, " sniffs at the floor, and growls: a plate!"), C_HILITE);
                 sfx(SFX_BARK);
                 return;
             }
@@ -87,7 +90,8 @@ void dog_move(void) {
         /* gone off to lick its wounds: back after a while */
         if (pl.dog_down && !--pl.dog_down && dog_place()) {
             pl.dog_hp = DOG_MAX;
-            msg("Your dog comes bounding back out of the dark.", C_GOLD);
+            pl.dog_stay = 0;
+            msg(dog_says(buf, " comes bounding back out of the dark."), C_GOLD);
             sfx(SFX_BARK);
         } else if (!pl.dog_down) pl.dog_down = 1;   /* (no room beside you: next turn) */
         return;
@@ -104,7 +108,7 @@ void dog_move(void) {
              * and left be (not run at) */
             if (d <= 1 && dog_warned != AT(c->x, c->y)) {
                 dog_warned = AT(c->x, c->y);
-                msg("Your dog growls at the chest, hackles up.", C_HILITE);
+                msg(dog_says(buf, " growls at the chest, hackles up."), C_HILITE);
                 sfx(SFX_BARK);
             }
             continue;
@@ -116,7 +120,8 @@ void dog_move(void) {
     }
     if (t == 0xFF) {
         /* nothing to chase: keep close (and catch up when left far behind),
-         * nose down */
+         * nose down; told to stay, it holds */
+        if (pl.dog_stay) return;
         sniff();
         d = apart(pl.x, pl.y, pl.dog_x, pl.dog_y);
         if (d > 10) dog_place();
@@ -125,13 +130,12 @@ void dog_move(void) {
     }
     c = &mons[t];
     if (best > 1) {
-        if (best == 9) return;
+        if (best == 9 || pl.dog_stay) return;          /* (staying: it bites only what comes to it) */
         dog_step(toward(pl.dog_x, c->x), toward(pl.dog_y, c->y));
         return;
     }
     /* beside it: a bite, and now and then it bites back */
-    buf[0] = 0;
-    str_cat(buf, "Your dog bites the ");
+    dog_says(buf, " bites the ");
     str_cat(buf, mon_name(c->kind));
     str_cat(buf, ".");
     msg(buf, C_TEXT);
@@ -147,6 +151,6 @@ void dog_move(void) {
     }
     pl.dog_hp = 0;
     pl.dog_down = DOG_BACK;
-    msg("Your dog yelps, and limps off into the dark.", C_RED);
+    msg(dog_says(buf, " yelps, and limps off into the dark."), C_RED);
     sfx(SFX_YELP);
 }

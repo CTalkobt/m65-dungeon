@@ -790,7 +790,7 @@ unsigned char battle(unsigned char mi, unsigned char ambush) {
         if (!m->hp) break;
         if (dog && rng_range(2) && !(mt.flags & MF_BOSS)) {
             sfx(SFX_BARK);
-            say("Your dog worries at it. (1)", C_TEXT);
+            say(dog_says(buf, " worries at it. (1)"), C_TEXT);
             m->hp--;
             draw_foe();
             if (!m->hp) break;

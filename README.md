@@ -247,7 +247,11 @@ as fast), the *cat's eye* (what is in shadow is seen dimly, as with
 dark-sight), *against the dead* (a ward at the start of every fight with
 the undead) and *against venom* (no venom takes hold).
 
-**Your dog.** A dog goes down with you, whoever you are. It keeps close
+**Your dog.** A dog goes down with you, whoever you are, its name one of
+eight (Bran, Nell, Patch, Tam, Bess, Grim, Rufus, Mags: the descent's
+seed chooses). B bids it stay where it is (it holds there, biting only
+what comes beside it) or come to you again; a new level, or its coming
+back from the dark, has it following again. It keeps close
 (two places off at most; left far behind, it catches up), and runs at the
 nearest creature in sight (not the lich: it is warded) and bites it, 1 a
 turn, waking it. Bitten, a creature snaps back now and then (1-3, and more
@@ -486,7 +490,7 @@ area it unpacks to, at an offset worked out so that the writing never
 overtakes the reading, and unpacks in place; DGLOOK loads into bank 5 and
 unpacks straight into attic RAM. The art is about 500 KB on the disk
 instead of 700 KB unpacked. The overlay files are packed by ln45
-(`--pack-overlays`): 80 KB of code in 48 KB on the disk.
+(`--pack-overlays`): 85 KB of code in 54 KB on the disk.
 
 **Sound** (`tools/gen_sfx.py`, `src/audio.c`). 28 sounds, 22 s at 12 kHz:
 cut, resampled, normalised, and coded in blocks of 16 samples (a predictor
@@ -513,16 +517,28 @@ the levels' tune leaves free. `build/music/*.wav` (`tune45 play --wav`)
 are the tunes to listen to on the PC.
 
 **Memory** (bank 0 is tight). The resident part (video, keys, the UI,
-sound, the tables, the message line) ends near $8200; the overlay
-region starts at $8D00. The code overlays `walk` (explore +
-view), `pack` (the inventory, items, the torch), `aim` (shooting,
-throwing, the creatures' turn and tricks, the way to the stairs), `battle`, `gen` (the dungeon generator, saving, traps
-and secrets, a new player, levels gained), `scenes` (loading and showing
-the close-ups; the chest and the idol) and `front` (the title, settings,
-endings, the start) are kept in
-attic RAM ($8000000-$801FFFF: two 64 KB banks, a file each, DUNGEON.OV1
-and, once the first is full, DUNGEON.OV2; packed, unpacked at the start)
-and copied by DMA into one region at $8B00 when called. A call
+sound, the tables, the message line, `dog_says`) ends at $84FF. The code
+overlays are kept in attic RAM ($8000000-$801FFFF: two 64 KB banks, a
+file each, DUNGEON.OV1 and, once the first is full, DUNGEON.OV2; packed,
+unpacked at the start) and copied by DMA into one region when called:
+
+| Overlay | Bytes | What |
+|---|---|---|
+| `front` | 11,433 | the title, settings, endings, the start, the day's descent, the Hall |
+| `gen` | 11,204 | the dungeon generator, saving and loading, traps and secrets, a new player, levels gained |
+| `walk` | 11,257 | exploring (keys, steps, turns, the torch) and the view |
+| `pack` | 10,934 | the inventory, items, the shop |
+| `scenes` | 12,499 | loading and showing the close-ups; chests, the idol and fixtures; the help, the level map, the way to the stairs |
+| `aim` | 12,309 | shooting and throwing, the creatures' turn and tricks, doors shut and wedged, the dog |
+| `battle` | 12,036 | the close-up fight |
+| `cheat` | 3,348 | the hidden test panel |
+
+ln45 sets the region's start so that it ends below the stack at $BC00:
+$BC00 less the largest overlay, rounded down to a page (now $8B00, for
+`scenes`). So the rule that matters is the resident end plus the largest
+overlay below $BC00; an overlay other than the largest may grow up to
+it for free, and the largest moves the region's start down as it grows,
+eating the 1.5 KB between the resident end and the region. A call
 from one overlay into another brings the caller back on return, but not
 the caller's text in the meantime; so what takes text from any overlay
 (the message line `msg`, the log, `video_text`) is resident. The map's
@@ -536,9 +552,9 @@ round the player, memory a byte a place in colour RAM.
 
 | Where | What |
 |---|---|
-| $2001-$81FF | the program, its data and variables |
-| $8200-$89FF | the heap (unused: room for the program to grow) |
-| $8A00-$BBFF | the code overlay region (12,800 bytes: one overlay at a time) |
+| $2001-$84FF | the program, its data and variables |
+| $8500-$8AFF | unused: room for the program, or the largest overlay, to grow |
+| $8B00-$BBFF | the code overlay region (12,544 bytes now: one overlay at a time; it moves with the largest) |
 | $BC00-$BFFF | the stack |
 | $12000-$197FF | DG<NAME>B: a close-up's last characters |
 | $19800-$1F7FF | the sounds' play slots (16 KB, 8 KB) |

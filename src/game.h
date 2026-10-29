@@ -199,6 +199,8 @@ unsigned char door_shut(void);           /* doors.c: K, a door beside shut or we
 void dog_move(void);
 unsigned char dog_place(void);
 extern unsigned int dog_warned;          /* where it last growled (AT): once a thing */
+#define DOG_NAMES  8
+char *dog_says(char *buf, const char *rest);   /* game.c: buf = the dog's name + rest */
 #define DOG_MAX    (10 + pl.level * 2)
 #define DOG_AT(x, y) (pl.dog_hp && (x) == pl.dog_x && (y) == pl.dog_y)
 void pick_up(unsigned int i, unsigned char n);   /* what lies at i (O_*), as the player walks over it */
@@ -267,6 +269,8 @@ struct player {
     unsigned int day;         /* the day's descent: its date (front.c day_of: month * 31 + day + ...), 0 none */
     unsigned char dog_x, dog_y, dog_hp;   /* the dog (dog.c): where, its life (0: gone off) */
     unsigned char dog_down;   /* turns till it comes back */
+    unsigned char dog_name;   /* its name (dog_says), one of DOG_NAMES */
+    unsigned char dog_stay;   /* 1: it holds where it is (B), 0: it follows */
 };
 #define CALL_FIGHTER 0
 #define CALL_HUNTER  1

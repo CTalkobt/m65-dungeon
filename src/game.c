@@ -7,6 +7,14 @@ unsigned char scratch[SCRATCH_SIZE];
 struct player pl;
 unsigned int turn;
 unsigned int dog_warned;
+
+/* (resident: dog.c, battle.c and explore.c all speak of the dog) */
+char *dog_says(char *buf, const char *rest) {
+    buf[0] = 0;
+    str_cat(buf, nth("Bran\0Nell\0Patch\0Tam\0Bess\0Grim\0Rufus\0Mags", pl.dog_name));
+    str_cat(buf, rest);
+    return buf;
+}
 struct mon mons[MAX_MON];
 unsigned char nmons;
 #ifdef CHEAT

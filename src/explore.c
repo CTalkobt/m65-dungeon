@@ -70,12 +70,16 @@ static void level_enter(void) {
     video_fade(0);
     dungeon_make();
     if (pl.dog_hp && !dog_place()) pl.dog_hp = 0, pl.dog_down = 1;   /* (the dog comes down too) */
+    pl.dog_stay = 0;
     buf[0] = 0;
     str_cat(buf, "You descend into ");
     str_cat(buf, depth_name(pl.depth));
     str_cat(buf, ".");
     msg(buf, C_GOLD);
-    if (pl.depth == 1) msg("Arrows / WASD move, QEZC diagonally. ? for help.", C_DIM);
+    if (pl.depth == 1) {
+        msg("Arrows / WASD move, QEZC diagonally. ? for help.", C_DIM);
+        msg(dog_says(buf, ", your dog, pads at your heel. B: stay / come."), C_DIM);
+    }
     if (pl.depth == DEPTHS) msg("A cold voice whispers your name.", C_PURPLE);
     game_save();                     /* (each level begun is kept, while the screen is dark) */
     screen_in();
@@ -413,6 +417,7 @@ unsigned char explore(unsigned char resume) {
 }
 
 static unsigned char explore_run(unsigned char resume) {
+    char buf[40];
     unsigned char k, took, r;
     signed char dx, dy;
     if (resume) {
@@ -592,6 +597,15 @@ static unsigned char explore_run(unsigned char resume) {
             break;
         case 'k':
             took = door_shut();
+            break;
+        case 'b':
+            /* the dog bidden: stay, or come (no turn) */
+            if (!pl.dog_hp) {
+                msg(dog_says(buf, " is off in the dark."), C_DIM);
+                break;
+            }
+            pl.dog_stay ^= 1;
+            msg(dog_says(buf, pl.dog_stay ? " sits, and stays." : " bounds back to your side."), C_TEXT);
             break;
         case '@':
             if (!cheat_on) break;

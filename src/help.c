@@ -33,6 +33,7 @@ static const char __noescape lines[] =
     "M\0the level as you remember it, and notes on it\0"
     "O\0settings: the music's and the sounds' levels\0"
     "K\0shut a door beside you; shut, wedge it with sticks\0"
+    "B\0bid your dog stay where it is, or come to you\0"
     "J\0the messages so far, to read again\0"
     "H, ?\0this help\0"
     "RUN/STOP\0save and stop (S), or give up (Y)\0"
@@ -46,7 +47,7 @@ static const char __noescape lines[] =
     "\0On the title\0"
     "RETURN\0begin: then choose who goes down\0"
     "C, D, S, F\0continue; the day's descent; settings; the fallen\0";
-#define LINES 27
+#define LINES 28
 
 void help_screen(void) {
     unsigned char k, row = HP_ROW + 3;
