@@ -1,17 +1,45 @@
 # The Fading Deep
 
-A torchlit descent for the MEGA65, in 640 x 400, built with the
-[M65Compiler](../m65compiler) tool suite (cc45 / ca45 / ln45 / disk45).
+A torchlit roguelike descent for the [MEGA65](https://mega65.org/),
+written in C with the [M65Compiler](https://github.com/CTalkobt/M65Compiler)
+tool suite (cc45 / ca45 / ln45 / disk45).
 
 Five levels down to the lich. You explore by torchlight: what the torch
 shows you, you remember only as the shape of the place, and that memory
 fades. Meet a creature and the view closes in on it for a fight, a turn at
-a time. Chests and idols have their own close-ups.
+a time. Chests and idols have their own close-ups. Your dog goes down with
+you: it hunts, sniffs out traps, fetches, and comes when you whistle.
 
-## Build and run
+| | |
+|---|---|
+| ![The title](docs/screens/title.png) | ![By torchlight, the dog at your heel; the rest only remembered](docs/screens/map.png) |
+| ![A fight: the cave spider](docs/screens/fight.png) | ![A chest opened](docs/screens/chest.png) |
+
+## Play it
+
+Download `the-fading-deep-<version>.d81` from the
+[Releases](https://github.com/CTalkobt/m65-dungeon/releases) page.
+
+- **xemu:** `xemu-xmega65 -8 the-fading-deep-<version>.d81 -autoload`
+- **MEGA65:** copy the `.d81` to the SD card, mount it (the freezer's disk
+  menu, or `MOUNT`), and `RUN "DUNGEON"`.
+
+It needs the MEGA65's attic RAM, which every production MEGA65 and xemu
+have. Keys: arrows or WASD to move, RETURN to go down the stairs, `?` for
+all the keys (and see [Playing](#playing) below). On the title: RETURN to
+begin, `D` for the day's descent (the same dungeon for everyone that day).
+
+## Build it
+
+Needs:
+
+- [M65Compiler](https://github.com/CTalkobt/M65Compiler), built, next to
+  this repository (`../m65compiler`), or `make M65=<path>`;
+- Python 3 with numpy and Pillow (the art is drawn by `tools/`);
+- [xemu](https://github.lgb.hu/xemu/) to run it (`xemu-xmega65`).
 
 ```sh
-make            # build/dungeon.d81: DUNGEON, DUNGEON.OV1, DGTILES, DG<NAME>A/B
+make            # build/dungeon.d81: the program, its overlays, the art, the sounds
 make run        # boot the disk in xemu-xmega65
 make screenshot # headless, build/screenshot.png
 make art        # only the art (build/art/, previews in build/art/preview/)
@@ -20,9 +48,11 @@ make SEED=1234  # the same dungeons every time
 make clean
 ```
 
-Needs Python 3 with numpy and PIL for the art, the M65Compiler tree next to
-this one (`../m65compiler`, or `make M65=<path>`), and xemu to run it. On a
-MEGA65, copy `build/dungeon.d81` to the SD card, mount it and run DUNGEON.
+The first build draws all the art and takes some minutes; later builds
+only redo what changed. `tools/items.py` (the items) is separate from the
+art and quick to remake.
+
+## Testing
 
 For testing, `make shot KEYS='F__dddd' SHOT_DELAY=16` builds a version that
 plays the keys (U D L R cursor keys, F RETURN, X RUN/STOP, _ a pause) and
@@ -67,8 +97,8 @@ and asks xemu's monitor for the registers and memory.
 ## Sound
 
 The sampled sounds are on `assets/baseimage.d81`, which `make` takes
-them from: the build needs nothing else. They were made from free sound packs
-that are not in this repository; `assets/README.md` says which sound comes
+them from: the build needs nothing else. They were made from sound packs that
+are not in this repository; `assets/README.md` says which sound comes
 from where. With the packs' zip files in `~/resources/audio/dungeon` (or
 `SFX_DIR=<dir>`), `make sounds` makes the image anew. Without the image the
 game builds with its SID effects only.
