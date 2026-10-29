@@ -140,9 +140,9 @@ static unsigned char find(unsigned char line, unsigned char good) {
         str_cat(buf, item_name(i, 1));
         str_cat(buf, ".");
     } else if (r < 78 || (r < 86 && !pl.bow && !pl.gun)) {
-        r = rng_range(13);
+        r = rng_range(15);
         i = r < 3 ? I_RAGS : r < 5 ? I_STICKS : r < 7 ? I_FUR : r < 8 ? I_CANDLE : r < 9 ? I_FIRESTICK :
-            r < 10 ? I_FLINT : r < 12 ? I_OIL : I_FOOD;
+            r < 10 ? I_FLINT : r < 12 ? I_OIL : r < 13 ? I_FOOD : I_BISCUIT;
         d = i == I_FLINT ? 1 : 1 + rng_range(2);
         pl.items[i] += d;
         str_cat(buf, "Dry, wrapped in waxed cloth: ");

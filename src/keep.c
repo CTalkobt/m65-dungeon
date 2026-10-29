@@ -19,7 +19,7 @@
 #define KEEP_KINDS 1024
 #define KEEP_SEEN  (KEEP_KINDS + MAP_N)
 #define KEEP_END   (KEEP_SEEN + MAP_N)
-#define VERSION    15
+#define VERSION    16
 
 extern unsigned char vault_x0, vault_y0, vault_x1, vault_y1;
 
@@ -139,6 +139,8 @@ void player_new(void) {
     pl.items[I_STICKS] = 1;
     pl.items[I_FIRESTICK] = 2;
     pl.items[I_ARROWS] = 8;
+    pl.items[I_BISCUIT] = 2;
+    pl.items[I_STICK] = 1;
     pl.bow = 1;
     pl.gun = 0;
     pl.fuel = 400;
@@ -168,6 +170,8 @@ void player_new(void) {
     pl.dog_down = 0;
     pl.dog_name = (unsigned char)rng_state % DOG_NAMES;   /* (looked at, not drawn: the dungeon stays the seed's) */
     pl.dog_stay = 0;
+    pl.dog_fetch = 0;
+    pl.dog_carry = 0;
     turn = 1;
 }
 

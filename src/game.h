@@ -151,11 +151,13 @@ extern unsigned char nmons;
 #define I_OIL      14         /* a flask of lamp oil: thrown, it bursts into fire (aim.c) */
 #define I_FOOD     15         /* dried meat: thrown, the hungry fall on it */
 #define I_ANTIDOTE 16         /* a vial of antidote: the venom's cure */
-#define I_FLASK    17         /* + 0-3: a strange flask, by its colour (green, grey, violet, amber) */
+#define I_BISCUIT  17         /* a dog biscuit: the dog, beside you, made whole */
+#define I_STICK    18         /* the dog's chewed stick: thrown (aim.c), fetched (dog.c) */
+#define I_FLASK    19         /* + 0-3: a strange flask, by its colour (green, grey, violet, amber) */
 #define FLASKS     4
-#define I_CHARM    21         /* + 0-4: a ring or an amulet, by its look (iron, jade, silver, bone, amber) */
+#define I_CHARM    23         /* + 0-4: a ring or an amulet, by its look (iron, jade, silver, bone, amber) */
 #define CHARMS     5
-#define I_COUNT    26
+#define I_COUNT    28
 /* what a flask's colour does: shuffled for each descent (pl.flask), known
  * once drunk (pl.known, a bit a colour) or read of on a shelf's page */
 #define FX_SIGHT   0          /* dark-sight: what is in shadow is seen, dimly, a while */
@@ -184,7 +186,7 @@ unsigned char fixture(unsigned int i, unsigned char n);   /* fixture.c: a founta
 /* the merchant's wares on this level (WARES of the shop's list, WARE_KINDS
  * kinds), and how many of each are left (game.c; dungeon.c stocks him) */
 #define WARES      6
-#define WARE_KINDS 13
+#define WARE_KINDS 14
 extern unsigned char ware[WARES], ware_left[WARES];
 unsigned char drink(void);
 unsigned char quaff(unsigned char c);   /* pack.c: the flask of colour c drunk */
@@ -192,7 +194,9 @@ unsigned char feed_any(void);
 unsigned char light_any(void);
 unsigned char light(unsigned char k);   /* I_FLINT, I_FIRESTICK, I_COUNT: a brazier's coals */
 unsigned char shoot(unsigned char gun); /* the bow (0) or the flintlock (1) at a creature in sight */
-unsigned char throw_it(unsigned char i); /* I_OIL or I_FOOD at a creature in sight; I_COUNT: which is asked */
+unsigned char throw_it(unsigned char i); /* I_OIL or I_FOOD at a creature in sight, I_STICK a way off; I_COUNT: which is asked */
+unsigned char throw_stick(void);         /* pack.c: the dog's stick, a way off (the dog fetches it: dog.c) */
+void fly(unsigned char fx, unsigned char fy, unsigned char tx, unsigned char ty);   /* aim.c: a thing thrown, flying */
 unsigned char door_shut(void);           /* doors.c: K, a door beside shut or wedged; 1 a turn */
 /* dog.c: the player's dog (pl.dog_*): its turn (creatures_move), and set
  * beside the player (a new level); DOG_AT: it is there */
@@ -271,6 +275,8 @@ struct player {
     unsigned char dog_down;   /* turns till it comes back */
     unsigned char dog_name;   /* its name (dog_says), one of DOG_NAMES */
     unsigned char dog_stay;   /* 1: it holds where it is (B), 0: it follows */
+    unsigned int dog_fetch;   /* where the stick it runs for lies (AT), 0 none */
+    unsigned char dog_carry;  /* 1: it brings the stick back */
 };
 #define CALL_FIGHTER 0
 #define CALL_HUNTER  1

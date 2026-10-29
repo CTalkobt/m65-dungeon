@@ -26,7 +26,7 @@ static const char __noescape lines[] =
     "RETURN\0go down the stairs; off them, walk to them\0"
     "(walk into)\0open doors, chests; fountains; foes; disarm plates\0"
     "T / G\0shoot the bow / fire the flintlock (RETURN: loose)\0"
-    "X\0throw a flask of oil or meat (O / M)\0"
+    "X\0throw oil or meat (O / M), or the dog's stick (S)\0"
     "I\0what you carry: RETURN uses it, D puts it down\0"
     "P\0drink a healing potion\0"
     "F / L\0feed the torch / light it\0"

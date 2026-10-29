@@ -175,14 +175,14 @@ void memory_sweep(void) {
 /* each item's colour in lists and messages */
 const unsigned char item_col[I_COUNT] = {
     C_RED, C_BLUE, C_BONE, C_BONE, C_BONE, C_GOLD, C_ORANGE, C_ORANGE, C_ORANGE, C_ORANGE, C_GREY, C_ORANGE,
-    C_TEXT, C_GREY, C_ORANGE, C_BLOOD, C_CYAN, C_GREEN, C_GREY, C_PURPLE, C_GOLD,
+    C_TEXT, C_GREY, C_ORANGE, C_BLOOD, C_CYAN, C_GOLD, C_BONE, C_GREEN, C_GREY, C_PURPLE, C_GOLD,
     C_GREY, C_GREEN, C_TEXT, C_BONE, C_GOLD,
 };
 
 /* each thing's tile, lying on the floor */
 const unsigned char item_tile[I_COUNT] = {
     T_POTION, T_DRAUGHT, T_SCROLL, T_SCROLL, T_SCROLL, T_KEY, T_RAGS, T_STICKS, T_FUR, T_CANDLE,
-    T_FLINT, T_FIRESTICK, T_ARROWS, T_SHOT, T_OIL, T_FOOD, T_ANTIDOTE, T_FLASK1, T_FLASK2, T_FLASK3, T_FLASK4,
+    T_FLINT, T_FIRESTICK, T_ARROWS, T_SHOT, T_OIL, T_FOOD, T_ANTIDOTE, T_BISCUIT, T_STICK, T_FLASK1, T_FLASK2, T_FLASK3, T_FLASK4,
     T_RING, T_RING, T_RING, T_AMULET, T_AMULET,
 };
 
@@ -200,7 +200,7 @@ static __bank(NAMES_BANK) const char item_names[] =
     "scrap of fur\0scraps of fur\0tallow candle\0tallow candles\0"
     "flint\0flints\0firestick\0firesticks\0arrow\0arrows\0cartridge\0cartridges\0"
     "flask of oil\0flasks of oil\0strip of dried meat\0strips of dried meat\0"
-    "vial of antidote\0vials of antidote";
+    "vial of antidote\0vials of antidote\0dog biscuit\0dog biscuits\0chewed stick\0chewed sticks";
 static __bank(NAMES_BANK) const char flask_names[] =
     "cloudy green flask\0cloudy green flasks\0smoky grey flask\0smoky grey flasks\0"
     "violet flask\0violet flasks\0amber flask\0amber flasks\0"

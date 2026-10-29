@@ -46,7 +46,8 @@ wedged door and a hunting creature beyond; `TEST=-DTEST_GEAR` starts with
 Superior dragonbone and rune plate; `TEST=-DTEST_DOG=<life>` starts the dog
 with that much life (0: away, back in 3 turns); `TEST_FIGHT`'s creature
 stands beside the dog; `TEST=-DTEST_SNIFF=1` puts a mimic, still a chest,
-beside the dog, `=2` a hidden plate two east (for the dog's nose). `TEST=-DTEST_VENOM` starts with venom in the blood and an antidote;
+beside the dog, `=2` a hidden plate two east (for the dog's nose);
+`TEST=-DTEST_FETCH_MISS` has the dog always lose interest in the stick. `TEST=-DTEST_VENOM` starts with venom in the blood and an antidote;
 `TEST=-DTEST_CHARMS=<0-4>` with one of each charm, wearing the one that
 does that (CH_*).
 
@@ -100,7 +101,8 @@ memory, but only 30 life). The ending names who it was.
 | F / L | | feed the torch / light it | |
 | O (S on the title) | | settings: music and sound levels | |
 | T / G | | shoot the bow / fire the flintlock (again: the next target, RETURN: shoot) | |
-| X | | throw a flask of oil or meat (O / M when you carry both) | |
+| X | | throw a flask of oil or meat at a foe, or the dog's stick a way off (O / M / S when you carry more than one) | |
+| B | | bid your dog stay where it is, or come to you | |
 | M | | the level as you remember it; a cursor, RETURN puts a note (! $ * ?) | |
 | K | | shut a door beside you; if it is shut, wedge it with a bundle of sticks | |
 | J | | the last 36 messages, to read again | |
@@ -266,6 +268,17 @@ beside one it growls at it, the once, and leaves it be; and a hidden pressure pl
 within two places of you it now and then sniffs out (1 in 6 a turn, while
 it has nothing to chase): the plate is found, as your own search finds one.
 
+You go down with two *dog biscuits* and the dog's *chewed stick*. A
+biscuit (I, RETURN) given to the dog beside you makes its life whole.
+The stick, thrown (X, then a way: up to six places, short of a wall or a
+creature), the dog runs for (unless it is staying, away, or chasing a
+creature: creatures come first); 17 times in 20 it snatches it up and
+drops it at your feet, the rest it sniffs at it and wanders off, and the
+stick lies there for you to pick up. Driven off, the dog drops what it
+carries; a stick left on a level stays there. Biscuits turn up lying
+about (a level in three), in chests and at the merchant's; a spare stick
+lies about a level in five.
+
 **Doors.** Creatures open shut doors (it takes them a move), but a shut
 door breaks their line of sight: K shuts an open door beside you. K again
 wedges it with a bundle of sticks, and then nothing opens it, though a
@@ -337,11 +350,11 @@ block sight and creatures; the generator never lets them shut a level
 
 **The merchant.** On some levels (not the last) a hooded merchant waits
 with his lantern (seen in the dark). Walk into him to buy, with gold, from
-six of his thirteen kinds of wares: healing potions (25), mana draughts
+six of his fourteen kinds of wares: healing potions (25), mana draughts
 (30), rags (6), sticks (10), tallow candles (18), firesticks (12), a flint
 (40), five arrows (15), three cartridges (24), a scroll of far sight (45),
-a flask of oil (20), two strips of meat (8), a vial of antidote (20); one
-to three of each.
+a flask of oil (20), two strips of meat (8), a vial of antidote (20), two
+dog biscuits (8); one to three of each.
 
 **What you carry** (I). Choose with up and down; RETURN (or U) uses it,
 D puts all of it down where you stand (or on a free place beside you),
@@ -350,7 +363,7 @@ fire* (for a fight: fire that no guard stops); a *scroll of recall* (all
 you have seen comes back fresh); a *scroll of far sight* (the level's
 walls, doors and stairs, seen or not); *iron keys*; the torch's fuel and
 flints and firesticks; flasks of oil and dried meat, to throw; vials of
-antidote. Most levels have a
+antidote; dog biscuits and the dog's stick. Most levels have a
 vault: a room whose doors are locked, with two chests that hold two finds
 each and the better ones. Its key lies somewhere you can reach without it.
 Chests give weapons and armour (each better than the last), potions,

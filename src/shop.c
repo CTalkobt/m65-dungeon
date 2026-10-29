@@ -9,10 +9,10 @@
 
 /* his kinds of wares: what, how many to the sale, for how much gold */
 static const unsigned char ware_item[WARE_KINDS] = {
-    I_POTION, I_DRAUGHT, I_RAGS, I_STICKS, I_CANDLE, I_FIRESTICK, I_FLINT, I_ARROWS, I_SHOT, I_SIGHT, I_OIL, I_FOOD, I_ANTIDOTE,
+    I_POTION, I_DRAUGHT, I_RAGS, I_STICKS, I_CANDLE, I_FIRESTICK, I_FLINT, I_ARROWS, I_SHOT, I_SIGHT, I_OIL, I_FOOD, I_ANTIDOTE, I_BISCUIT,
 };
-static const unsigned char ware_n[WARE_KINDS] = {1, 1, 1, 1, 1, 1, 1, 5, 3, 1, 1, 2, 1};
-static const unsigned char ware_price[WARE_KINDS] = {25, 30, 6, 10, 18, 12, 40, 15, 24, 45, 20, 8, 20};
+static const unsigned char ware_n[WARE_KINDS] = {1, 1, 1, 1, 1, 1, 1, 5, 3, 1, 1, 2, 1, 2};
+static const unsigned char ware_price[WARE_KINDS] = {25, 30, 6, 10, 18, 12, 40, 15, 24, 45, 20, 8, 20, 8};
 
 #define SH_COL 14
 #define SH_ROW 8

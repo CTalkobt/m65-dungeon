@@ -71,6 +71,7 @@ static void level_enter(void) {
     dungeon_make();
     if (pl.dog_hp && !dog_place()) pl.dog_hp = 0, pl.dog_down = 1;   /* (the dog comes down too) */
     pl.dog_stay = 0;
+    pl.dog_fetch = 0;                /* (a stick left lying stays with the old level) */
     buf[0] = 0;
     str_cat(buf, "You descend into ");
     str_cat(buf, depth_name(pl.depth));

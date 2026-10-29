@@ -243,6 +243,81 @@ static unsigned char wear(unsigned char c) {
 }
 
 /* an item used on the map; 1 if that took the turn */
+#define STICK_REACH 6
+
+/* the eight ways, by key: WEDCSZAQ (and the cursor keys, the numbers) */
+static const char way_key[8] = {'w', 'e', 'd', 'c', 's', 'z', 'a', 'q'};
+static const char way_num[8] = {'8', '9', '6', '3', '2', '1', '4', '7'};
+static const signed char way_x[8] = {0, 1, 1, 1, 0, -1, -1, -1};
+static const signed char way_y[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
+
+/* (pack, not aim: aim is the fullest overlay) the dog's stick thrown a way off (STICK_REACH, short of a wall or a
+ * creature), where nothing else lies; the dog, free, runs for it (dog.c) */
+unsigned char throw_stick(void) {
+    unsigned char k, w, x = pl.x, y = pl.y, lx = 0, ly = 0, t, o;
+    char buf[64];
+    msg("Throw it which way? (RUN/STOP: not)", C_HILITE);
+    k = key_wait();
+    for (w = 0; w < 8 && k != way_key[w] && k != way_num[w]; w++) ;
+    if (k == K_UP) w = 0;
+    else if (k == K_RIGHT) w = 2;
+    else if (k == K_DOWN) w = 4;
+    else if (k == K_LEFT) w = 6;
+    if (w == 8) {
+        msg("You lower your arm.", C_DIM);
+        return 0;
+    }
+    for (k = 0; k < STICK_REACH; k++) {
+        t = terrain(x + way_x[w], y + way_y[w]);
+        if (t != TR_FLOOR && t != TR_CORR && t != TR_OPEN && t != TR_STAIRS) break;
+        if (mon_at(x + way_x[w], y + way_y[w]) || BLOCKS(obj_at(AT(x + way_x[w], y + way_y[w])))) break;
+        x += way_x[w];
+        y += way_y[w];
+        o = obj_at(AT(x, y));
+        if (t != TR_STAIRS && (!o || o == O_PILE + I_STICK)) {
+            lx = x;                                 /* (the farthest it may lie) */
+            ly = y;
+        }
+    }
+    if (!lx) {
+        msg("There is no room to throw it that way.", C_DIM);
+        return 0;
+    }
+    pl.items[I_STICK]--;
+    sfx(SFX_SWING);
+    fly(pl.x, pl.y, lx, ly);
+    obj_add(AT(lx, ly), O_PILE + I_STICK, 1);
+    if (!pl.dog_hp) msg("The stick clatters down.", C_DIM);
+    else if (pl.dog_stay) msg(dog_says(buf, " watches it fly, but stays."), C_TEXT);
+    else {
+        pl.dog_fetch = AT(lx, ly);
+        msg(dog_says(buf, " bounds after it!"), C_TEXT);
+        sfx(SFX_BARK);
+    }
+    return 1;
+}
+
+/* a dog biscuit to the dog, beside you: its life whole again */
+static unsigned char biscuit(void) {
+    char buf[64];
+    unsigned char dx = pl.x > pl.dog_x ? pl.x - pl.dog_x : pl.dog_x - pl.x;
+    unsigned char dy = pl.y > pl.dog_y ? pl.y - pl.dog_y : pl.dog_y - pl.y;
+    if (!pl.dog_hp) {
+        msg(dog_says(buf, " is off in the dark."), C_DIM);
+        return 0;
+    }
+    if (dx > 1 || dy > 1) {
+        msg(dog_says(buf, " is too far off to take it."), C_DIM);
+        return 0;
+    }
+    pl.items[I_BISCUIT]--;
+    msg(dog_says(buf, pl.dog_hp < DOG_MAX ? " crunches the biscuit, and perks up."
+                                          : " crunches the biscuit, tail thumping."), C_GOLD);
+    pl.dog_hp = DOG_MAX;
+    sfx(SFX_BARK);
+    return 1;
+}
+
 static unsigned char use(unsigned char k) {
     unsigned char d;
     switch (k) {
@@ -284,6 +359,10 @@ static unsigned char use(unsigned char k) {
     case I_OIL:
     case I_FOOD:
         return throw_it(k);
+    case I_STICK:
+        return throw_stick();
+    case I_BISCUIT:
+        return biscuit();
     case I_ANTIDOTE:
         if (!pl.venom) {
             msg("There is no venom in you to cure.", C_DIM);

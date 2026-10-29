@@ -91,7 +91,7 @@ static void the_mon(char *buf, struct mon *m) {
 }
 
 /* the shot's flight from the player to (tx, ty), a place a frame or two */
-static void fly(unsigned char fx, unsigned char fy, unsigned char tx, unsigned char ty) {
+void fly(unsigned char fx, unsigned char fy, unsigned char tx, unsigned char ty) {
     signed int x = fx, y = fy, dx, dy, sx, sy, err, e2;
     dx = (signed int)tx - x;
     dy = (signed int)ty - y;
@@ -255,20 +255,21 @@ unsigned char throw_it(unsigned char i) {
     struct mon *m;
     char buf[64];
     if (i == I_COUNT) {
-        if (pl.items[I_OIL] && pl.items[I_FOOD]) {
-            msg("Throw what? O: a flask of oil. M: meat.", C_HILITE);
+        if ((pl.items[I_OIL] != 0) + (pl.items[I_FOOD] != 0) + (pl.items[I_STICK] != 0) > 1) {
+            msg("Throw what? O: oil. M: meat. S: the stick.", C_HILITE);
             d = key_wait();
-            i = d == 'o' ? I_OIL : d == 'm' ? I_FOOD : I_COUNT;
+            i = d == 'o' ? I_OIL : d == 'm' ? I_FOOD : d == 's' ? I_STICK : I_COUNT;
             if (i == I_COUNT) {
                 msg("You think better of it.", C_DIM);
                 return 0;
             }
-        } else i = pl.items[I_OIL] ? I_OIL : I_FOOD;
+        } else i = pl.items[I_OIL] ? I_OIL : pl.items[I_FOOD] ? I_FOOD : I_STICK;
     }
     if (!pl.items[i]) {
         msg("You have nothing to throw.", C_DIM);
         return 0;
     }
+    if (i == I_STICK) return throw_stick();
     find_targets(THROW_REACH);
     if (!ntargets) {
         msg("Nothing in sight and in reach to throw at.", C_DIM);
