@@ -66,7 +66,7 @@ author's commercial subscription (their README says so).
 
 ### Licensing
 
-These sounds are not covered by this project's own licence: each remains
+These sounds are not covered by this project's own licence (CC BY-NC-SA 4.0, `LICENSE`): each remains
 under the terms of the pack it came from (above). They are here, made
 into the game's own format, so that the game can be built; they are not
 offered as a sound library. Please get the packs from their authors to

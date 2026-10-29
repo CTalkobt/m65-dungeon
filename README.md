@@ -607,3 +607,13 @@ round the player, memory a byte a place in colour RAM.
 | $8310000-$831AC7F | attic RAM: DGLOOK, each depth's stone (5 x 8,832 bytes) |
 | $8320000-$83208FF | attic RAM: the messages' history (36 x 64 bytes) |
 | $8340000-$8340623 | attic RAM: the names and `tile_char`, `__bank(0x834)` data (DUNGEON.OV3) |
+
+## Licence
+
+The game's own work (code, tools, art, music and these notes) is © 2026
+Craig Taylor, under the Creative Commons
+[Attribution-NonCommercial-ShareAlike 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+licence: share and change it freely for non-commercial use, with credit,
+and share what you change under the same licence. See `LICENSE`. The
+sampled sounds in `assets/baseimage.d81` keep their own packs' licences
+(`assets/README.md`).
