@@ -19,7 +19,7 @@
 #define KEEP_KINDS 1024
 #define KEEP_SEEN  (KEEP_KINDS + MAP_N)
 #define KEEP_END   (KEEP_SEEN + MAP_N)
-#define VERSION    17
+#define VERSION    18
 
 extern unsigned char vault_x0, vault_y0, vault_x1, vault_y1;
 
@@ -141,6 +141,7 @@ void player_new(void) {
     pl.items[I_ARROWS] = 8;
     pl.items[I_BISCUIT] = 2;
     pl.items[I_STICK] = 1;
+    pl.items[I_WHISTLE] = 1;
     pl.bow = 1;
     pl.gun = 0;
     pl.fuel = 400;
@@ -172,6 +173,7 @@ void player_new(void) {
     pl.dog_stay = 0;
     pl.dog_fetch = 0;
     pl.dog_carry = 0;
+    pl.dog_load = 0;
     turn = 1;
 }
 

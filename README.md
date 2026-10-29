@@ -47,7 +47,9 @@ Superior dragonbone and rune plate; `TEST=-DTEST_DOG=<life>` starts the dog
 with that much life (0: away, back in 3 turns); `TEST_FIGHT`'s creature
 stands beside the dog; `TEST=-DTEST_SNIFF=1` puts a mimic, still a chest,
 beside the dog, `=2` a hidden plate two east (for the dog's nose);
-`TEST=-DTEST_FETCH_MISS` has the dog always lose interest in the stick. `TEST=-DTEST_VENOM` starts with venom in the blood and an antidote;
+`TEST=-DTEST_FETCH_MISS` has the dog always lose interest in the stick;
+`TEST=-DTEST_DOG_FAR=<n>` puts the dog far off, with n whistles (0: none);
+`TEST=-DTEST_ARROWS` four spent arrows three east. `TEST=-DTEST_VENOM` starts with venom in the blood and an antidote;
 `TEST=-DTEST_CHARMS=<0-4>` with one of each charm, wearing the one that
 does that (CH_*).
 
@@ -102,7 +104,7 @@ memory, but only 30 life). The ending names who it was.
 | O (S on the title) | | settings: music and sound levels | |
 | T / G | | shoot the bow / fire the flintlock (again: the next target, RETURN: shoot) | |
 | X | | throw a flask of oil or meat at a foe, or the dog's stick a way off (O / M / S when you carry more than one) | |
-| B | | bid your dog stay where it is, or come to you | |
+| B | | bid your dog stay where it is, or come to you; out of earshot, blow the whistle | |
 | M | | the level as you remember it; a cursor, RETURN puts a note (! $ * ?) | |
 | K | | shut a door beside you; if it is shut, wedge it with a bundle of sticks | |
 | J | | the last 36 messages, to read again | |
@@ -278,6 +280,13 @@ stick lies there for you to pick up. Driven off, the dog drops what it
 carries; a stick left on a level stays there. Biscuits turn up lying
 about (a level in three), in chests and at the merchant's; a spare stick
 lies about a level in five.
+
+Your voice carries four places, or ten to a dog you can see: further off,
+B blows your *tin whistle* (or use it from what you carry), and the dog
+comes from wherever it is on the level, through shut doors, to your side,
+staying no more (what it went for it leaves; what it carries it brings).
+With nothing else to do, the dog brings back spent arrows lying in sight
+within eight places of you, the whole pile.
 
 **Doors.** Creatures open shut doors (it takes them a move), but a shut
 door breaks their line of sight: K shuts an open door beside you. K again

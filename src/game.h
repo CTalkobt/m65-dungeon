@@ -182,6 +182,8 @@ void dog_move(void);
 unsigned char dog_place(void);
 extern unsigned int dog_warned;          /* where it last growled (AT): once a thing */
 #define DOG_NAMES  8
+unsigned char dog_bid(void);             /* explore.c: B, the dog stay or come, in earshot (else the whistle) */
+unsigned char dog_whistle(void);         /* explore.c: the whistle: the dog to your side, from anywhere */
 char *dog_says(char *buf, const char *rest);   /* game.c: buf = the dog's name + rest */
 #define DOG_MAX    (10 + pl.level * 2)
 #define DOG_AT(x, y) (pl.dog_hp && (x) == pl.dog_x && (y) == pl.dog_y)
@@ -253,8 +255,9 @@ struct player {
     unsigned char dog_down;   /* turns till it comes back */
     unsigned char dog_name;   /* its name (dog_says), one of DOG_NAMES */
     unsigned char dog_stay;   /* 1: it holds where it is (B), 0: it follows */
-    unsigned int dog_fetch;   /* where the stick it runs for lies (AT), 0 none */
-    unsigned char dog_carry;  /* 1: it brings the stick back */
+    unsigned int dog_fetch;   /* where what it runs for lies (AT: the stick, spent arrows), 0 none */
+    unsigned char dog_carry;  /* what it brings back: its item + 1, 0 nothing */
+    unsigned char dog_load;   /* and how many */
 };
 #define CALL_FIGHTER 0
 #define CALL_HUNTER  1

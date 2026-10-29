@@ -65,6 +65,53 @@ static void screen_in(void) {
     video_fade(16);
 }
 
+/* the dog within call of a voice: four places, or in sight up to ten */
+static unsigned char earshot(void) {
+    unsigned char dx = pl.x > pl.dog_x ? pl.x - pl.dog_x : pl.dog_x - pl.x;
+    unsigned char dy = pl.y > pl.dog_y ? pl.y - pl.dog_y : pl.dog_y - pl.y, v;
+    if (dy > dx) dx = dy;
+    if (dx <= 4) return 1;
+    v = vis_at(pl.dog_x, pl.dog_y);
+    return dx <= 10 && v && v != VIS_SHADOW;
+}
+
+/* B: the dog bidden stay, or come (no turn); out of earshot, the whistle
+ * if there is one */
+unsigned char dog_bid(void) {
+    char buf[64];
+    if (!pl.dog_hp) {
+        msg(dog_says(buf, " is off in the dark."), C_DIM);
+        return 0;
+    }
+    if (!earshot()) {
+        if (pl.items[I_WHISTLE]) return dog_whistle();
+        msg(dog_says(buf, " is too far off to hear you."), C_DIM);
+        return 0;
+    }
+    pl.dog_stay ^= 1;
+    msg(dog_says(buf, pl.dog_stay ? " sits, and stays." : " bounds back to your side."), C_TEXT);
+    return 0;
+}
+
+/* the tin whistle: the dog comes, from wherever it is on the level (out of
+ * earshot, it is at your side at once: it knows the way), staying no more;
+ * what it went for it leaves, what it carries it brings. A turn */
+unsigned char dog_whistle(void) {
+    char buf[64];
+    msg("You whistle, shrill and long.", C_TEXT);
+    if (!pl.dog_hp) {
+        msg(dog_says(buf, " is off in the dark: no bark answers."), C_DIM);
+        return 1;
+    }
+    pl.dog_stay = 0;
+    pl.dog_fetch = 0;
+    if (earshot()) msg(dog_says(buf, " pricks up its ears, and comes."), C_TEXT);
+    else if (dog_place()) msg(dog_says(buf, " comes bounding to your side."), C_GOLD);
+    else msg(dog_says(buf, " barks, far off, but cannot get to you."), C_DIM);
+    sfx(SFX_BARK);
+    return 1;
+}
+
 static void level_enter(void) {
     char buf[64];
     video_fade(0);
@@ -418,7 +465,6 @@ unsigned char explore(unsigned char resume) {
 }
 
 static unsigned char explore_run(unsigned char resume) {
-    char buf[40];
     unsigned char k, took, r;
     signed char dx, dy;
     if (resume) {
@@ -503,6 +549,20 @@ static unsigned char explore_run(unsigned char resume) {
 #ifdef TEST_DOG
     pl.dog_hp = TEST_DOG;              /* (tests: the dog nearly done; 0: away, back in 3 turns) */
     if (!pl.dog_hp) pl.dog_down = 3;
+#endif
+#ifdef TEST_DOG_FAR
+    /* (tests: the dog on a floor far off, more than 12 places; TEST_DOG_FAR
+     * whistles, 0 none) */
+    for (r = 0; r < MAP_H; r++)
+        for (k = 0; k < MAP_W; k++)
+            if (terrain(k, r) == TR_FLOOR && (k > pl.x + 12 || k + 12 < pl.x)) {
+                pl.dog_x = k;
+                pl.dog_y = r;
+            }
+    pl.items[I_WHISTLE] = TEST_DOG_FAR;
+#endif
+#ifdef TEST_ARROWS
+    put_down(pl.x + 3, pl.y, I_ARROWS, 4);   /* (tests: spent arrows three east, for the dog) */
 #endif
 #ifdef TEST_SNIFF
 #if TEST_SNIFF == 1
@@ -600,13 +660,7 @@ static unsigned char explore_run(unsigned char resume) {
             took = door_shut();
             break;
         case 'b':
-            /* the dog bidden: stay, or come (no turn) */
-            if (!pl.dog_hp) {
-                msg(dog_says(buf, " is off in the dark."), C_DIM);
-                break;
-            }
-            pl.dog_stay ^= 1;
-            msg(dog_says(buf, pl.dog_stay ? " sits, and stays." : " bounds back to your side."), C_TEXT);
+            took = dog_bid();
             break;
         case '@':
             if (!cheat_on) break;

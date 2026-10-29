@@ -739,6 +739,8 @@ ART["antidote"] = ["................"] * 3 + [
 ] + ["................"] * 2
 # a dog biscuit: bone-shaped, baked brown
 ART["biscuit"] = ['................', '................', '................', '................', '................', '..kk........kk..', '.kYYk......kYYk.', '.kYYYkkkkkkYYdk.', '..kYYYYYYYYYdk..', '..kYdYYdYYdYdk..', '.kYYdkkkkkkdddk.', '.kddk......kddk.', '..kk........kk..', '................', '................', '................']
+# the dog's tin whistle, on a cord
+ART["whistle"] = ['................', '................', '................', '................', '................', '..nn............', '.n..n...........', '.n...n.kkkkkkk..', '..n...ksssssssk.', '...nnksSskssSSk.', '......kSSSSSSSk.', '.......kkkkkkk..', '................', '................', '................', '................']
 # the dog's stick: a forked twig, its end chewed pale
 ART["stick"] = ['................', '................', '................', '............kk..', '...........knNk.', '..........knNk..', '.......kk.knNk..', '......knNkkNk...', '........knNk....', '.......knNk.....', '......knNk......', '.....knNk.......', '....kbNk........', '...kbbk.........', '....kk..........', '................']
 ART["fountain_dry"] = [r.replace('u', 'h').replace('U', 'h').replace('w', 'F') for r in ART["fountain"]]
@@ -1153,7 +1155,7 @@ def terrain_kinds(style=0):
 SPRITES = ("chest", "chest_open", "idol", "idol_spent", "potion", "gold", "bones", "brazier",
            "brazier_cold", "scroll", "key", "draught", "rags", "sticks", "fur", "candle", "flint", "firestick",
            "arrows", "shot", "merchant", "fountain", "fountain_dry", "shelf", "oil", "food", "flames",
-           "flask1", "flask2", "flask3", "flask4", "antidote", "ring", "amulet", "biscuit", "stick", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats", "ghoul", "ember", "dog",
+           "flask1", "flask2", "flask3", "flask4", "antidote", "ring", "amulet", "biscuit", "stick", "whistle", "player", "player_dark", "aim", "missile", "rat", "skeleton", "spider", "slime", "orc", "wraith", "lich", "bats", "ghoul", "ember", "dog",
            "note1", "note2", "note3", "note4")
 
 

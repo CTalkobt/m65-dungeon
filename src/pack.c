@@ -364,6 +364,8 @@ static unsigned char use(unsigned char k) {
         return throw_stick();
     case U_BISCUIT:
         return biscuit();
+    case U_WHISTLE:
+        return dog_whistle();
     case U_FUEL:
         return feed(k);
     case U_LIGHT:

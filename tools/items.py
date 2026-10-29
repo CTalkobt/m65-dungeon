@@ -20,7 +20,7 @@ import os
 import sys
 
 USES = ["POTION", "DRAUGHT", "FIGHT", "RECALL", "SIGHT", "KEY", "FUEL", "LIGHT", "BOW", "GUN",
-        "THROW", "ANTIDOTE", "BISCUIT", "STICK", "FLASK", "CHARM"]
+        "THROW", "ANTIDOTE", "BISCUIT", "STICK", "WHISTLE", "FLASK", "CHARM"]
 
 
 def it(ident, name, plural, col, tile, use, val=0, key=None, shop=None, floor=None, chest=None):
@@ -57,6 +57,7 @@ ITEMS = [
        shop=(2, 8), floor=(1, 3), chest=(1, 2, 2)),
     it("STICK", "chewed stick", "chewed sticks", "BONE", "STICK", "STICK", key=("s", "the stick"),
        floor=(1, 5)),
+    it("WHISTLE", "tin whistle", "tin whistles", "TEXT", "WHISTLE", "WHISTLE"),   # (the dog's: kept)
     # the strange flasks, by their colour (what each does: pl.flask, game.c flask_fx)
     it("FLASK", "cloudy green flask", "cloudy green flasks", "GREEN", "FLASK1", "FLASK"),
     it("FLASK2", "smoky grey flask", "smoky grey flasks", "GREY", "FLASK2", "FLASK"),

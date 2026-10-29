@@ -9,9 +9,10 @@
  * and now and then it sniffs out a hidden plate near the player (sniff:
  * found, as the player's search finds one). Told to stay (B: explore.c)
  * it holds where it is, biting only what comes beside it, till told to
- * follow, or a new level, or it comes back from the dark. The stick
- * thrown (aim.c), it runs for it (fetch), and 17 times in 20 brings it
- * back; creatures in sight come first. */
+ * follow, or a new level, or it comes back from the dark (B, in earshot,
+ * and the whistle from anywhere: explore.c). The stick thrown (pack.c),
+ * it runs for it (fetch), and 17 times in 20 brings it back; spent arrows
+ * in sight it brings, always; creatures in sight come first. */
 #pragma cc45 overlay(aim)
 #pragma cc45 noescape_strings
 #include "hw.h"
@@ -84,24 +85,51 @@ static void sniff(void) {
         }
 }
 
-/* the stick: run for it, snatch it up (17 in 20) and bring it back; 0 if
- * there is none to see to */
+/* spent arrows lying in sight within eight places of the player (not where
+ * it last gave up: dog_warned): where, or 0 */
+static unsigned int arrows_seen(void) {
+    unsigned char k, x, y, v;
+    for (k = 0; k < MAX_OBJ; k++) {
+        if (thing_kind[k] != O_PILE + I_ARROWS || thing_at[k] == dog_warned) continue;
+        x = thing_at[k] % MAP_W;
+        y = thing_at[k] / MAP_W;
+        v = vis_at(x, y);
+        if (v && v != VIS_SHADOW && apart(x, y, pl.x, pl.y) <= 8) return thing_at[k];
+    }
+    return 0;
+}
+
+/* the stick thrown (or spent arrows seen): run for it, take it up (the
+ * stick 17 in 20, arrows always) and bring it back to drop at the
+ * player's feet; 0 if there is nothing to see to (or it is staying) */
 static unsigned char fetch(void) {
     char buf[64];
-    unsigned char x = pl.dog_x, y = pl.dog_y, n;
+    unsigned char x = pl.dog_x, y = pl.dog_y, i;
     unsigned int at = pl.dog_fetch;
+    if (pl.dog_stay) return 0;
     if (pl.dog_carry) {
         if (apart(pl.x, pl.y, x, y) > 1) {
             dog_step(toward(x, pl.x), toward(y, pl.y));
             if (apart(pl.x, pl.y, pl.dog_x, pl.dog_y) > 1) return 1;
         }
+        i = pl.dog_carry - 1;
         pl.dog_carry = 0;
-        pl.items[I_STICK]++;
-        msg(dog_says(buf, " drops the stick at your feet, tail wagging."), C_GOLD);
+        pl.items[i] += pl.dog_load;
+        if (i == I_STICK) dog_says(buf, " drops the stick at your feet, tail wagging.");
+        else {
+            dog_says(buf, " drops ");
+            str_num(buf, pl.dog_load);
+            str_cat(buf, " ");
+            str_cat(buf, item_name(i, pl.dog_load));
+            str_cat(buf, " at your feet.");
+        }
+        msg(buf, C_GOLD);
         return 1;
     }
-    if (!at) return 0;
-    if (obj_at(at) != O_PILE + I_STICK) {
+    if (!at && (at = arrows_seen()) == 0) return 0;
+    pl.dog_fetch = at;
+    i = obj_at(at) - O_PILE;
+    if (i != I_STICK && i != I_ARROWS) {
         pl.dog_fetch = 0;                          /* (picked up meanwhile) */
         return 0;
     }
@@ -109,24 +137,24 @@ static unsigned char fetch(void) {
         dog_step(toward(x, at % MAP_W), toward(y, at / MAP_W));
         if (pl.dog_x == x && pl.dog_y == y) {
             pl.dog_fetch = 0;                      /* (no way to it) */
-            msg(dog_says(buf, " cannot get to the stick."), C_DIM);
+            dog_warned = at;
+            if (i == I_STICK) msg(dog_says(buf, " cannot get to the stick."), C_DIM);
         }
         return 1;
     }
     pl.dog_fetch = 0;
 #ifdef TEST_FETCH_MISS
-    if (1) {                                       /* (tests: it always loses interest) */
+    if (i == I_STICK) {                            /* (tests: it always loses interest) */
 #else
-    if (rng_range(20) >= 17) {
+    if (i == I_STICK && rng_range(20) >= 17) {
 #endif
         msg(dog_says(buf, " sniffs the stick, and wanders off."), C_DIM);
         return 1;
     }
-    n = obj_count(at);
+    pl.dog_carry = i + 1;
+    pl.dog_load = obj_count(at);
     obj_set(at, O_NONE);
-    if (n > 1) obj_add(at, O_PILE + I_STICK, n - 1);
-    pl.dog_carry = 1;
-    msg(dog_says(buf, " snatches up the stick."), C_TEXT);
+    msg(dog_says(buf, i == I_STICK ? " snatches up the stick." : " gathers up the arrows."), C_TEXT);
     return 1;
 }
 
@@ -169,8 +197,7 @@ void dog_move(void) {
     if (t == 0xFF) {
         /* nothing to chase: the stick (fetch), or keep close (and catch up
          * when left far behind), nose down; told to stay, it holds */
-        if (fetch()) return;
-        if (pl.dog_stay) return;
+        if (fetch() || pl.dog_stay) return;
         sniff();
         d = apart(pl.x, pl.y, pl.dog_x, pl.dog_y);
         if (d > 10) dog_place();
@@ -200,7 +227,7 @@ void dog_move(void) {
     }
     pl.dog_hp = 0;
     pl.dog_down = DOG_BACK;
-    if (pl.dog_carry) put_down(pl.dog_x, pl.dog_y, I_STICK, 1);   /* (the stick falls where it was) */
+    if (pl.dog_carry) put_down(pl.dog_x, pl.dog_y, pl.dog_carry - 1, pl.dog_load);   /* (what it carried falls) */
     pl.dog_carry = 0;
     pl.dog_fetch = 0;
     msg(dog_says(buf, " yelps, and limps off into the dark."), C_RED);
