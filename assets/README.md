@@ -78,13 +78,27 @@ licensor objects, the sounds will be replaced or removed.
 
 ### Remaking the image
 
-With the packs' zip files in `~/resources/audio/dungeon` (or
-`make sounds SFX_DIR=<dir>`):
+You don't need to: `assets/baseimage.d81` is in the repository and `make`
+uses it as it is. (Without it, the game builds with its SID sound effects
+only.) To make it anew, from the packs themselves, get these zip files
+from their authors and put them, as downloaded and not unpacked, in
+`~/resources/audio/dungeon` (or any folder, given as `SFX_DIR`):
+
+| Zip file | Pack | Sounds taken |
+|---|---|---|
+| `NimbeKit_Fantasy_RPG_Collection.zip` | NimbeKit Studio, *Fantasy RPG: Dungeon & Magic Complete Collection* v1.0 (a paid pack; the sounds are read from the `NimbeKit_Fantasy_RPG_SFX_160.zip` inside it) | 24 |
+| `free-fantasy-sounds-audio.zip` | moneywithjj, *Free Fantasy RPG Sounds* | 3 |
+| `free-roguelike-sounds-audio.zip` | moneywithjj, *Free Roguelike Sounds* | 3 |
+| `free-lost-temple-sounds-audio.zip` | moneywithjj, *Free Lost Temple Sounds* | 3 |
 
 ```sh
-make sounds     # assets/baseimage.d81 anew
+make sounds                                 # assets/baseimage.d81 anew
+make sounds SFX_DIR=~/Downloads/dungeon-sfx # the zips elsewhere
 make
 ```
+
+`tools/gen_sfx.py` (`SOUNDS`) says, for each sound, which zip and file
+it comes from, where it starts, how long it is and its gain.
 
 To change a sound, edit `SOUNDS` in `tools/gen_sfx.py` (the file, where to
 start, how long, the gain and the play slot) and run `make sounds`.
